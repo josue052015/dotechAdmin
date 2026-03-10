@@ -1,0 +1,319 @@
+{
+    "provinces": [
+        {
+            "name": "Santo Domingo",
+            "cities": [
+                "Santo Domingo Este",
+                "Santo Domingo Norte",
+                "Santo Domingo Oeste",
+                "Los Alcarrizos",
+                "Boca Chica",
+                "Pedro Brand",
+                "San Antonio de Guerra"
+            ]
+        },
+        {
+            "name": "Distrito Nacional",
+            "cities": [
+                "Santo Domingo"
+            ]
+        },
+        {
+            "name": "Santiago",
+            "cities": [
+                "Santiago de los Caballeros",
+                "Bisonó",
+                "Jánico",
+                "Licey al Medio",
+                "Puñal",
+                "Sabana Iglesia",
+                "San José de las Matas",
+                "Tamboril",
+                "Villa Bisonó",
+                "Villa González"
+            ]
+        },
+        {
+            "name": "La Vega",
+            "cities": [
+                "Concepción de La Vega",
+                "Constanza",
+                "Jarabacoa",
+                "Jima Abajo"
+            ]
+        },
+        {
+            "name": "San Cristóbal",
+            "cities": [
+                "San Cristóbal",
+                "Bajos de Haina",
+                "Cambita Garabitos",
+                "Los Cacaos",
+                "Sabana Grande de Palenque",
+                "San Gregorio de Nigua",
+                "Villa Altagracia",
+                "Yaguate"
+            ]
+        },
+        {
+            "name": "Duarte",
+            "cities": [
+                "San Francisco de Macorís",
+                "Arenoso",
+                "Castillo",
+                "Eugenio María de Hostos",
+                "Las Guáranas",
+                "Pimentel",
+                "Villa Riva"
+            ]
+        },
+        {
+            "name": "Puerto Plata",
+            "cities": [
+                "San Felipe de Puerto Plata",
+                "Altamira",
+                "Guananico",
+                "Imbert",
+                "Los Hidalgos",
+                "Luperón",
+                "Sosúa",
+                "Villa Isabela",
+                "Villa Montellano"
+            ]
+        },
+        {
+            "name": "Espaillat",
+            "cities": [
+                "Moca",
+                "Cayetano Germosén",
+                "Gaspar Hernández",
+                "Jamao al Norte"
+            ]
+        },
+        {
+            "name": "La Romana",
+            "cities": [
+                "La Romana",
+                "Guaymate",
+                "Villa Hermosa"
+            ]
+        },
+        {
+            "name": "San Juan",
+            "cities": [
+                "San Juan de la Maguana",
+                "Bohechío",
+                "El Cercado",
+                "Juan de Herrera",
+                "San Martín"> "Vallejuelo"
+            ]
+        },
+        {
+            "name": "San Pedro de Macorís",
+            "cities": [
+                "San Pedro de Macorís",
+                "Consuelo",
+                "Guayacanes",
+                "Quisqueya",
+                "Ramon Santana",
+                "San José de Los Llanos"
+            ]
+        },
+        {
+            "name": "La Altagracia",
+            "cities": [
+                "Salvaleón de Higüey",
+                "San Rafael del Yuma"
+            ]
+        },
+        {
+            "name": "Azua",
+            "cities": [
+                "Azua de Compostela",
+                "Estebanía",
+                "Guayabal",
+                "Las Charcas",
+                "Las Yayas de Viajama",
+                "Padre Las Casas",
+                "Pueblo Viejo",
+                "Sabana Yegua",
+                "Tábara Arriba",
+                "Pernal"
+            ]
+        },
+        {
+            "name": "Monseñor Nouel",
+            "cities": [
+                "Bonao",
+                "Maimón",
+                "Piedra Blanca"
+            ]
+        },
+        {
+            "name": "Barahona",
+            "cities": [
+                "Santa Cruz de Barahona",
+                "Cabral",
+                "El Peñón",
+                "Enriquillo",
+                "Fundación",
+                "Jaquimeyes",
+                "La Salina",
+                "Las Salinas",
+                "Paraíso",
+                "Polo",
+                "Vicente Noble"
+            ]
+        },
+        {
+            "name": "Monte Plata",
+            "cities": [
+                "Monte Plata",
+                "Bayaguana",
+                "Peralvillo",
+                "Sabana Grande de Boyá",
+                "Yamasá"
+            ]
+        },
+        {
+            "name": "Peravia",
+            "cities": [
+                "Baní",
+                "Nizao"
+            ]
+        },
+        {
+            "name": "María Trinidad Sánchez",
+            "cities": [
+                "Nagua",
+                "Cabrera",
+                "El Factor",
+                "Río San Juan"
+            ]
+        },
+        {
+            "name": "Hermanas Mirabal",
+            "cities": [
+                "Salcedo",
+                "Tenares",
+                "Villa Tapia"
+            ]
+        },
+        {
+            "name": "Sánchez Ramírez",
+            "cities": [
+                "Cotuí",
+                "Cevicos",
+                "Fantino",
+                "La Mata"
+            ]
+        },
+        {
+            "name": "Valverde",
+            "cities": [
+                "Mao",
+                "Esperanza",
+                "Laguna Salada"
+            ]
+        },
+        {
+            "name": "El Seibo",
+            "cities": [
+                "Santa Cruz de El Seibo",
+                "Miches"
+            ]
+        },
+        {
+            "name": "Hato Mayor",
+            "cities": [
+                "Hato Mayor del Rey",
+                "El Valle",
+                "Sabana de la Mar"
+            ]
+        },
+        {
+            "name": "Monte Cristi",
+            "cities": [
+                "San Fernando de Monte Cristi",
+                "Castañuelas",
+                "Guayubín",
+                "Las Matas de Santa Cruz",
+                "Pepillo Salcedo",
+                "Villa Vásquez"
+            ]
+        },
+        {
+            "name": "Samaná",
+            "cities": [
+                "Santa Bárbara de Samaná",
+                "Las Terrenas",
+                "Sánchez"
+            ]
+        },
+        {
+            "name": "Baoruco",
+            "cities": [
+                "Neiba",
+                "Galván",
+                "Los Ríos",
+                "Tamayo",
+                "Villa Jaragua"
+            ]
+        },
+        {
+            "name": "Elías Piña",
+            "cities": [
+                "Comendador",
+                "Bánica",
+                "El Llano",
+                "Hondo Valle",
+                "Juan Santiago",
+                "Pedro Santana"
+            ]
+        },
+        {
+            "name": "San José de Ocoa",
+            "cities": [
+                "San José de Ocoa",
+                "Rancho Arriba",
+                "Sabana Larga"
+            ]
+        },
+        {
+            "name": "Dajabón",
+            "cities": [
+                "Dajabón",
+                "El Pino",
+                "Loma de Cabrera",
+                "Partido",
+                "Restauración"
+            ]
+        },
+        {
+            "name": "Independencia",
+            "cities": [
+                "Jimaní",
+                "Cristóbal",
+                "Duvergé",
+                "La Descubierta",
+                "Mella",
+                "Postrer Río"
+            ]
+        },
+        {
+            "name": "Santiago Rodríguez",
+            "cities": [
+                "San Ignacio de Sabaneta",
+                "Los Almácigos",
+                "Monción"
+            ]
+        },
+        {
+            "name": "Pedernales",
+            "cities": [
+                "Pedernales",
+                "Oviedo"
+            ]
+        }
+    ]
+}

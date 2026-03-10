@@ -19,7 +19,7 @@ export class LocationService {
 
     private async loadData() {
         try {
-            const response = await fetch('/assets/data/dr-locations.json');
+            const response = await fetch('/dr-locations.json');
             const json = await response.json();
             this.data = json.provinces as Province[];
         } catch (e) {
