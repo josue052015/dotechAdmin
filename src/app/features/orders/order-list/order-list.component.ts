@@ -97,6 +97,17 @@ import { Order } from '../../../core/models/order.model';
               </td>
             </ng-container>
 
+            <!-- Phone Column -->
+            <ng-container matColumnDef="phone">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Phone Number </th>
+              <td mat-cell *matCellDef="let row" class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <mat-icon class="text-slate-300 !text-sm">phone</mat-icon>
+                  <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
+                </div>
+              </td>
+            </ng-container>
+
             <!-- Product Column -->
             <ng-container matColumnDef="product">
               <th mat-header-cell *matHeaderCellDef mat-sort-header="productName" class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Product </th>
@@ -194,7 +205,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   private fb = inject(FormBuilder);
   public Math = Math;
 
-  displayedColumns: string[] = ['customer', 'product', 'qty', 'price', 'status', 'actions'];
+  displayedColumns: string[] = ['customer', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
   dataSource: MatTableDataSource<Order> = new MatTableDataSource();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;

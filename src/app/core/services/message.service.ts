@@ -27,11 +27,27 @@ export class MessageService {
                     name: row[1] || '',
                     text: row[2] || ''
                 }));
+
+                // Fallback if no templates found
+                if (parsed.length === 0) {
+                    parsed.push({
+                        id: 'default',
+                        name: 'Mensaje Estándar',
+                        text: 'Hola {{FullName}}, te escribimos de Dotech. Tu pedido de {{ProductName}} por RD$ {{Price}} está {{Status}}.'
+                    });
+                }
+
                 this.templates.set(parsed);
                 this.isLoading.set(false);
             },
             error: (err) => {
                 console.error('Error loading templates', err);
+                // Even on error, provide at least one template
+                this.templates.set([{
+                    id: 'default',
+                    name: 'Mensaje Estándar',
+                    text: 'Hola {{FullName}}, te escribimos de Dotech. Tu pedido de {{ProductName}} por RD$ {{Price}} está {{Status}}.'
+                }]);
                 this.isLoading.set(false);
             }
         });
@@ -54,19 +70,21 @@ export class MessageService {
 
     public generateWhatsAppUrl(order: Order, templateText: string): string {
         let replacedText = templateText
-            .replace(/{{FullName}}/g, order.fullName || '')
-            .replace(/{{ProductName}}/g, order.productName || '')
-            .replace(/{{Price}}/g, (order.productPrice || 0).toString())
-            .replace(/{{Status}}/g, order.status || '')
-            .replace(/{{City}}/g, order.city || '');
+            .replace(/{{FullName}}/gi, String(order.fullName || ''))
+            .replace(/{{ProductName}}/gi, String(order.productName || ''))
+            .replace(/{{Price}}/gi, String(order.productPrice || 0))
+            .replace(/{{Status}}/gi, String(order.status || ''))
+            .replace(/{{City}}/gi, String(order.city || ''));
 
         const encodedText = encodeURIComponent(replacedText);
-        // Use the customer's phone number as the recipient
-        // Using business phone if we were to send it to the business? The prompt says "SEND WHATSAPP MESSAGE"
-        // "The system opens WhatsApp Web with the prepared message. Use this format: https://wa.me/PHONE?text=MESSAGE"
-        // Usually, you send TO the customer FROM the business.
-        // The link format uses the customer's phone here:
-        const cleanPhone = (order.phone || '').replace(/\D/g, '');
+
+        // Ensure phone is a string and remove non-numeric characters
+        let cleanPhone = String(order.phone || '').replace(/\D/g, '');
+
+        // If it's a 10-digit local number (common in DR), prepend '1' for international format
+        if (cleanPhone.length === 10 && (cleanPhone.startsWith('809') || cleanPhone.startsWith('829') || cleanPhone.startsWith('849'))) {
+            cleanPhone = '1' + cleanPhone;
+        }
         return `https://wa.me/${cleanPhone}?text=${encodedText}`;
     }
 }
