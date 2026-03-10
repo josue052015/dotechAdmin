@@ -136,9 +136,8 @@ import { Order } from '../../../core/models/order.model';
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-center"> Status </th>
               <td mat-cell *matCellDef="let row" class="px-6 py-4 text-center">
-                <div [class]="getStatusClass(row.status)" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full border shadow-sm">
-                   <span class="w-1.5 h-1.5 rounded-full" [class]="getStatusDot(row.status)"></span>
-                   <span class="text-[10px] font-bold uppercase tracking-wider">{{row.status}}</span>
+                <div [class]="getStatusClass(row.status)" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                   {{row.status}}
                 </div>
               </td>
             </ng-container>
@@ -290,19 +289,24 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     };
   }
 
-  getStatusClass(status: string): string {
-    const s = status?.toLowerCase() || '';
-    if (s.includes('entregado') || s.includes('recibido')) return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    if (s.includes('cancelado') || s.includes('desaparecido')) return 'bg-red-50 text-red-600 border-red-100';
-    if (s.includes('pendiente') || s.includes('espera') || s.includes('no confirmado')) return 'bg-amber-50 text-amber-600 border-amber-100';
-    return 'bg-blue-50 text-blue-600 border-blue-100';
+  private normalize(s: string): string {
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   }
 
-  getStatusDot(status: string): string {
-    const s = status?.toLowerCase() || '';
-    if (s.includes('entregado') || s.includes('recibido')) return 'bg-emerald-500';
-    if (s.includes('cancelado') || s.includes('desaparecido')) return 'bg-red-500';
-    if (s.includes('pendiente') || s.includes('espera') || s.includes('no confirmado')) return 'bg-amber-500';
-    return 'bg-blue-500';
+  getStatusClass(status: string): string {
+    const s = this.normalize(status || '');
+
+    // Exact colors from the reference image
+    if (s === 'cancelado') return 'bg-[#E9D5FF] text-[#7C3AED]'; // Light purple
+    if (s === 'desaparecido') return 'bg-[#581C87] text-white'; // Dark purple
+    if (s === 'no confirmado') return 'bg-[#F1F5F9] text-[#475569]'; // Light slate
+    if (s === 'pendiente de ubicacion') return 'bg-[#FEE2E2] text-[#DC2626]'; // Light red/rose
+    if (s === 'confirmado completo') return 'bg-[#FEF3C7] text-[#D97706]'; // Light amber
+    if (s === 'empacado') return 'bg-[#DCFCE7] text-[#16A34A]'; // Light green
+    if (s === 'envio en proceso') return 'bg-[#DBEAFE] text-[#2563EB]'; // Light blue
+    if (s === 'entregado') return 'bg-[#991B1B] text-white'; // Dark red
+    if (s === 'dinero recibido') return 'bg-[#1E40AF] text-white'; // Dark blue
+
+    return 'bg-slate-100 text-slate-500'; // Default
   }
 }

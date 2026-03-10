@@ -324,7 +324,10 @@ export class DashboardComponent implements OnInit {
       this.ordersDelivered = orders.filter(o => o.status?.toLowerCase() === 'entregado' || o.status?.toLowerCase().includes('recibido')).length;
 
       this.moneyReceived = orders
-        .filter(o => o.status && o.status.toLowerCase() === 'dinero recibido')
+        .filter(o => {
+          const s = (o.status || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          return s === 'dinero recibido';
+        })
         .reduce((sum, o) => sum + (o.productPrice * o.productQuantity) + (o.shippingCost || 0) + (o.packaging || 0), 0);
 
       this.updateDonutChart(orders);

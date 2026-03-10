@@ -46,8 +46,8 @@ import { MatButtonModule } from '@angular/material/button';
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div class="flex items-center space-x-4">
             <h1 class="text-3xl font-black text-slate-900 tracking-tight">Order {{ order?.id || order?.['_rowNumber'] }}</h1>
-            <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider">
-               {{ order?.status || 'PROCESSING' }}
+            <span [class]="getStatusClass(order?.status || '')" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+               {{ order?.status || 'SIN ESTADO' }}
             </span>
          </div>
          <div class="flex items-center space-x-3 w-full md:w-auto">
@@ -333,6 +333,26 @@ export class OrderDetailComponent implements OnInit {
       navigator.clipboard.writeText(tracking).then(() => {
          // Visual feedback can be added later
       });
+   }
+
+   normalize(s: string): string {
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+   }
+
+   getStatusClass(status: string): string {
+      const s = this.normalize(status || '');
+
+      if (s === 'cancelado') return 'bg-[#E9D5FF] text-[#7C3AED]';
+      if (s === 'desaparecido') return 'bg-[#581C87] text-white';
+      if (s === 'no confirmado') return 'bg-[#F1F5F9] text-[#475569]';
+      if (s === 'pendiente de ubicacion') return 'bg-[#FEE2E2] text-[#DC2626]';
+      if (s === 'confirmado completo') return 'bg-[#FEF3C7] text-[#D97706]';
+      if (s === 'empacado') return 'bg-[#DCFCE7] text-[#16A34A]';
+      if (s === 'envio en proceso') return 'bg-[#DBEAFE] text-[#2563EB]';
+      if (s === 'entregado') return 'bg-[#991B1B] text-white';
+      if (s === 'dinero recibido') return 'bg-[#1E40AF] text-white';
+
+      return 'bg-slate-100 text-slate-500';
    }
 
    goBack() {
