@@ -172,11 +172,12 @@ import { Router, RouterModule } from '@angular/router';
            </button>
            <button (click)="submitOrder()" 
                    type="button"
-                   [disabled]="orderForm.invalid || isSaving"
+                   [disabled]="orderForm.invalid || isSaving || isLoadingOrders()"
                    class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95 text-sm font-bold flex items-center space-x-3">
-              <mat-spinner diameter="18" strokeWidth="2.5" *ngIf="isSaving" class="text-white"></mat-spinner>
-              <span *ngIf="!isSaving">Save Order</span>
+              <mat-spinner diameter="18" strokeWidth="2.5" *ngIf="isSaving || isLoadingOrders()" class="text-white"></mat-spinner>
+              <span *ngIf="!isSaving && !isLoadingOrders()">Save Order</span>
               <span *ngIf="isSaving">Saving Order...</span>
+              <span *ngIf="isLoadingOrders() && !isSaving">Syncing Sequence...</span>
            </button>
         </div>
 
@@ -197,6 +198,7 @@ export class OrderFormComponent implements OnInit {
   private router = inject(Router);
 
   isSaving = false;
+  isLoadingOrders = this.orderService.isLoading;
   products = this.productService.products;
   provinces$ = this.locationService.getProvinces();
   cities: string[] = [];
@@ -223,6 +225,7 @@ export class OrderFormComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.orderService.loadOrders();
     this.productService.loadProducts();
 
     this.orderForm.get('province')?.valueChanges.subscribe(province => {

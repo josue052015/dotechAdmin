@@ -28,7 +28,7 @@ export class OrderService {
             next: (response) => {
                 const rows = response.values || [];
                 const parsedOrders: Order[] = rows.map((row: any[], index: number) => this.mapRowToOrder(row, index + 2));
-                this.orders.set(parsedOrders);
+                this.orders.set(parsedOrders.reverse());
                 this.isLoading.set(false);
             },
             error: (err) => {
@@ -41,16 +41,21 @@ export class OrderService {
     public createOrder(order: Order): Observable<any> {
         order.date = new Date().toISOString().split('T')[0];
 
-        // Generate sequential w00 ID
-        const w00Orders = this.orders().filter(o => o.id && o.id.toString().startsWith('w00'));
+        // Generate sequential ID starting with 'w'
+        const wOrders = this.orders().filter(o => o.id && /w/i.test(o.id.toString()));
         let nextNumber = 1;
-        if (w00Orders.length > 0) {
-            const numbers = w00Orders.map(o => parseInt((o.id || '').toString().replace('w00', ''), 10)).filter(n => !isNaN(n));
+        if (wOrders.length > 0) {
+            const numbers = wOrders.map(o => {
+                const idStr = o.id?.toString() || '';
+                const match = idStr.match(/\d+/g);
+                return match ? parseInt(match[match.length - 1], 10) : 0;
+            }).filter(n => n > 0);
+
             if (numbers.length > 0) {
                 nextNumber = Math.max(...numbers) + 1;
             }
         }
-        order.id = `w00${nextNumber}`;
+        order.id = `W${nextNumber.toString().padStart(5, '0')}`;
 
         const row = this.mapOrderToRow(order);
         return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:N`, [row]).pipe(
