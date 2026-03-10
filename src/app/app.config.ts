@@ -10,8 +10,8 @@ import {
   LogOut, Plus, Filter, MoreVertical, CheckCircle,
   XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
   BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
-  ChevronRight, Camera, RefreshCw, Mail, TrendingUp, Info,
-  ArrowLeft, CheckCheck, Smile, Paperclip, Mic
+  ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
+  ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -29,8 +29,8 @@ export const appConfig: ApplicationConfig = {
       LogOut, Plus, Filter, MoreVertical, CheckCircle,
       XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
       BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
-      ChevronRight, Camera, RefreshCw, Mail, TrendingUp, Info,
-      ArrowLeft, CheckCheck, Smile, Paperclip, Mic
+      ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
+      ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote
     }))
   ]
 };

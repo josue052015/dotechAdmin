@@ -26,7 +26,7 @@ import { MatButtonModule } from '@angular/material/button';
          <div class="flex items-center space-x-2 text-sm text-slate-400 font-medium">
             <a routerLink="/orders" class="hover:text-blue-600">Orders</a>
             <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-            <span class="text-slate-600 font-bold">ORD-{{ order?.id || order?.['_rowNumber'] }}</span>
+            <span class="text-slate-600 font-bold">{{ order?.id || order?.['_rowNumber'] }}</span>
          </div>
          <div class="flex items-center space-x-4 w-full md:w-auto">
             <div class="relative flex-1 md:w-64 group">
@@ -45,7 +45,7 @@ import { MatButtonModule } from '@angular/material/button';
       <!-- Header: Title & Actions -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div class="flex items-center space-x-4">
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Order #ORD-{{ order?.id || order?.['_rowNumber'] }}</h1>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Order {{ order?.id || order?.['_rowNumber'] }}</h1>
             <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider">
                {{ order?.status || 'PROCESSING' }}
             </span>
@@ -170,10 +170,7 @@ import { MatButtonModule } from '@angular/material/button';
                            <span>Shipping</span>
                            <span class="text-emerald-600 font-black uppercase tracking-widest text-[10px]">Free</span>
                         </div>
-                        <div class="flex justify-between text-sm font-medium text-slate-500">
-                           <span>Tax (8%)</span>
-                           <span class="text-slate-900 font-bold italic">RD$ {{ (order.productPrice * order.productQuantity * 0.08) | number }}</span>
-                        </div>
+
                         <div class="pt-4 border-t border-slate-200 flex justify-between items-center mt-4">
                            <span class="text-lg font-black text-slate-900 uppercase tracking-tighter">Total</span>
                            <span class="text-2xl font-black text-blue-600 tracking-tighter italic">RD$ {{ totalAmount | number:'1.2-2' }}</span>
@@ -284,8 +281,7 @@ export class OrderDetailComponent implements OnInit {
    get totalAmount() {
       if (!this.order) return 0;
       const subtotal = (this.order.productPrice * this.order.productQuantity);
-      const tax = subtotal * 0.08; // Added 8% tax as seen in design
-      return subtotal + tax + (this.order.shippingCost || 0) + (this.order.packaging || 0);
+      return subtotal + (this.order.shippingCost || 0) + (this.order.packaging || 0);
    }
 
    constructor() {

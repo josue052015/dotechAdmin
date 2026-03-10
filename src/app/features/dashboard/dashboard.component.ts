@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrderService } from '../../core/services/order.service';
 import { BaseChartDirective } from 'ng2-charts';
@@ -13,7 +13,7 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatProgressSpinnerModule, BaseChartDirective],
+  imports: [CommonModule, LucideAngularModule, MatProgressSpinnerModule, BaseChartDirective],
   template: `
     <div class="space-y-8 animate-in fade-in duration-700">
       
@@ -29,10 +29,10 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <div class="card-stitch p-6 group hover:border-blue-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
             <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
-              <mat-icon>shopping_cart</mat-icon>
+              <lucide-icon name="shopping-cart" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-               <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">trending_up</mat-icon>
+               <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                <span class="text-[11px] font-bold">12.5%</span>
             </div>
           </div>
@@ -46,10 +46,10 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <div class="card-stitch p-6 group hover:border-amber-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
             <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
-              <mat-icon>schedule</mat-icon>
+              <lucide-icon name="clock" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">
-               <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">trending_down</mat-icon>
+               <lucide-icon name="trending-down" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                <span class="text-[11px] font-bold">4.2%</span>
             </div>
           </div>
@@ -63,10 +63,10 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <div class="card-stitch p-6 group hover:border-emerald-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
             <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 transition-transform group-hover:scale-110">
-              <mat-icon>check_circle</mat-icon>
+              <lucide-icon name="check-circle" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-               <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">trending_up</mat-icon>
+               <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                <span class="text-[11px] font-bold">8.1%</span>
             </div>
           </div>
@@ -80,10 +80,10 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <div class="card-stitch p-6 group hover:border-slate-300 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
             <div class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 transition-transform group-hover:scale-110">
-              <mat-icon>payments</mat-icon>
+              <lucide-icon name="banknote" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-               <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">trending_up</mat-icon>
+               <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                <span class="text-[11px] font-bold">15.3%</span>
             </div>
           </div>
@@ -174,12 +174,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                <tbody class="divide-y divide-slate-50">
                   <tr *ngFor="let order of recentOrders" class="hover:bg-slate-50/50 transition-colors group cursor-pointer">
                      <td class="px-6 py-4">
-                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">#ORD-{{ order.id.toString().slice(-4) }}</span>
+                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{{ order.id }}</span>
                      </td>
                      <td class="px-6 py-4">
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
-                              {{ order.customerName.charAt(0) }}{{ order.customerName.split(' ')[1]?.charAt(0) || '' }}
+                              {{ order.customerName.charAt(0) }}{{ order.customerName.split(' ')[1] ? order.customerName.split(' ')[1].charAt(0) : '' }}
                            </div>
                            <span class="text-xs font-semibold text-slate-700">{{ order.customerName }}</span>
                         </div>

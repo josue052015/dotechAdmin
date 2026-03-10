@@ -315,7 +315,7 @@ export class MessageListComponent implements OnInit {
          .replace(/{ {ProductName} }/img, 'Premium Wireless Headphones')
          .replace(/{ {Price} }/img, 'RD$ 7,500')
          .replace(/{ {Status} }/img, 'Delivered')
-         .replace(/{ {OrderID} }/img, '#ORD-1234')
+         .replace(/{ {OrderID} }/img, 'w001234')
          .replace(/{ {City} }/img, 'Santo Domingo');
    }
 }

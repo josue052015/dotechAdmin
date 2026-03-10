@@ -29,18 +29,6 @@ import { Router, RouterModule } from '@angular/router';
           <p class="text-sm text-slate-500 font-medium">Fill in the customer and product details to register a new transaction.</p>
         </div>
 
-        <div class="flex items-center space-x-3">
-           <button (click)="goBack()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm bg-white hover:bg-slate-50 transition-all active:scale-95">
-              Cancel
-           </button>
-           <button (click)="submitOrder()" 
-                   [disabled]="orderForm.invalid || isSaving"
-                   class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95 text-sm font-bold flex items-center space-x-2">
-              <mat-spinner diameter="16" strokeWidth="2.5" *ngIf="isSaving"></mat-spinner>
-              <span *ngIf="!isSaving">Save Order</span>
-              <span *ngIf="isSaving">Saving...</span>
-           </button>
-        </div>
       </div>
 
       <form [formGroup]="orderForm" class="space-y-6">
@@ -177,6 +165,21 @@ import { Router, RouterModule } from '@angular/router';
            </div>
         </div>
 
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end space-x-4 pt-4">
+           <button (click)="goBack()" type="button" class="px-8 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm bg-white hover:bg-slate-50 transition-all active:scale-95">
+              Cancel
+           </button>
+           <button (click)="submitOrder()" 
+                   type="button"
+                   [disabled]="orderForm.invalid || isSaving"
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95 text-sm font-bold flex items-center space-x-3">
+              <mat-spinner diameter="18" strokeWidth="2.5" *ngIf="isSaving" class="text-white"></mat-spinner>
+              <span *ngIf="!isSaving">Save Order</span>
+              <span *ngIf="isSaving">Saving Order...</span>
+           </button>
+        </div>
+
       </form>
       
     </div>
@@ -207,7 +210,7 @@ export class OrderFormComponent implements OnInit {
   orderForm: FormGroup = this.fb.group({
     fullName: ['', Validators.required],
     phone: ['', Validators.required],
-    address1: ['', Validators.required],
+    address1: [''],
     province: ['', Validators.required],
     city: [{ value: '', disabled: true }, Validators.required],
     productName: ['', Validators.required],

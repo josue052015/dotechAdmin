@@ -91,7 +91,7 @@ import { Order } from '../../../core/models/order.model';
                    </div>
                    <div class="flex flex-col">
                       <span class="text-[13px] font-bold text-slate-900 leading-tight">{{row.fullName}}</span>
-                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: #ORD-{{row._rowNumber || row.id}}</span>
+                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {{row.id || row._rowNumber}}</span>
                    </div>
                 </div>
               </td>

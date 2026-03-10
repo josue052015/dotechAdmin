@@ -40,7 +40,18 @@ export class OrderService {
 
     public createOrder(order: Order): Observable<any> {
         order.date = new Date().toISOString().split('T')[0];
-        order.id = crypto.randomUUID(); // Give it a unique ID for easier lookup
+
+        // Generate sequential w00 ID
+        const w00Orders = this.orders().filter(o => o.id && o.id.toString().startsWith('w00'));
+        let nextNumber = 1;
+        if (w00Orders.length > 0) {
+            const numbers = w00Orders.map(o => parseInt((o.id || '').toString().replace('w00', ''), 10)).filter(n => !isNaN(n));
+            if (numbers.length > 0) {
+                nextNumber = Math.max(...numbers) + 1;
+            }
+        }
+        order.id = `w00${nextNumber}`;
+
         const row = this.mapOrderToRow(order);
         return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:N`, [row]).pipe(
             tap(() => this.loadOrders()) // Reload to get fresh data
