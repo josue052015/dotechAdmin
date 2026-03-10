@@ -9,7 +9,7 @@ import { Observable, of } from 'rxjs';
 })
 export class OrderService {
     private sheetsService = inject(GoogleSheetsService);
-    private readonly SHEET_NAME = 'TEST PEDIDOS DOTECH ';
+    private readonly SHEET_NAME = 'ORDENES';
 
     // State
     public orders = signal<Order[]>([]);
@@ -57,25 +57,26 @@ export class OrderService {
     private mapRowToOrder(row: any[], rowNumber: number): Order {
         return {
             _rowNumber: rowNumber,
-            date: row[0] || '',
-            productQuantity: parseInt(row[1]) || 1,
-            productPrice: parseFloat(row[2]) || 0,
-            productName: row[3] || '',
-            fullName: row[4] || '',
-            phone: row[5] || '',
-            address1: row[6] || '',
-            province: row[7] || '',
-            city: row[8] || '',
-            status: row[9] || '',
-            notes: row[10] || '',
-            shippingCost: parseFloat(row[11]) || 0,
-            packaging: parseFloat(row[12]) || 0,
-            id: row[13] || ''
+            date: row[1] || '',
+            productQuantity: parseInt(row[2]) || 1,
+            productPrice: parseFloat(row[3]) || 0,
+            productName: row[4] || '',
+            fullName: row[5] || '',
+            phone: row[6] || '',
+            address1: row[7] || '',
+            province: row[8] || '',
+            city: row[9] || '',
+            status: row[10] || '',
+            notes: row[11] || '',
+            shippingCost: parseFloat(row[12]) || 0,
+            packaging: parseFloat(row[13]) || 0,
+            id: row[0] || ''
         };
     }
 
     private mapOrderToRow(order: Order): any[] {
         return [
+            order.id || '',
             order.date,
             order.productQuantity,
             order.productPrice,
@@ -88,8 +89,7 @@ export class OrderService {
             order.status,
             order.notes,
             order.shippingCost || 0,
-            order.packaging || 0,
-            order.id || ''
+            order.packaging || 0
         ];
     }
 }
