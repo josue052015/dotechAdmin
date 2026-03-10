@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { GoogleAuthService } from '../core/services/google-auth.service';
 
 @Component({
@@ -10,7 +10,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
   imports: [
     CommonModule,
     RouterModule,
-    MatIconModule
+    LucideAngularModule
   ],
   template: `
     <div class="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
@@ -21,7 +21,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
         <div class="h-16 flex items-center px-6 border-b border-slate-100 flex-shrink-0">
           <div class="flex items-center space-x-3 group">
              <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
-               <mat-icon class="text-white !text-xl flex items-center justify-center">shopping_cart</mat-icon>
+               <lucide-icon name="shopping-cart" class="text-white w-5 h-5 flex items-center justify-center"></lucide-icon>
              </div>
              <span class="text-lg font-bold text-slate-900 tracking-tight">OrderFlow</span>
           </div>
@@ -36,25 +36,25 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
           <a routerLink="/dashboard" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
              [routerLinkActiveOptions]="{exact: true}"
              class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">dashboard</mat-icon>
+            <lucide-icon name="layout-grid" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
             <span class="text-[14px]">Dashboard</span>
           </a>
           
           <a routerLink="/orders" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
              class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">list_alt</mat-icon>
+            <lucide-icon name="shopping-cart" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
             <span class="text-[14px]">Orders</span>
           </a>
           
           <a routerLink="/products" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
              class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">inventory_2</mat-icon>
+            <lucide-icon name="package" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
             <span class="text-[14px]">Products</span>
           </a>
 
           <a routerLink="/messages" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
              class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">message</mat-icon>
+            <lucide-icon name="message-square" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
             <span class="text-[14px]">Messages</span>
           </a>
 
@@ -64,13 +64,13 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
 
           <a routerLink="/customers" 
              class="opacity-40 cursor-not-allowed flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 group">
-            <mat-icon class="!text-xl flex items-center justify-center">people</mat-icon>
+            <lucide-icon name="users" class="w-5 h-5"></lucide-icon>
             <span class="text-[14px]">Customers</span>
           </a>
 
           <a routerLink="/reports" 
              class="opacity-40 cursor-not-allowed flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 group">
-            <mat-icon class="!text-xl flex items-center justify-center">insert_chart</mat-icon>
+            <lucide-icon name="bar-chart-2" class="w-5 h-5"></lucide-icon>
             <span class="text-[14px]">Reports</span>
           </a>
         </nav>
@@ -79,7 +79,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
         <div class="p-4 mt-auto space-y-2 border-t border-slate-100 bg-slate-50/50">
           <a routerLink="/settings" routerLinkActive="bg-white text-slate-900 shadow-sm border border-slate-200"
              class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all group">
-            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-slate-700">settings</mat-icon>
+            <lucide-icon name="settings" class="w-5 h-5 group-hover:text-slate-700"></lucide-icon>
             <span class="text-[14px] font-medium">Settings</span>
           </a>
 
@@ -92,7 +92,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
                <p class="text-[11px] text-slate-500 truncate">Administrator</p>
             </div>
             <button (click)="logout()" class="text-slate-400 hover:text-red-500 transition-all p-1.5 rounded-xl hover:bg-red-50 group">
-              <mat-icon class="!text-lg">logout</mat-icon>
+              <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm shadow-slate-100/20">
           <div class="flex items-center space-x-4">
             <button class="md:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-              <mat-icon>menu</mat-icon>
+              <lucide-icon name="menu" class="w-5 h-5"></lucide-icon>
             </button>
             <div class="flex flex-col">
                <h1 class="text-lg font-bold text-slate-900 leading-tight">Dashboard Overview</h1>
@@ -119,25 +119,25 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
           <div class="flex items-center space-x-4">
             <!-- Search Bar (Fake) -->
             <div class="hidden lg:flex items-center bg-slate-50 rounded-xl px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white transition-all w-64 group">
-               <mat-icon class="text-slate-400 !text-lg mr-2 group-focus-within:text-blue-500">search</mat-icon>
+               <lucide-icon name="search" class="text-slate-400 w-4 h-4 mr-2 group-focus-within:text-blue-500"></lucide-icon>
                <input type="text" placeholder="Search data..." class="bg-transparent border-none text-sm focus:outline-none w-full text-slate-700 placeholder:text-slate-400">
             </div>
 
             <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
-              <mat-icon class="text-slate-400 !text-lg group-hover:text-blue-600 mr-2 transition-colors">calendar_today</mat-icon>
+              <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-blue-600 mr-2 transition-colors"></lucide-icon>
               <span class="text-[12px] font-semibold text-slate-600">Mar 9 - Mar 15</span>
-              <mat-icon class="text-slate-300 !text-lg ml-1">expand_more</mat-icon>
+              <lucide-icon name="chevron-down" class="text-slate-300 w-4 h-4 ml-1"></lucide-icon>
             </div>
 
             <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
             <button class="relative p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100 active:scale-95">
-              <mat-icon class="!text-xl">notifications</mat-icon>
+              <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
               <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 animate-bounce"></span>
             </button>
             
             <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 active:scale-95 transition-all text-[13px] font-bold flex items-center space-x-2">
-               <mat-icon class="!text-lg">ios_share</mat-icon>
+               <lucide-icon name="arrow-up-right" class="w-4 h-4"></lucide-icon>
                <span>Export</span>
             </button>
           </div>

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -12,7 +12,7 @@ import { Router, RouterModule } from '@angular/router';
   selector: 'app-order-form',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, RouterModule, MatIconModule, MatProgressSpinnerModule
+    CommonModule, ReactiveFormsModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule
   ],
   template: `
     <div class="max-w-[850px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -22,7 +22,7 @@ import { Router, RouterModule } from '@angular/router';
         <div class="space-y-1">
           <nav class="flex items-center space-x-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
              <a routerLink="/orders" class="hover:text-blue-600 transition-colors">Orders</a>
-             <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">chevron_right</mat-icon>
+             <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
              <span class="text-slate-600">Create New Order</span>
           </nav>
           <h1 class="text-2xl font-black text-slate-900 tracking-tight">Create New Order</h1>
@@ -49,7 +49,7 @@ import { Router, RouterModule } from '@angular/router';
         <div class="card-stitch p-8 bg-white space-y-6 relative overflow-hidden">
           <div class="flex items-center space-x-3 mb-2">
             <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <mat-icon class="!text-lg">person</mat-icon>
+              <lucide-icon name="user" class="w-5 h-5"></lucide-icon>
             </div>
             <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">Customer Information</h2>
           </div>
@@ -73,7 +73,7 @@ import { Router, RouterModule } from '@angular/router';
         <div class="card-stitch p-8 bg-white space-y-6">
           <div class="flex items-center space-x-3 mb-2">
             <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <mat-icon class="!text-lg">shopping_bag</mat-icon>
+              <lucide-icon name="shopping-bag" class="w-5 h-5"></lucide-icon>
             </div>
             <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">Product & Pricing</h2>
           </div>
@@ -86,7 +86,7 @@ import { Router, RouterModule } from '@angular/router';
                   <option value="">Select a product</option>
                   <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
                 </select>
-                <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
               </div>
             </div>
 
@@ -111,7 +111,7 @@ import { Router, RouterModule } from '@angular/router';
         <div class="card-stitch p-8 bg-white space-y-6">
           <div class="flex items-center space-x-3 mb-2">
             <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <mat-icon class="!text-lg">local_shipping</mat-icon>
+              <lucide-icon name="truck" class="w-5 h-5"></lucide-icon>
             </div>
             <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider">Shipping Address</h2>
           </div>
@@ -124,7 +124,7 @@ import { Router, RouterModule } from '@angular/router';
                   <option value="">Select province</option>
                   <option *ngFor="let prov of provinces$ | async" [value]="prov">{{ prov }}</option>
                 </select>
-                <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
               </div>
             </div>
 
@@ -135,7 +135,7 @@ import { Router, RouterModule } from '@angular/router';
                   <option value="">Select city</option>
                   <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
                 </select>
-                <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
               </div>
             </div>
 
@@ -155,7 +155,7 @@ import { Router, RouterModule } from '@angular/router';
                 <select formControlName="status" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer">
                   <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
                 </select>
-                <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
               </div>
            </div>
 
@@ -169,7 +169,7 @@ import { Router, RouterModule } from '@angular/router';
         <!-- Info Card -->
         <div class="bg-blue-50 border border-blue-100 rounded-xl p-5 flex items-start space-x-4">
            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-blue-200 mt-0.5">
-              <mat-icon class="!text-base">info</mat-icon>
+              <lucide-icon name="info" class="w-4 h-4"></lucide-icon>
            </div>
            <div>
               <p class="text-[13px] font-bold text-blue-900">Inventory Management Notice</p>

@@ -1,7 +1,18 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { LucideAngularModule } from 'lucide-angular';
+import {
+  LayoutGrid, ShoppingCart, Package, Users, Settings,
+  Search, Bell, Pencil, User, ShoppingBag, Truck,
+  FileText, ChevronDown, Copy, Send, MessageSquare,
+  LogOut, Plus, Filter, MoreVertical, CheckCircle,
+  XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
+  BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
+  ChevronRight, Camera, RefreshCw, Mail, TrendingUp, Info,
+  ArrowLeft, CheckCheck, Smile, Paperclip, Mic
+} from 'lucide-angular';
 
 import { routes } from './app.routes';
 
@@ -10,6 +21,16 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+    importProvidersFrom(LucideAngularModule.pick({
+      LayoutGrid, ShoppingCart, Package, Users, Settings,
+      Search, Bell, Pencil, User, ShoppingBag, Truck,
+      FileText, ChevronDown, Copy, Send, MessageSquare,
+      LogOut, Plus, Filter, MoreVertical, CheckCircle,
+      XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
+      BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
+      ChevronRight, Camera, RefreshCw, Mail, TrendingUp, Info,
+      ArrowLeft, CheckCheck, Smile, Paperclip, Mic
+    }))
   ]
 };

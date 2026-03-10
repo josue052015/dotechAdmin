@@ -1,16 +1,16 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
-    selector: 'app-settings',
-    standalone: true,
-    imports: [
-        CommonModule, ReactiveFormsModule, FormsModule, MatIconModule, MatProgressSpinnerModule
-    ],
-    template: `
+   selector: 'app-settings',
+   standalone: true,
+   imports: [
+      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule
+   ],
+   template: `
     <div class="max-w-[1000px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <div class="space-y-1">
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">System Settings</h1>
@@ -25,7 +25,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                    (click)="activeTab = tab.id"
                    [class]="activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'"
                    class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-sm">
-              <mat-icon class="!text-xl">{{ tab.icon }}</mat-icon>
+              <lucide-icon [name]="tab.icon" class="w-5 h-5"></lucide-icon>
               <span>{{ tab.label }}</span>
            </button>
         </div>
@@ -45,7 +45,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                     <div class="w-24 h-24 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" class="w-full h-full object-cover">
                        <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <mat-icon class="text-white">photo_camera</mat-icon>
+                          <lucide-icon name="camera" class="text-white w-6 h-6"></lucide-icon>
                        </div>
                     </div>
                  </div>
@@ -74,7 +74,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                  <div *ngFor="let pref of notifications" class="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-slate-100 transition-all hover:bg-slate-50">
                     <div class="flex items-center space-x-4">
                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
-                          <mat-icon class="!text-lg">{{ pref.icon }}</mat-icon>
+                          <lucide-icon [name]="pref.icon" class="w-5 h-5"></lucide-icon>
                        </div>
                        <div>
                           <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ pref.label }}</p>
@@ -120,7 +120,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                  <div class="pt-6 border-t border-slate-100 flex justify-between items-center">
                     <button class="text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline px-2 py-1">Advanced Connection Settings</button>
                     <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-xl shadow-blue-100 transition-all font-bold text-[13px] flex items-center space-x-2 active:scale-95">
-                       <mat-icon class="!text-lg">sync</mat-icon>
+                       <lucide-icon name="refresh-cw" class="w-5 h-5"></lucide-icon>
                        <span>Force Re-sync</span>
                     </button>
                  </div>
@@ -139,24 +139,24 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       </div>
     </div>
   `,
-    styles: [`
+   styles: [`
     :host { display: block; }
   `]
 })
 export class SettingsComponent {
-    activeTab = 'account';
+   activeTab = 'account';
 
-    tabs = [
-        { id: 'account', label: 'Account Settings', icon: 'person' },
-        { id: 'notifications', label: 'Notifications', icon: 'notifications' },
-        { id: 'sync', label: 'Google Sheets Sync', icon: 'sync' },
-        { id: 'team', label: 'Team Management', icon: 'groups' }
-    ];
+   tabs = [
+      { id: 'account', label: 'Account Settings', icon: 'user' },
+      { id: 'notifications', label: 'Notifications', icon: 'bell' },
+      { id: 'sync', label: 'Google Sheets Sync', icon: 'refresh-cw' },
+      { id: 'team', label: 'Team Management', icon: 'users' }
+   ];
 
-    notifications = [
-        { label: 'New Order Email', desc: 'Get notified immediately when a new order is received.', icon: 'mail' },
-        { label: 'Daily Sales Summary', desc: 'A recap of all transactions delivered at 8:00 AM.', icon: 'trending_up' },
-        { label: 'Low Stock Alerts', desc: 'Alert when products fall below the safety threshold.', icon: 'inventory' },
-        { label: 'Sync Failures', desc: 'Notify if the Google Sheets connection is interrupted.', icon: 'error' }
-    ];
+   notifications = [
+      { label: 'New Order Email', desc: 'Get notified immediately when a new order is received.', icon: 'mail' },
+      { label: 'Daily Sales Summary', desc: 'A recap of all transactions delivered at 8:00 AM.', icon: 'trending-up' },
+      { label: 'Low Stock Alerts', desc: 'Alert when products fall below the safety threshold.', icon: 'package' },
+      { label: 'Sync Failures', desc: 'Notify if the Google Sheets connection is interrupted.', icon: 'alert-triangle' }
+   ];
 }

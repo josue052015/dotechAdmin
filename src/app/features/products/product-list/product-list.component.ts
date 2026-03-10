@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProductService } from '../../../core/services/product.service';
 import { Product } from '../../../core/models/product.model';
@@ -14,7 +14,7 @@ import { Product } from '../../../core/models/product.model';
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule, MatTableModule,
-    MatPaginatorModule, MatSortModule, MatIconModule, MatProgressSpinnerModule
+    MatPaginatorModule, MatSortModule, LucideAngularModule, MatProgressSpinnerModule
   ],
   template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -28,14 +28,14 @@ import { Product } from '../../../core/models/product.model';
         
         <div class="flex items-center space-x-3 w-full xl:w-auto">
            <div class="relative flex-1 xl:w-80 group">
-              <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 !text-xl group-focus-within:text-blue-600 transition-colors">search</mat-icon>
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
                      placeholder="Search products, SKUs..." 
                      class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm">
            </div>
            
            <button (click)="openForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center space-x-2 text-sm font-bold">
-              <mat-icon class="!text-xl">add</mat-icon>
+              <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
               <span>Add Product</span>
            </button>
         </div>
@@ -46,7 +46,7 @@ import { Product } from '../../../core/models/product.model';
          <!-- Total Products -->
          <div class="card-stitch p-6 bg-white flex items-center space-x-5 group hover:border-blue-200 transition-all">
             <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform shadow-sm">
-               <mat-icon class="!text-2xl">inventory_2</mat-icon>
+               <lucide-icon name="package" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex-1">
                <div class="flex items-center justify-between">
@@ -60,7 +60,7 @@ import { Product } from '../../../core/models/product.model';
          <!-- Low Stock -->
          <div class="card-stitch p-6 bg-white flex items-center space-x-5 group hover:border-amber-200 transition-all">
             <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform shadow-sm">
-               <mat-icon class="!text-2xl">warning_amber</mat-icon>
+               <lucide-icon name="alert-circle" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex-1">
                <div class="flex items-center justify-between">
@@ -68,7 +68,7 @@ import { Product } from '../../../core/models/product.model';
                </div>
                <p class="text-2xl font-black text-slate-900 mt-1">{{ lowStockCount }}</p>
                <div class="flex items-center space-x-1 mt-1 text-amber-600">
-                  <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">notification_important</mat-icon>
+                  <lucide-icon name="alert-circle" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                   <span class="text-[10px] font-bold uppercase tracking-tight">Needs attention</span>
                </div>
             </div>
@@ -77,7 +77,7 @@ import { Product } from '../../../core/models/product.model';
          <!-- Out of Stock -->
          <div class="card-stitch p-6 bg-white flex items-center space-x-5 group hover:border-red-200 transition-all">
             <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform shadow-sm">
-               <mat-icon class="!text-2xl">error_outline</mat-icon>
+               <lucide-icon name="x-circle" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex-1">
                <div class="flex items-center justify-between">
@@ -85,7 +85,7 @@ import { Product } from '../../../core/models/product.model';
                </div>
                <p class="text-2xl font-black text-slate-900 mt-1">{{ outOfStockCount }}</p>
                <div class="flex items-center space-x-1 mt-1 text-red-600">
-                  <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">remove_circle_outline</mat-icon>
+                  <lucide-icon name="x-circle" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                   <span class="text-[10px] font-bold uppercase tracking-tight">Action required</span>
                </div>
             </div>
@@ -101,7 +101,7 @@ import { Product } from '../../../core/models/product.model';
                   <p class="text-sm text-slate-400 font-medium">Configure product details and pricing</p>
                </div>
                <button (click)="closeForm()" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-all">
-                  <mat-icon>close</mat-icon>
+                  <lucide-icon name="x-circle" class="w-5 h-5"></lucide-icon>
                </button>
             </div>
             <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="p-8 space-y-6">
@@ -201,10 +201,10 @@ import { Product } from '../../../core/models/product.model';
               <th mat-header-cell *matHeaderCellDef class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-right"> </th>
               <td mat-cell *matCellDef="let row" class="px-8 py-5 text-right space-x-1">
                 <button (click)="editProduct(row)" class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90">
-                  <mat-icon class="!text-xl">edit</mat-icon>
+                  <lucide-icon name="pencil" class="w-5 h-5"></lucide-icon>
                 </button>
                 <button (click)="deleteProduct(row)" class="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90">
-                  <mat-icon class="!text-xl">delete</mat-icon>
+                  <lucide-icon name="trash-2" class="w-5 h-5"></lucide-icon>
                 </button>
               </td>
             </ng-container>
@@ -214,7 +214,7 @@ import { Product } from '../../../core/models/product.model';
 
             <tr class="mat-row" *matNoDataRow>
               <td class="px-8 py-24 text-center" colspan="6">
-                <mat-icon class="!w-16 !h-16 !text-6xl mx-auto mb-4 text-slate-100">inventory</mat-icon>
+                <lucide-icon name="package" class="w-16 h-16 mx-auto mb-4 text-slate-100" [strokeWidth]="1.5"></lucide-icon>
                 <h3 class="text-lg font-bold text-slate-900">No products found</h3>
                 <p class="text-sm text-slate-400 mt-1">Try to add some products to see them here.</p>
               </td>

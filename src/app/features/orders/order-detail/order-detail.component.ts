@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../../core/services/order.service';
@@ -15,7 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
    selector: 'app-order-detail',
    standalone: true,
    imports: [
-      CommonModule, RouterModule, MatIconModule, MatProgressSpinnerModule,
+      CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule,
       FormsModule, MatMenuModule, MatButtonModule
    ],
    template: `
@@ -25,16 +25,16 @@ import { MatButtonModule } from '@angular/material/button';
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
          <div class="flex items-center space-x-2 text-sm text-slate-400 font-medium">
             <a routerLink="/orders" class="hover:text-blue-600">Orders</a>
-            <mat-icon class="!text-xs h-3 w-3 flex items-center justify-center">chevron_right</mat-icon>
+            <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
             <span class="text-slate-600 font-bold">ORD-{{ order?.id || order?.['_rowNumber'] }}</span>
          </div>
          <div class="flex items-center space-x-4 w-full md:w-auto">
             <div class="relative flex-1 md:w-64 group">
-               <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 !text-lg">search</mat-icon>
+               <lucide-icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></lucide-icon>
                <input type="text" placeholder="Search orders..." class="w-full bg-slate-100/50 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-100 transition-all">
             </div>
             <button class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
-               <mat-icon>notifications</mat-icon>
+               <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
             </button>
             <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-[11px] font-bold text-white uppercase">
                ac
@@ -53,7 +53,7 @@ import { MatButtonModule } from '@angular/material/button';
          <div class="flex items-center space-x-3 w-full md:w-auto">
             <button [matMenuTriggerFor]="statusMenu" class="flex-1 md:flex-none flex items-center justify-between space-x-4 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
                <span>Change Status</span>
-               <mat-icon class="!text-sm h-4 w-4">expand_more</mat-icon>
+               <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
             </button>
             <mat-menu #statusMenu="matMenu" class="rounded-xl shadow-xl border border-slate-100">
                <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(s)" class="text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -61,7 +61,7 @@ import { MatButtonModule } from '@angular/material/button';
                </button>
             </mat-menu>
             <button class="flex-1 md:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg text-sm font-bold hover:bg-slate-200 transition-all">
-               <mat-icon class="!text-sm">edit</mat-icon>
+               <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                <span>Edit Order</span>
             </button>
          </div>
@@ -70,7 +70,7 @@ import { MatButtonModule } from '@angular/material/button';
       <!-- WhatsApp Main Action -->
       <button [matMenuTriggerFor]="whatsappMenu" 
               class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.99]">
-         <mat-icon class="!text-2xl h-6 w-6">chat</mat-icon>
+         <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
          <span class="text-base font-black uppercase tracking-widest">Send WhatsApp Message</span>
       </button>
 
@@ -84,7 +84,7 @@ import { MatButtonModule } from '@angular/material/button';
                <span class="text-sm font-bold text-slate-800">{{ tpl.name }}</span>
                <span class="text-[10px] text-slate-400 line-clamp-1">{{ tpl.text }}</span>
             </div>
-            <mat-icon class="!text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">send</mat-icon>
+            <lucide-icon name="send" class="text-emerald-500 w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></lucide-icon>
          </button>
       </mat-menu>
 
@@ -100,14 +100,14 @@ import { MatButtonModule } from '@angular/material/button';
             <!-- Customer Information -->
             <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-8 shadow-sm">
                <div class="flex items-center space-x-3">
-                  <mat-icon class="text-blue-600">person</mat-icon>
+                  <lucide-icon name="user" class="text-blue-600 w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Customer Information</h2>
                </div>
 
                <div class="flex items-center space-x-4">
-                  <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-xl font-black text-slate-400 border-2 border-white shadow-md">
-                     {{ order.fullName.charAt(0) }}{{ order.fullName.split(' ')[1]?.charAt(0) || '' }}
-                  </div>
+                   <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[11px] font-bold text-blue-700 shadow-sm mt-0.5">
+                      {{ order.fullName.charAt(0) }}{{ order.fullName.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                   </div>
                   <div>
                      <h3 class="text-xl font-bold text-slate-900 leading-tight">{{ order.fullName }}</h3>
                      <p class="text-sm text-slate-500 font-medium">Customer since {{ order.date | date:'MMMM yyyy' }} • 12 Orders</p>
@@ -134,7 +134,7 @@ import { MatButtonModule } from '@angular/material/button';
             <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
                   <div class="flex items-center space-x-3">
-                     <mat-icon class="text-blue-600">shopping_bag</mat-icon>
+                     <lucide-icon name="shopping-bag" class="text-blue-600 w-5 h-5"></lucide-icon>
                      <h2 class="text-base font-black text-slate-900 tracking-tight">Order Items</h2>
                   </div>
                   <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ order.productQuantity }} Items</span>
@@ -190,7 +190,7 @@ import { MatButtonModule } from '@angular/material/button';
             <!-- Delivery Info -->
             <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
                <div class="flex items-center space-x-3 mb-2">
-                  <mat-icon class="text-blue-600">local_shipping</mat-icon>
+                  <lucide-icon name="truck" class="text-blue-600 w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Delivery Info</h2>
                </div>
 
@@ -210,7 +210,7 @@ import { MatButtonModule } from '@angular/material/button';
                      <div class="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 group">
                         <span class="text-xs font-bold text-slate-700 font-mono tracking-tighter">FX-9928-1120-002</span>
                         <button (click)="copyTracking()" class="text-slate-300 hover:text-blue-600 transition-colors">
-                           <mat-icon class="!text-sm">content_copy</mat-icon>
+                           <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                         </button>
                      </div>
                   </div>
@@ -224,7 +224,7 @@ import { MatButtonModule } from '@angular/material/button';
                      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&auto=format&fit=crop&q=60" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                      <div class="absolute inset-0 bg-blue-900/10 flex items-center justify-center">
                         <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-2xl border-4 border-white animate-bounce">
-                           <mat-icon>location_on</mat-icon>
+                           <lucide-icon name="map-pin" class="w-5 h-5"></lucide-icon>
                         </div>
                      </div>
                   </div>
@@ -234,14 +234,14 @@ import { MatButtonModule } from '@angular/material/button';
             <!-- Order Notes -->
             <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
                <div class="flex items-center space-x-3 mb-2">
-                  <mat-icon class="text-blue-600">assignment</mat-icon>
+                  <lucide-icon name="file-text" class="text-blue-600 w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Order Notes</h2>
                </div>
 
                <div class="space-y-4">
                   <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 relative overflow-hidden">
                      <div class="absolute top-0 right-0 p-2 opacity-10">
-                        <mat-icon>chat_bubble</mat-icon>
+                        <lucide-icon name="message-square" class="w-6 h-6"></lucide-icon>
                      </div>
                      <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Customer Note:</p>
                      <p class="text-xs text-slate-600 font-medium leading-relaxed italic">

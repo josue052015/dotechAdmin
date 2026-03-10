@@ -1,18 +1,18 @@
 import { Component, OnInit, inject, ViewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MessageService } from '../../../core/services/message.service';
 import { MessageTemplate } from '../../../core/models/message.model';
 
 @Component({
-  selector: 'app-message-list',
-  standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule, FormsModule, MatIconModule, MatProgressSpinnerModule
-  ],
-  template: `
+   selector: 'app-message-list',
+   standalone: true,
+   imports: [
+      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule
+   ],
+   template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
       <!-- Header Area (Visible only when not editing) -->
@@ -24,14 +24,14 @@ import { MessageTemplate } from '../../../core/models/message.model';
         
         <div class="flex items-center space-x-3 w-full xl:w-auto">
            <div class="relative flex-1 xl:w-80 group">
-              <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 !text-xl group-focus-within:text-blue-600 transition-colors">search</mat-icon>
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
                      placeholder="Search templates..." 
                      class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm font-medium">
            </div>
            
            <button (click)="openForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center space-x-2 text-sm font-bold">
-              <mat-icon class="!text-xl">add</mat-icon>
+              <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
               <span>Create Template</span>
            </button>
         </div>
@@ -43,7 +43,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
             <div class="flex justify-between items-start mb-4">
                <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100/50">
-                    <mat-icon class="!text-xl">chat</mat-icon>
+                    <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
                   </div>
                   <div class="flex flex-col">
                      <span class="text-sm font-bold text-slate-900 leading-tight">{{ template.name }}</span>
@@ -64,13 +64,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Modified 2 days ago</span>
                <div class="flex items-center space-x-1">
                   <button (click)="editTemplate(template)" class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90">
-                     <mat-icon class="!text-lg">edit</mat-icon>
+                     <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                   </button>
                   <button class="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all active:scale-90">
-                     <mat-icon class="!text-lg">content_copy</mat-icon>
+                     <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                   </button>
                   <button class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90">
-                     <mat-icon class="!text-lg">delete</mat-icon>
+                     <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
                   </button>
                </div>
             </div>
@@ -78,7 +78,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
 
          <!-- Empty State for Search -->
          <div *ngIf="filteredTemplates.length === 0" class="col-span-full py-20 flex flex-col items-center border-2 border-dashed border-slate-200 rounded-3xl">
-            <mat-icon class="!text-5xl text-slate-100 mb-4">search_off</mat-icon>
+            <lucide-icon name="search" class="w-12 h-12 text-slate-100 mb-4" [strokeWidth]="1.5"></lucide-icon>
             <h3 class="text-lg font-bold text-slate-900">No matching templates</h3>
             <p class="text-sm text-slate-400 mt-1">Try different keywords or create a new template.</p>
          </div>
@@ -90,13 +90,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
          <div class="lg:col-span-7 space-y-8">
             <div class="flex items-center space-x-4 mb-4">
                <button (click)="closeForm()" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-white border hover:border-slate-200 rounded-xl transition-all shadow-sm">
-                  <mat-icon>arrow_back</mat-icon>
+                  <lucide-icon name="arrow-left" class="w-5 h-5"></lucide-icon>
                </button>
                <div>
                   <h2 class="text-2xl font-black text-slate-900 tracking-tight">{{ isEditing ? 'Edit Template' : 'Create New Template' }}</h2>
                   <nav class="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                      <span>Library</span>
-                     <mat-icon class="!text-[12px] h-3 w-3 flex items-center justify-center">chevron_right</mat-icon>
+                     <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
                      <span class="text-blue-600">Editor</span>
                   </nav>
                </div>
@@ -154,13 +154,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
                   <div class="w-full h-full bg-[#E5DDD5] flex flex-col relative">
                      <!-- WhatsApp Header -->
                      <div class="h-20 bg-[#075E54] flex items-end px-4 pb-3 space-x-3 shadow-md z-10 relative">
-                        <mat-icon class="text-white !text-2xl mb-0.5">arrow_back</mat-icon>
+                        <lucide-icon name="arrow-left" class="text-white w-6 h-6 mb-0.5"></lucide-icon>
                         <div class="w-9 h-9 rounded-full bg-white/20 border border-white/10"></div>
                         <div class="flex-1 flex flex-col">
                            <span class="text-sm font-bold text-white leading-none">OrderFlow Admin</span>
                            <span class="text-[10px] text-emerald-100/70 mt-0.5">online</span>
                         </div>
-                        <mat-icon class="text-white !text-xl mb-0.5 ml-auto">more_vert</mat-icon>
+                        <lucide-icon name="more-vertical" class="text-white w-5 h-5 mb-0.5 ml-auto"></lucide-icon>
                      </div>
 
                      <!-- Chat Area -->
@@ -175,7 +175,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
                            <div class="text-[13px] text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{{ previewText || 'Type text to preview...' }}</div>
                            <div class="flex items-center justify-end space-x-1 mt-1 opacity-40">
                               <span class="text-[9px] font-bold">12:30 PM</span>
-                              <mat-icon class="!text-[10px] h-3 w-3 flex items-center justify-center">done_all</mat-icon>
+                              <lucide-icon name="check-check" class="w-3 h-3 flex items-center justify-center text-blue-500"></lucide-icon>
                            </div>
                         </div>
                      </div>
@@ -183,13 +183,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
                      <!-- WhatsApp Footer -->
                      <div class="h-16 flex items-center px-2 space-x-2 bg-transparent z-10 relative">
                         <div class="flex-1 bg-white rounded-full h-10 flex items-center px-3 shadow-sm border border-slate-200/50">
-                           <mat-icon class="text-slate-400 !text-xl">sentiment_satisfied</mat-icon>
+                           <lucide-icon name="smile" class="text-slate-400 w-5 h-5"></lucide-icon>
                            <span class="text-xs text-slate-300 ml-3">Message</span>
-                           <mat-icon class="text-slate-400 !text-xl ml-auto">attach_file</mat-icon>
-                           <mat-icon class="text-slate-400 !text-xl ml-2">photo_camera</mat-icon>
+                           <lucide-icon name="paperclip" class="text-slate-400 w-5 h-5 ml-auto"></lucide-icon>
+                           <lucide-icon name="camera" class="text-slate-400 w-5 h-5 ml-2"></lucide-icon>
                         </div>
                         <div class="w-10 h-10 rounded-full bg-[#128C7E] flex items-center justify-center text-white shadow-md">
-                           <mat-icon class="!text-xl">mic</mat-icon>
+                           <lucide-icon name="mic" class="w-5 h-5"></lucide-icon>
                         </div>
                      </div>
                   </div>
@@ -200,7 +200,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
 
     </div>
   `,
-  styles: [`
+   styles: [`
     :host { display: block; }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
@@ -213,109 +213,109 @@ import { MessageTemplate } from '../../../core/models/message.model';
   `]
 })
 export class MessageListComponent implements OnInit {
-  public messageService = inject(MessageService);
-  private fb = inject(FormBuilder);
+   public messageService = inject(MessageService);
+   private fb = inject(FormBuilder);
 
-  templates: MessageTemplate[] = [];
-  filteredTemplates: MessageTemplate[] = [];
-  variables = ['FullName', 'ProductName', 'Price', 'Status', 'OrderID', 'City'];
+   templates: MessageTemplate[] = [];
+   filteredTemplates: MessageTemplate[] = [];
+   variables = ['FullName', 'ProductName', 'Price', 'Status', 'OrderID', 'City'];
 
-  showForm = false;
-  isEditing = false;
-  isSaving = false;
-  currentRowNumber: number | null = null;
-  previewText = '';
+   showForm = false;
+   isEditing = false;
+   isSaving = false;
+   currentRowNumber: number | null = null;
+   previewText = '';
 
-  templateForm: FormGroup = this.fb.group({
-    name: ['', Validators.required],
-    text: ['', Validators.required],
-    id: ['']
-  });
+   templateForm: FormGroup = this.fb.group({
+      name: ['', Validators.required],
+      text: ['', Validators.required],
+      id: ['']
+   });
 
-  constructor() {
-    effect(() => {
-      this.templates = this.messageService.templates();
-      this.applyFilter({ target: { value: '' } } as any);
-    });
-
-    this.templateForm.valueChanges.subscribe(val => {
-      this.previewText = this.processPreview(val.text || '');
-    });
-  }
-
-  ngOnInit() {
-    this.messageService.loadTemplates();
-  }
-
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value?.trim().toLowerCase() || '';
-    if (!filterValue) {
-      this.filteredTemplates = this.templates;
-    } else {
-      this.filteredTemplates = this.templates.filter(t =>
-        t.name.toLowerCase().includes(filterValue) ||
-        t.text.toLowerCase().includes(filterValue)
-      );
-    }
-  }
-
-  openForm() {
-    this.templateForm.reset();
-    this.isEditing = false;
-    this.currentRowNumber = null;
-    this.showForm = true;
-    this.previewText = '';
-  }
-
-  closeForm() {
-    this.showForm = false;
-  }
-
-  editTemplate(template: MessageTemplate) {
-    this.templateForm.patchValue(template);
-    this.isEditing = true;
-    this.currentRowNumber = template._rowNumber || null;
-    this.showForm = true;
-  }
-
-  saveTemplate() {
-    if (this.templateForm.invalid) return;
-
-    this.isSaving = true;
-    const value = this.templateForm.value;
-
-    if (this.isEditing && this.currentRowNumber) {
-      this.messageService.updateTemplate(this.currentRowNumber, value).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.closeForm();
-        },
-        error: () => this.isSaving = false
+   constructor() {
+      effect(() => {
+         this.templates = this.messageService.templates();
+         this.applyFilter({ target: { value: '' } } as any);
       });
-    } else {
-      this.messageService.createTemplate(value).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.closeForm();
-        },
-        error: () => this.isSaving = false
+
+      this.templateForm.valueChanges.subscribe(val => {
+         this.previewText = this.processPreview(val.text || '');
       });
-    }
-  }
+   }
 
-  insertVar(v: string) {
-    const text = this.templateForm.get('text')?.value || '';
-    this.templateForm.get('text')?.setValue(text + ' {{' + v + '}} ');
-  }
+   ngOnInit() {
+      this.messageService.loadTemplates();
+   }
 
-  private processPreview(text: string): string {
-    // Naively replace variables for preview
-    return text
-      .replace(/{ {FullName} }/img, 'John Doe')
-      .replace(/{ {ProductName} }/img, 'Premium Wireless Headphones')
-      .replace(/{ {Price} }/img, 'RD$ 7,500')
-      .replace(/{ {Status} }/img, 'Delivered')
-      .replace(/{ {OrderID} }/img, '#ORD-1234')
-      .replace(/{ {City} }/img, 'Santo Domingo');
-  }
+   applyFilter(event: Event) {
+      const filterValue = (event.target as HTMLInputElement).value?.trim().toLowerCase() || '';
+      if (!filterValue) {
+         this.filteredTemplates = this.templates;
+      } else {
+         this.filteredTemplates = this.templates.filter(t =>
+            t.name.toLowerCase().includes(filterValue) ||
+            t.text.toLowerCase().includes(filterValue)
+         );
+      }
+   }
+
+   openForm() {
+      this.templateForm.reset();
+      this.isEditing = false;
+      this.currentRowNumber = null;
+      this.showForm = true;
+      this.previewText = '';
+   }
+
+   closeForm() {
+      this.showForm = false;
+   }
+
+   editTemplate(template: MessageTemplate) {
+      this.templateForm.patchValue(template);
+      this.isEditing = true;
+      this.currentRowNumber = template._rowNumber || null;
+      this.showForm = true;
+   }
+
+   saveTemplate() {
+      if (this.templateForm.invalid) return;
+
+      this.isSaving = true;
+      const value = this.templateForm.value;
+
+      if (this.isEditing && this.currentRowNumber) {
+         this.messageService.updateTemplate(this.currentRowNumber, value).subscribe({
+            next: () => {
+               this.isSaving = false;
+               this.closeForm();
+            },
+            error: () => this.isSaving = false
+         });
+      } else {
+         this.messageService.createTemplate(value).subscribe({
+            next: () => {
+               this.isSaving = false;
+               this.closeForm();
+            },
+            error: () => this.isSaving = false
+         });
+      }
+   }
+
+   insertVar(v: string) {
+      const text = this.templateForm.get('text')?.value || '';
+      this.templateForm.get('text')?.setValue(text + ' {{' + v + '}} ');
+   }
+
+   private processPreview(text: string): string {
+      // Naively replace variables for preview
+      return text
+         .replace(/{ {FullName} }/img, 'John Doe')
+         .replace(/{ {ProductName} }/img, 'Premium Wireless Headphones')
+         .replace(/{ {Price} }/img, 'RD$ 7,500')
+         .replace(/{ {Status} }/img, 'Delivered')
+         .replace(/{ {OrderID} }/img, '#ORD-1234')
+         .replace(/{ {City} }/img, 'Santo Domingo');
+   }
 }

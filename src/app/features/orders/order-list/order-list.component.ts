@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angul
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
-import { MatIconModule } from '@angular/material/icon';
+import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -17,7 +17,7 @@ import { Order } from '../../../core/models/order.model';
   standalone: true,
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
-    MatPaginatorModule, MatSortModule, MatIconModule, MatProgressSpinnerModule
+    MatPaginatorModule, MatSortModule, LucideAngularModule, MatProgressSpinnerModule
   ],
   template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -31,14 +31,14 @@ import { Order } from '../../../core/models/order.model';
         
         <div class="flex items-center space-x-3 w-full xl:w-auto" [formGroup]="filterForm">
            <div class="relative flex-1 xl:w-80 group">
-              <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 !text-xl group-focus-within:text-blue-600 transition-colors">search</mat-icon>
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors"></lucide-icon>
               <input type="text" formControlName="search" 
                      placeholder="Search customer, ID, or phone..." 
                      class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm">
            </div>
            
            <button routerLink="/orders/new" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center">
-              <mat-icon class="!text-2xl">add</mat-icon>
+              <lucide-icon name="plus" class="w-6 h-6"></lucide-icon>
            </button>
         </div>
       </div>
@@ -50,7 +50,7 @@ import { Order } from '../../../core/models/order.model';
                <option value="">All Statuses</option>
                <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
             </select>
-            <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
 
          <div class="relative">
@@ -58,7 +58,7 @@ import { Order } from '../../../core/models/order.model';
                <option value="">All Provinces</option>
                <option *ngFor="let prov of provinces$ | async" [value]="prov">{{ prov }}</option>
             </select>
-            <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
 
          <div class="relative">
@@ -66,7 +66,7 @@ import { Order } from '../../../core/models/order.model';
                <option value="">All Products</option>
                <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
             </select>
-            <mat-icon class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</mat-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
       </div>
 
@@ -102,7 +102,7 @@ import { Order } from '../../../core/models/order.model';
               <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Phone Number </th>
               <td mat-cell *matCellDef="let row" class="px-6 py-4">
                 <div class="flex items-center space-x-2">
-                  <mat-icon class="text-slate-300 !text-sm">phone</mat-icon>
+                  <lucide-icon name="phone" class="text-slate-300 w-4 h-4"></lucide-icon>
                   <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
                 </div>
               </td>
@@ -148,7 +148,7 @@ import { Order } from '../../../core/models/order.model';
               <th mat-header-cell *matHeaderCellDef class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-right"> </th>
               <td mat-cell *matCellDef="let row" class="px-6 py-4 text-right">
                 <button [routerLink]="['/orders', row._rowNumber]" class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90 group focus:outline-none">
-                  <mat-icon class="!text-xl group-hover:translate-x-0.5 transition-transform">chevron_right</mat-icon>
+                  <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
                 </button>
               </td>
             </ng-container>
@@ -162,7 +162,7 @@ import { Order } from '../../../core/models/order.model';
               <td class="px-6 py-24 text-center" colspan="6">
                 <div class="flex flex-col items-center">
                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
-                      <mat-icon class="!text-4xl text-slate-200">search_off</mat-icon>
+                      <lucide-icon name="search" class="w-10 h-10 text-slate-200" [strokeWidth]="1.5"></lucide-icon>
                    </div>
                    <h3 class="text-lg font-bold text-slate-900">No orders found</h3>
                    <p class="text-sm text-slate-400 font-medium max-w-xs mx-auto mt-2">Adjust your filters or search keywords to find what you're looking for.</p>
