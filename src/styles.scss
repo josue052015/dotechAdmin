@@ -1,12 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   height: 100%;
 }
+
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #f3f4f6; /* bg-gray-100 */
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: #F8FAFC;
+  /* Slate 50 */
+  color: #1E293B;
+  /* Slate 800 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base utility for standard cards matching Stitch */
+.card-stitch {
+  @apply bg-white border border-slate-200 rounded-card shadow-sm;
 }

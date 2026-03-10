@@ -40,6 +40,10 @@ export const routes: Routes = [
             {
                 path: 'messages',
                 loadComponent: () => import('./features/messages/message-list/message-list.component').then(m => m.MessageListComponent)
+            },
+            {
+                path: 'settings',
+                loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
             }
         ]
     },

@@ -3,4 +3,7 @@ export interface Product {
     _rowNumber?: number;
     name: string;
     price: number;
+    sku?: string;
+    category?: string;
+    stock?: number;
 }

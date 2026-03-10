@@ -1,11 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { GoogleAuthService } from '../core/services/google-auth.service';
 
 @Component({
@@ -14,92 +10,165 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
   imports: [
     CommonModule,
     RouterModule,
-    MatSidenavModule,
-    MatToolbarModule,
-    MatListModule,
-    MatIconModule,
-    MatButtonModule
+    MatIconModule
   ],
   template: `
-    <mat-sidenav-container class="h-screen bg-gray-100">
+    <div class="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
       
-      <!-- Sidebar -->
-      <mat-sidenav #sidenav mode="side" opened class="w-64 border-r border-gray-200 bg-white shadow-sm">
-        <div class="h-16 flex items-center justify-center border-b border-gray-100 px-4">
-          <mat-icon class="text-blue-600 mr-2">shopping_bag</mat-icon>
-          <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">AdminPanel</span>
+      <!-- Sidebar Desktop -->
+      <aside class="hidden md:flex flex-col w-[260px] bg-white border-r border-slate-200 h-full fixed left-0 top-0 z-40 transition-all duration-300">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-100 flex-shrink-0">
+          <div class="flex items-center space-x-3 group">
+             <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
+               <mat-icon class="text-white !text-xl flex items-center justify-center">shopping_cart</mat-icon>
+             </div>
+             <span class="text-lg font-bold text-slate-900 tracking-tight">OrderFlow</span>
+          </div>
         </div>
         
-        <mat-nav-list class="pt-4 px-2">
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="bg-blue-50 text-blue-600 rounded-lg">
-            <mat-icon matListItemIcon [class.text-blue-600]="true">dashboard</mat-icon>
-            <span class="font-medium">Dashboard</span>
-          </a>
-          
-          <a mat-list-item routerLink="/orders" routerLinkActive="bg-blue-50 text-blue-600 rounded-lg" class="mt-1">
-            <mat-icon matListItemIcon>list_alt</mat-icon>
-            <span class="font-medium">Orders</span>
-          </a>
-          
-          <a mat-list-item routerLink="/products" routerLinkActive="bg-blue-50 text-blue-600 rounded-lg" class="mt-1">
-            <mat-icon matListItemIcon>inventory_2</mat-icon>
-            <span class="font-medium">Products</span>
-          </a>
-          
-          <a mat-list-item routerLink="/messages" routerLinkActive="bg-blue-50 text-blue-600 rounded-lg" class="mt-1">
-            <mat-icon matListItemIcon>message</mat-icon>
-            <span class="font-medium">Messages</span>
-          </a>
-        </mat-nav-list>
+        <!-- Navigation Section -->
+        <nav class="flex-1 overflow-y-auto pt-8 px-4 space-y-1.5 custom-scrollbar">
+          <div class="pb-2 px-4 italic">
+            <span class="text-[11px] uppercase font-bold text-slate-400 tracking-widest leading-none">Core</span>
+          </div>
 
-        <div class="absolute bottom-0 w-full p-4 border-t border-gray-100">
-          <button mat-stroked-button color="warn" class="w-full" (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            Logout
-          </button>
+          <a routerLink="/dashboard" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
+             [routerLinkActiveOptions]="{exact: true}"
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">dashboard</mat-icon>
+            <span class="text-[14px]">Dashboard</span>
+          </a>
+          
+          <a routerLink="/orders" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">list_alt</mat-icon>
+            <span class="text-[14px]">Orders</span>
+          </a>
+          
+          <a routerLink="/products" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">inventory_2</mat-icon>
+            <span class="text-[14px]">Products</span>
+          </a>
+
+          <a routerLink="/messages" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-blue-600 transition-colors">message</mat-icon>
+            <span class="text-[14px]">Messages</span>
+          </a>
+
+          <div class="pt-6 pb-2 px-4">
+            <span class="text-[11px] uppercase font-bold text-slate-400 tracking-widest leading-none">Management</span>
+          </div>
+
+          <a routerLink="/customers" 
+             class="opacity-40 cursor-not-allowed flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 group">
+            <mat-icon class="!text-xl flex items-center justify-center">people</mat-icon>
+            <span class="text-[14px]">Customers</span>
+          </a>
+
+          <a routerLink="/reports" 
+             class="opacity-40 cursor-not-allowed flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 group">
+            <mat-icon class="!text-xl flex items-center justify-center">insert_chart</mat-icon>
+            <span class="text-[14px]">Reports</span>
+          </a>
+        </nav>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="p-4 mt-auto space-y-2 border-t border-slate-100 bg-slate-50/50">
+          <a routerLink="/settings" routerLinkActive="bg-white text-slate-900 shadow-sm border border-slate-200"
+             class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all group">
+            <mat-icon class="!text-xl flex items-center justify-center group-hover:text-slate-700">settings</mat-icon>
+            <span class="text-[14px] font-medium">Settings</span>
+          </a>
+
+          <div class="flex items-center space-x-3 px-4 py-3 mt-2 bg-white rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50">
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200 transition-all hover:ring-4 hover:ring-blue-50 cursor-pointer overflow-hidden">
+               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 min-w-0">
+               <p class="text-[13px] font-bold text-slate-900 truncate leading-tight">Alex Rivera</p>
+               <p class="text-[11px] text-slate-500 truncate">Administrator</p>
+            </div>
+            <button (click)="logout()" class="text-slate-400 hover:text-red-500 transition-all p-1.5 rounded-xl hover:bg-red-50 group">
+              <mat-icon class="!text-lg">logout</mat-icon>
+            </button>
+          </div>
         </div>
-      </mat-sidenav>
+      </aside>
 
-      <!-- Main Content -->
-      <mat-sidenav-content class="flex flex-col bg-slate-50">
+      <!-- Main Layout Area -->
+      <main class="flex-1 flex flex-col md:ml-[260px] overflow-hidden min-h-screen">
         
         <!-- Header -->
-        <mat-toolbar class="bg-white border-b border-gray-200 shadow-sm h-16 sticky top-0 z-50 px-6">
-          <button mat-icon-button (click)="sidenav.toggle()" class="mr-4 text-gray-500 hover:text-gray-800">
-            <mat-icon>menu</mat-icon>
-          </button>
-          
-          <span class="spacer flex-1"></span>
-          
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm shadow-slate-100/20">
           <div class="flex items-center space-x-4">
-            <button mat-icon-button class="text-gray-500 hover:text-gray-800">
-              <mat-icon>notifications</mat-icon>
+            <button class="md:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
+              <mat-icon>menu</mat-icon>
             </button>
-            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
-              A
+            <div class="flex flex-col">
+               <h1 class="text-lg font-bold text-slate-900 leading-tight">Dashboard Overview</h1>
+               <div class="flex items-center space-x-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span class="text-[11px] font-medium text-slate-400 uppercase tracking-tighter">Live Updates Enabled</span>
+               </div>
             </div>
           </div>
-        </mat-toolbar>
+          
+          <div class="flex items-center space-x-4">
+            <!-- Search Bar (Fake) -->
+            <div class="hidden lg:flex items-center bg-slate-50 rounded-xl px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white transition-all w-64 group">
+               <mat-icon class="text-slate-400 !text-lg mr-2 group-focus-within:text-blue-500">search</mat-icon>
+               <input type="text" placeholder="Search data..." class="bg-transparent border-none text-sm focus:outline-none w-full text-slate-700 placeholder:text-slate-400">
+            </div>
 
-        <!-- Page Content -->
-        <div class="p-6 flex-1 overflow-auto">
-          <router-outlet></router-outlet>
+            <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
+              <mat-icon class="text-slate-400 !text-lg group-hover:text-blue-600 mr-2 transition-colors">calendar_today</mat-icon>
+              <span class="text-[12px] font-semibold text-slate-600">Mar 9 - Mar 15</span>
+              <mat-icon class="text-slate-300 !text-lg ml-1">expand_more</mat-icon>
+            </div>
+
+            <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+            <button class="relative p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100 active:scale-95">
+              <mat-icon class="!text-xl">notifications</mat-icon>
+              <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 animate-bounce"></span>
+            </button>
+            
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 active:scale-95 transition-all text-[13px] font-bold flex items-center space-x-2">
+               <mat-icon class="!text-lg">ios_share</mat-icon>
+               <span>Export</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-8 lg:p-10 scroll-smooth pb-20 custom-scrollbar bg-slate-50/30">
+           <router-outlet></router-outlet>
         </div>
         
-      </mat-sidenav-content>
+      </main>
       
-    </mat-sidenav-container>
+    </div>
   `,
   styles: [`
-    /* Ensure the list items look modern */
-    ::ng-deep .mat-mdc-list-item.mdc-list-item--activated {
-      background-color: #eff6ff !important;
-      color: #2563eb !important;
-      border-radius: 0.5rem;
+    :host {
+      display: block;
+      height: 100vh;
     }
-    ::ng-deep .mat-mdc-list-item {
-      border-radius: 0.5rem;
-      margin-bottom: 0.25rem;
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
     }
   `]
 })
