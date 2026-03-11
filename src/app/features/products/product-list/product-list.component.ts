@@ -225,8 +225,8 @@ import { Product } from '../../../core/models/product.model';
         <div class="px-8 py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col md:flex-row items-center justify-between gap-4">
            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span class="text-slate-900">{{ (paginator ? paginator.pageIndex * paginator.pageSize + 1 : 1) }}</span> to 
-              <span class="text-slate-900">{{ (paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.data.length) : Math.min(10, dataSource.data.length)) }}</span> 
-              of <span class="text-slate-900">{{ dataSource.data.length }}</span> results
+              <span class="text-slate-900">{{ (paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.filteredData.length) : Math.min(10, dataSource.filteredData.length)) }}</span> 
+              of <span class="text-slate-900">{{ dataSource.filteredData.length }}</span> results
            </div>
            <mat-paginator [pageSizeOptions]="[10, 25, 100]" class="!bg-transparent !border-none !font-bold" hidePageSize></mat-paginator>
         </div>

@@ -55,9 +55,13 @@ import { MatButtonModule } from '@angular/material/button';
                <span>Change Status</span>
                <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
             </button>
-            <mat-menu #statusMenu="matMenu" class="rounded-xl shadow-xl border border-slate-100">
-               <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(s)" class="text-xs font-bold uppercase tracking-wide text-slate-600">
-                  {{ s }}
+            <mat-menu #statusMenu="matMenu" class="rounded-xl shadow-xl border border-slate-100 p-2">
+               <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(s)" 
+                       class="hover:bg-slate-50 rounded-lg group px-2 py-1">
+                  <span [class]="getStatusClass(s)" 
+                        class="block w-full text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full text-center">
+                     {{ s }}
+                  </span>
                </button>
             </mat-menu>
             <button class="flex-1 md:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg text-sm font-bold hover:bg-slate-200 transition-all">
@@ -275,7 +279,8 @@ export class OrderDetailComponent implements OnInit {
    selectedTemplateText: string = '';
 
    statuses = [
-      'confirmado completo', 'empacado', 'envio en proceso', 'entregado', 'cancelado'
+      'cancelado', 'desaparecido', 'no confirmado', 'pendiente de ubicacion',
+      'confirmado completo', 'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
    ];
 
    get totalAmount() {
