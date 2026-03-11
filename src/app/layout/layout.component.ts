@@ -13,10 +13,10 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
     LucideAngularModule
   ],
   template: `
-    <div class="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
+    <div class="flex h-screen bg-background font-sans text-text overflow-hidden">
       
       <!-- Sidebar Desktop -->
-      <aside class="hidden md:flex flex-col w-[260px] bg-white border-r border-slate-200 h-full fixed left-0 top-0 z-40 transition-all duration-300">
+      <aside class="hidden md:flex flex-col w-[260px] bg-sidebar border-r border-sidebar-border h-full fixed left-0 top-0 z-40 transition-all duration-300">
         <!-- Logo Area -->
         <div class="h-16 flex items-center px-6 border-b border-slate-100 flex-shrink-0">
           <div class="flex items-center space-x-3 group">
@@ -33,28 +33,28 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
             <span class="text-[11px] uppercase font-bold text-slate-400 tracking-widest leading-none">Core</span>
           </div>
 
-          <a routerLink="/dashboard" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
+          <a routerLink="/dashboard" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
              [routerLinkActiveOptions]="{exact: true}"
-             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <lucide-icon name="layout-grid" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="layout-grid" class="w-5 h-5 group-hover:text-primary transition-colors"></lucide-icon>
             <span class="text-[14px]">Dashboard</span>
           </a>
           
-          <a routerLink="/orders" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
-             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <lucide-icon name="shopping-cart" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
+          <a routerLink="/orders" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="shopping-cart" class="w-5 h-5 group-hover:text-primary transition-colors"></lucide-icon>
             <span class="text-[14px]">Orders</span>
           </a>
           
-          <a routerLink="/products" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
-             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <lucide-icon name="package" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
+          <a routerLink="/products" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="package" class="w-5 h-5 group-hover:text-primary transition-colors"></lucide-icon>
             <span class="text-[14px]">Products</span>
           </a>
 
-          <a routerLink="/messages" routerLinkActive="bg-blue-50 !text-blue-700 font-semibold shadow-sm shadow-blue-50 ring-1 ring-blue-100/50" 
-             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-            <lucide-icon name="message-square" class="w-5 h-5 group-hover:text-blue-600 transition-colors"></lucide-icon>
+          <a routerLink="/messages" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="message-square" class="w-5 h-5 group-hover:text-primary transition-colors"></lucide-icon>
             <span class="text-[14px]">Messages</span>
           </a>
 
@@ -102,7 +102,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
       <main class="flex-1 flex flex-col md:ml-[260px] overflow-hidden min-h-screen">
         
         <!-- Header -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm shadow-slate-100/20">
+        <header class="h-16 bg-white border-b border-border flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
           <div class="flex items-center space-x-4">
             <button class="md:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
               <lucide-icon name="menu" class="w-5 h-5"></lucide-icon>
@@ -144,7 +144,7 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto p-8 lg:p-10 scroll-smooth pb-20 custom-scrollbar bg-slate-50/30">
+        <div class="flex-1 overflow-y-auto p-8 lg:p-10 scroll-smooth pb-20 custom-scrollbar bg-background">
            <router-outlet></router-outlet>
         </div>
         

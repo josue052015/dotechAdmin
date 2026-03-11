@@ -30,11 +30,11 @@ import { Order } from '../../../core/models/order.model';
         </div>
         
         <div class="flex items-center space-x-3 w-full xl:w-auto" [formGroup]="filterForm">
-           <div class="relative flex-1 xl:w-80 group">
-              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors"></lucide-icon>
+            <div class="relative flex-1 xl:w-80 group">
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" formControlName="search" 
                      placeholder="Search customer, ID, or phone..." 
-                     class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm">
+                     class="input-stitch pl-12 h-12">
            </div>
            
            <button routerLink="/orders/new" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center">
@@ -46,27 +46,27 @@ import { Order } from '../../../core/models/order.model';
       <!-- Filters Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" [formGroup]="filterForm">
          <div class="relative">
-            <select formControlName="status" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold text-slate-600 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer shadow-sm">
+            <select formControlName="status" class="select-stitch h-12 pl-4 pr-10 font-bold">
                <option value="">All Statuses</option>
                <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
             </select>
-            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
 
          <div class="relative">
-            <select formControlName="province" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold text-slate-600 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer shadow-sm">
+            <select formControlName="province" class="select-stitch h-12 pl-4 pr-10 font-bold">
                <option value="">All Provinces</option>
                <option *ngFor="let prov of provinces$ | async" [value]="prov">{{ prov }}</option>
             </select>
-            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
 
          <div class="relative">
-            <select formControlName="product" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold text-slate-600 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer shadow-sm">
+            <select formControlName="product" class="select-stitch h-12 pl-4 pr-10 font-bold">
                <option value="">All Products</option>
                <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
             </select>
-            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
       </div>
 
@@ -79,19 +79,19 @@ import { Order } from '../../../core/models/order.model';
             <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
           </div>
 
-          <table mat-table [dataSource]="dataSource" matSort class="w-full">
+          <table mat-table [dataSource]="dataSource" matSort class="table-stitch">
             
             <!-- Customer Column -->
             <ng-container matColumnDef="customer">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header="fullName" class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Customer </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="w-1/4"> Customer </th>
+              <td mat-cell *matCellDef="let row">
                 <div class="flex items-center space-x-4">
-                   <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[11px] font-bold text-blue-700 shadow-sm">
+                   <div class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shadow-sm">
                       {{ row.fullName.charAt(0) }}{{ row.fullName.split(' ')[1]?.charAt(0) || '' }}
                    </div>
                    <div class="flex flex-col">
-                      <span class="text-[13px] font-bold text-slate-900 leading-tight">{{row.fullName}}</span>
-                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {{row.id || row._rowNumber}}</span>
+                      <span class="text-sm font-bold leading-tight">{{row.fullName}}</span>
+                      <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">ID: {{row.id || row._rowNumber}}</span>
                    </div>
                 </div>
               </td>
@@ -99,44 +99,44 @@ import { Order } from '../../../core/models/order.model';
 
             <!-- Phone Column -->
             <ng-container matColumnDef="phone">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Phone Number </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Phone Number </th>
+              <td mat-cell *matCellDef="let row">
                 <div class="flex items-center space-x-2">
-                  <lucide-icon name="phone" class="text-slate-300 w-4 h-4"></lucide-icon>
-                  <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
+                  <lucide-icon name="phone" class="text-text-muted w-4 h-4"></lucide-icon>
+                  <span class="text-xs font-bold">{{row.phone}}</span>
                 </div>
               </td>
             </ng-container>
 
             <!-- Product Column -->
             <ng-container matColumnDef="product">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header="productName" class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50"> Product </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4">
-                <span class="text-[12px] font-semibold text-slate-600 leading-relaxed">{{row.productName}}</span>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="productName"> Product </th>
+              <td mat-cell *matCellDef="let row">
+                <span class="text-xs font-semibold leading-relaxed">{{row.productName}}</span>
               </td>
             </ng-container>
 
             <!-- Quantity Column -->
             <ng-container matColumnDef="qty">
-              <th mat-header-cell *matHeaderCellDef class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-center"> Qty </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4 text-center">
-                <span class="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{{row.productQuantity}}</span>
+              <th mat-header-cell *matHeaderCellDef class="text-center"> Qty </th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <span class="text-xs font-bold px-2 py-1 rounded-md bg-slate-100">{{row.productQuantity}}</span>
               </td>
             </ng-container>
 
             <!-- Price Column -->
             <ng-container matColumnDef="price">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-right"> Price </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4 text-right">
-                <span class="text-[13px] font-black text-slate-900">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}</span>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-right"> Price </th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <span class="text-sm font-black">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}</span>
               </td>
             </ng-container>
 
             <!-- Status Column -->
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-center"> Status </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4 text-center">
-                <div [class]="getStatusClass(row.status)" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center"> Status </th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <div [class]="getStatusClass(row.status)" class="inline-flex items-center px-3 py-1 rounded-pill text-[10px] font-bold uppercase tracking-wider">
                    {{row.status}}
                 </div>
               </td>
@@ -144,28 +144,28 @@ import { Order } from '../../../core/models/order.model';
 
             <!-- Actions Column -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 text-right"> </th>
-              <td mat-cell *matCellDef="let row" class="px-6 py-4 text-right">
-                <button [routerLink]="['/orders', row._rowNumber]" class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90 group focus:outline-none">
+              <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <button [routerLink]="['/orders', row._rowNumber]" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
                   <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
                 </button>
               </td>
             </ng-container>
 
             <!-- Header and Row Definitions -->
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="border-b border-slate-100"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50/80 border-b border-slate-50 transition-all cursor-pointer group last:border-0" [routerLink]="['/orders', row._rowNumber]"></tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="cursor-pointer group" [routerLink]="['/orders', row._rowNumber]"></tr>
 
             <!-- No Data Row -->
             <tr class="mat-row bg-white" *matNoDataRow>
-              <td class="px-6 py-24 text-center" colspan="6">
+              <td class="px-6 py-24 text-center" colspan="7">
                 <div class="flex flex-col items-center">
                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
                       <lucide-icon name="search" class="w-10 h-10 text-slate-200" [strokeWidth]="1.5"></lucide-icon>
                    </div>
-                   <h3 class="text-lg font-bold text-slate-900">No orders found</h3>
-                   <p class="text-sm text-slate-400 font-medium max-w-xs mx-auto mt-2">Adjust your filters or search keywords to find what you're looking for.</p>
-                   <button (click)="resetFilters()" class="mt-8 text-blue-600 font-bold hover:underline flex items-center space-x-2">
+                   <h3 class="text-lg font-bold">No orders found</h3>
+                   <p class="text-sm text-text-muted font-medium max-w-xs mx-auto mt-2">Adjust your filters or search keywords to find what you're looking for.</p>
+                   <button (click)="resetFilters()" class="mt-8 text-primary font-bold hover:underline flex items-center space-x-2">
                        <span>Clear all filters</span>
                    </button>
                 </div>
@@ -296,16 +296,16 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   getStatusClass(status: string): string {
     const s = this.normalize(status || '');
 
-    // Exact colors from the reference image
-    if (s === 'cancelado') return 'bg-[#E9D5FF] text-[#7C3AED]'; // Light purple
-    if (s === 'desaparecido') return 'bg-[#581C87] text-white'; // Dark purple
-    if (s === 'no confirmado') return 'bg-[#F1F5F9] text-[#475569]'; // Light slate
-    if (s === 'pendiente de ubicacion') return 'bg-[#FEE2E2] text-[#DC2626]'; // Light red/rose
-    if (s === 'confirmado completo') return 'bg-[#FEF3C7] text-[#D97706]'; // Light amber
-    if (s === 'empacado') return 'bg-[#DCFCE7] text-[#16A34A]'; // Light green
-    if (s === 'envio en proceso') return 'bg-[#DBEAFE] text-[#2563EB]'; // Light blue
-    if (s === 'entregado') return 'bg-[#991B1B] text-white'; // Dark red
-    if (s === 'dinero recibido') return 'bg-[#1E40AF] text-white'; // Dark blue
+    // Use Stitch status semantic token colors (they map directly here to tailwind utility classes)
+    if (s === 'cancelado') return 'bg-danger text-danger-text';
+    if (s === 'desaparecido') return 'bg-danger text-danger-text';
+    if (s === 'no confirmado') return 'bg-warning text-warning-text';
+    if (s === 'pendiente de ubicacion') return 'bg-warning text-warning-text';
+    if (s === 'confirmado completo') return 'bg-info text-info-text';
+    if (s === 'empacado') return 'bg-info text-info-text';
+    if (s === 'envio en proceso') return 'bg-info text-info-text';
+    if (s === 'entregado') return 'bg-success text-success-text';
+    if (s === 'dinero recibido') return 'bg-success text-success-text';
 
     return 'bg-slate-100 text-slate-500'; // Default
   }

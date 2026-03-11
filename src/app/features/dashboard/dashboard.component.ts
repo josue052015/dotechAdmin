@@ -28,12 +28,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <!-- Orders Today -->
         <div class="card-stitch p-6 group hover:border-blue-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
               <lucide-icon name="shopping-cart" class="w-6 h-6"></lucide-icon>
             </div>
-            <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-success text-success-text text-xs font-medium">
                <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-               <span class="text-[11px] font-bold">12.5%</span>
+               <span>12.5%</span>
             </div>
           </div>
           <div>
@@ -45,12 +45,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <!-- Pending Orders -->
         <div class="card-stitch p-6 group hover:border-amber-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
-            <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
+            <div class="w-12 h-12 rounded-xl bg-warning/20 flex items-center justify-center text-warning-text transition-transform group-hover:scale-110">
               <lucide-icon name="clock" class="w-6 h-6"></lucide-icon>
             </div>
-            <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">
+            <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-danger text-danger-text text-xs font-medium">
                <lucide-icon name="trending-down" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-               <span class="text-[11px] font-bold">4.2%</span>
+               <span>4.2%</span>
             </div>
           </div>
           <div>
@@ -62,12 +62,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <!-- Delivered Orders -->
         <div class="card-stitch p-6 group hover:border-emerald-200 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 transition-transform group-hover:scale-110">
+            <div class="w-12 h-12 rounded-xl bg-success flex items-center justify-center text-success-text transition-transform group-hover:scale-110">
               <lucide-icon name="check-circle" class="w-6 h-6"></lucide-icon>
             </div>
-            <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-success text-success-text text-xs font-medium">
                <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-               <span class="text-[11px] font-bold">8.1%</span>
+               <span>8.1%</span>
             </div>
           </div>
           <div>
@@ -79,12 +79,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
         <!-- Money Received -->
         <div class="card-stitch p-6 group hover:border-slate-300 transition-all duration-300">
           <div class="flex justify-between items-start mb-4">
-            <div class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 transition-transform group-hover:scale-110">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 transition-transform group-hover:scale-110">
               <lucide-icon name="banknote" class="w-6 h-6"></lucide-icon>
             </div>
-            <div class="flex items-center space-x-1 px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+            <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-success text-success-text text-xs font-medium">
                <lucide-icon name="trending-up" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-               <span class="text-[11px] font-bold">15.3%</span>
+               <span>15.3%</span>
             </div>
           </div>
           <div>
@@ -160,43 +160,43 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
             <button class="text-blue-600 text-xs font-bold hover:underline">View All Orders</button>
          </div>
          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse bg-white">
+            <table class="table-stitch">
                <thead>
-                  <tr class="bg-slate-50/50 border-b border-slate-100">
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order ID</th>
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer</th>
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Product</th>
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                  <tr>
+                     <th>Order ID</th>
+                     <th>Customer</th>
+                     <th>Product</th>
+                     <th>Amount</th>
+                     <th>Status</th>
+                     <th>Date</th>
                   </tr>
                </thead>
-               <tbody class="divide-y divide-slate-50">
-                  <tr *ngFor="let order of recentOrders" class="hover:bg-slate-50/50 transition-colors group cursor-pointer">
-                     <td class="px-6 py-4">
-                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{{ order.id }}</span>
+               <tbody>
+                  <tr *ngFor="let order of recentOrders" class="group cursor-pointer">
+                     <td>
+                        <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{{ order.id }}</span>
                      </td>
-                     <td class="px-6 py-4">
+                     <td>
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
                               {{ order.customerName.charAt(0) }}{{ order.customerName.split(' ')[1] ? order.customerName.split(' ')[1].charAt(0) : '' }}
                            </div>
-                           <span class="text-xs font-semibold text-slate-700">{{ order.customerName }}</span>
+                           <span class="font-semibold">{{ order.customerName }}</span>
                         </div>
                      </td>
-                     <td class="px-6 py-4">
-                        <span class="text-xs text-slate-600 font-medium">{{ order.productName }}</span>
+                     <td>
+                        <span class="font-medium">{{ order.productName }}</span>
                      </td>
-                     <td class="px-6 py-4">
-                        <span class="text-xs font-bold text-slate-900">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
+                     <td>
+                        <span class="font-bold">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
                      </td>
-                     <td class="px-6 py-4">
-                        <span [class]="getStatusClass(order.status)" class="text-[10px] font-bold px-3 py-1.5 rounded-full border">
+                     <td>
+                        <span [class]="getStatusClass(order.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
                            {{ order.status }}
                         </span>
                      </td>
-                     <td class="px-6 py-4">
-                        <span class="text-xs text-slate-400 font-medium whitespace-nowrap">{{ order.date }}</span>
+                     <td>
+                        <span class="text-text-muted font-medium whitespace-nowrap">{{ order.date }}</span>
                      </td>
                   </tr>
                </tbody>
@@ -282,7 +282,7 @@ export class DashboardComponent implements OnInit {
   };
 
   // Donut Chart
-  public donutChartColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444'];
+  public donutChartColors = ['#2563EB', '#16A34A', '#D97706', '#DC2626'];
   public donutChartData: ChartConfiguration<'doughnut'>['data'] = {
     labels: ['Processing', 'Delivered', 'On Hold', 'Cancelled'],
     datasets: [{
@@ -382,12 +382,14 @@ export class DashboardComponent implements OnInit {
 
   getStatusClass(status: string): string {
     const s = status?.toLowerCase() || '';
-    if (s.includes('entregado') || s.includes('recibido'))
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    if (s.includes('cancelado'))
-      return 'bg-red-50 text-red-600 border-red-100';
+    if (s.includes('entregado') || s.includes('recibido') || s.includes('completado'))
+      return 'bg-success text-success-text';
+    if (s.includes('cancelado') || s.includes('desaparecido'))
+      return 'bg-danger text-danger-text';
     if (s.includes('pendiente') || s.includes('espera') || s.includes('no confirmado'))
-      return 'bg-amber-50 text-amber-600 border-amber-100';
-    return 'bg-blue-50 text-blue-600 border-blue-100';
+      return 'bg-warning text-warning-text';
+    if (s.includes('confirmado completo') || s.includes('empacado') || s.includes('en proceso'))
+      return 'bg-info text-info-text';
+    return 'bg-slate-100 text-slate-500';
   }
 }

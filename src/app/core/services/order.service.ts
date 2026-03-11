@@ -71,17 +71,36 @@ export class OrderService {
     }
 
     private mapRowToOrder(row: any[], rowNumber: number): Order {
-        // Detect format: If row[0] looks like a date (e.g., contains '-' or '/'), it's the standard sheet format.
-        // If row[0] looks like an ID (e.g., starts with 'W'), it's the app-generated format.
+        // Assume format based on sheet headers:
+        // A(0): ID, B(1): Date, C(2): Qty, D(3): Price, E(4): Product Name,
+        // F(5): Full Name, G(6): Phone, H(7): Address 1, I(8): Province, J(9): City,
+        // K(10): empacado, L(11): Envio registrado, M(12): Costo de envio, N(13): Status, O(14): Notes
+        
+        let order: Order = {
+            _rowNumber: rowNumber,
+            id: row[0] || '',
+            date: row[1] || '',
+            productQuantity: parseInt(row[2]) || 1,
+            productPrice: parseFloat(row[3]) || 0,
+            productName: row[4] || '',
+            fullName: row[5] || '',
+            phone: row[6] || '',
+            address1: row[7] || '',
+            province: row[8] || '',
+            city: row[9] || '',
+            packaging: parseFloat(row[10]) || 0,
+            shippingCost: parseFloat(row[12]) || 0,
+            status: row[13] || '',
+            notes: row[14] || ''
+        };
+
+        // Fallback for older rows that might have date first
         const firstCol = row[0] ? row[0].toString() : '';
         const isDateFirst = firstCol.includes('-') || firstCol.includes('/') || (firstCol.length >= 8 && !isNaN(Date.parse(firstCol)));
 
-        let order: Order;
-
         if (isDateFirst) {
-            // Standard Sheet Format (Date at A, Status at N per user)
             order = {
-                _rowNumber: rowNumber,
+                ...order,
                 date: row[0] || '',
                 productQuantity: parseInt(row[1]) || 1,
                 productPrice: parseFloat(row[2]) || 0,
@@ -89,36 +108,17 @@ export class OrderService {
                 fullName: row[4] || '',
                 phone: row[5] || '',
                 address1: row[6] || '',
-                city: row[7] || '',
-                province: row[8] || '',
-                status: row[13] || row[9] || '', // User said Col N (13), fallback to J (9)
+                province: row[7] || '',
+                city: row[8] || '',
+                status: row[13] || row[9] || '',
                 notes: row[10] || '',
                 shippingCost: parseFloat(row[11]) || 0,
                 packaging: parseFloat(row[12]) || 0,
-                id: row[14] || `${rowNumber}` // Check if ID is in O or use rowNumber
-            };
-        } else {
-            // App-Generated Format (ID at A, Date at B, Status at K)
-            order = {
-                _rowNumber: rowNumber,
-                id: row[0] || '',
-                date: row[1] || '',
-                productQuantity: parseInt(row[2]) || 1,
-                productPrice: parseFloat(row[3]) || 0,
-                productName: row[4] || '',
-                fullName: row[5] || '',
-                phone: row[6] || '',
-                address1: row[7] || '',
-                city: row[8] || '',
-                province: row[9] || '',
-                status: row[10] || '',
-                notes: row[11] || '',
-                shippingCost: parseFloat(row[12]) || 0,
-                packaging: parseFloat(row[13]) || 0
+                id: row[14] || `${rowNumber}`
             };
         }
 
-        // Final check: If status is still empty, look in any column for known status strings
+        // Final check for status based on known strings
         if (!order.status) {
             const knownStatuses = [
                 'confirmado', 'pendiente', 'no confirmado', 'cancelado', 'desaparecido',
@@ -139,22 +139,23 @@ export class OrderService {
     }
 
     private mapOrderToRow(order: Order): any[] {
+        // Mapping exactly to A - O (0 - 14)
         return [
-            order.date || '',              // A (0)
-            order.productQuantity,          // B (1)
-            order.productPrice,             // C (2)
-            order.productName,              // D (3)
-            order.fullName,                 // E (4)
-            order.phone,                    // F (5)
-            order.address1,                 // G (6)
-            order.city,                     // H (7)
-            order.province,                 // I (8)
-            '',                             // J (9) - Spacer/Reserved
-            order.notes || '',              // K (10)
-            order.shippingCost || 0,        // L (11)
-            order.packaging || 0,           // M (12)
-            order.status || '',             // N (13) - Status per user
-            order.id || ''                  // O (14) - ID
+            order.id || '',                 // A (0) - ID
+            order.date || '',               // B (1) - Date
+            order.productQuantity || 1,     // C (2) - Product Quantity
+            order.productPrice || 0,        // D (3) - Product Price
+            order.productName || '',        // E (4) - Product Name
+            order.fullName || '',           // F (5) - Full Name
+            order.phone || '',              // G (6) - Phone
+            order.address1 || '',           // H (7) - Address 1
+            order.province || '',           // I (8) - Province
+            order.city || '',               // J (9) - City
+            order.packaging || '',          // K (10) - empacado
+            '',                             // L (11) - Envio registrado en paqueteria (leave empty to not overwrite if exists, or just empty)
+            order.shippingCost || 0,        // M (12) - Costo de envio
+            order.status || '',             // N (13) - Status
+            order.notes || ''               // O (14) - Notes
         ];
     }
 }

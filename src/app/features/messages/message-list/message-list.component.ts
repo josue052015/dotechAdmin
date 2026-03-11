@@ -24,13 +24,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
         
         <div class="flex items-center space-x-3 w-full xl:w-auto">
            <div class="relative flex-1 xl:w-80 group">
-              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors"></lucide-icon>
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
                      placeholder="Search templates..." 
-                     class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm font-medium">
+                     class="input-stitch pl-12 h-12">
            </div>
            
-           <button (click)="openForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center space-x-2 text-sm font-bold">
+           <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-ui shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-sm font-bold">
               <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
               <span>Create Template</span>
            </button>
@@ -39,19 +39,19 @@ import { MessageTemplate } from '../../../core/models/message.model';
 
       <!-- Template Grid (Visible only when not editing) -->
       <div *ngIf="!showForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-         <div *ngFor="let template of filteredTemplates" class="card-stitch p-6 bg-white group hover:border-blue-200 transition-all flex flex-col min-h-[220px]">
+         <div *ngFor="let template of filteredTemplates" class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
             <div class="flex justify-between items-start mb-4">
                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100/50">
+                  <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success-text border border-success/20">
                     <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
                   </div>
                   <div class="flex flex-col">
                      <span class="text-sm font-bold text-slate-900 leading-tight">{{ template.name }}</span>
-                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">WhatsApp / Global</span>
+                     <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">WhatsApp / Global</span>
                   </div>
                </div>
                <div class="flex items-center h-6 px-2 rounded-full bg-slate-50 border border-slate-100">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-success mr-2"></span>
                   <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Active</span>
                </div>
             </div>
@@ -63,13 +63,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
             <div class="flex items-center justify-between pt-4 border-t border-slate-50">
                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Modified 2 days ago</span>
                <div class="flex items-center space-x-1">
-                  <button (click)="editTemplate(template)" class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90">
+                  <button (click)="editTemplate(template)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                   </button>
-                  <button class="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all active:scale-90">
+                  <button class="p-2 text-text-muted hover:text-text hover:bg-slate-100 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                   </button>
-                  <button class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90">
+                  <button class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
                   </button>
                </div>
@@ -89,38 +89,38 @@ import { MessageTemplate } from '../../../core/models/message.model';
          <!-- Left Side: Form -->
          <div class="lg:col-span-7 space-y-8">
             <div class="flex items-center space-x-4 mb-4">
-               <button (click)="closeForm()" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-white border hover:border-slate-200 rounded-xl transition-all shadow-sm">
+               <button (click)="closeForm()" class="p-2 text-text-muted hover:text-text hover:bg-white border hover:border-border border-transparent rounded-ui transition-all shadow-sm">
                   <lucide-icon name="arrow-left" class="w-5 h-5"></lucide-icon>
                </button>
                <div>
                   <h2 class="text-2xl font-black text-slate-900 tracking-tight">{{ isEditing ? 'Edit Template' : 'Create New Template' }}</h2>
-                  <nav class="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <nav class="flex items-center space-x-2 text-[10px] font-bold text-text-muted uppercase tracking-widest">
                      <span>Library</span>
                      <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-                     <span class="text-blue-600">Editor</span>
+                     <span class="text-primary">Editor</span>
                   </nav>
                </div>
             </div>
 
             <div class="card-stitch p-8 bg-white space-y-8">
                <form [formGroup]="templateForm" class="space-y-6">
-                  <div class="space-y-1.5 text-blue-1000">
-                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Template Name</label>
+                  <div class="space-y-1.5 text-slate-900">
+                     <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Template Name</label>
                      <input type="text" formControlName="name" placeholder="e.g. Order Confirmation" 
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all">
+                            class="input-stitch font-bold text-slate-700">
                   </div>
 
                   <div class="space-y-1.5">
                      <div class="flex justify-between items-center mb-1 pr-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Message Content</label>
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Message Content</label>
                         <span class="text-[10px] font-bold text-slate-300 uppercase">Interactive Variables Enabled</span>
                      </div>
                      <textarea formControlName="text" placeholder="Type your message here..." rows="8"
-                               class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm font-medium text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all resize-none leading-relaxed custom-scrollbar"></textarea>
+                               class="input-stitch py-4 px-5 font-medium text-slate-600 h-auto resize-none leading-relaxed custom-scrollbar"></textarea>
                      <div class="flex flex-wrap gap-2 mt-4">
                         <button type="button" *ngFor="let v of variables" 
                                 (click)="insertVar(v)"
-                                class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-black text-slate-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm">
+                                class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-black text-slate-500 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all shadow-sm">
                            + {{ v }}
                         </button>
                      </div>
@@ -129,9 +129,9 @@ import { MessageTemplate } from '../../../core/models/message.model';
             </div>
 
             <div class="flex justify-end space-x-4 pt-4">
-               <button (click)="closeForm()" class="px-8 py-3 rounded-xl text-slate-600 font-bold text-[13px] hover:bg-white border border-transparent hover:border-slate-200 transition-all">Discard Changes</button>
+               <button (click)="closeForm()" class="px-8 py-2.5 rounded-ui text-text-muted hover:text-text font-bold text-sm bg-white border hover:border-border border-transparent transition-all">Discard Changes</button>
                <button (click)="saveTemplate()" [disabled]="templateForm.invalid || isSaving" 
-                       class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl shadow-xl shadow-blue-200 hover:shadow-blue-300 disabled:opacity-50 transition-all active:scale-95 text-[13px] font-black flex items-center space-x-2">
+                       class="bg-primary hover:bg-blue-700 text-white px-10 py-2.5 rounded-ui shadow-md hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 text-sm font-black flex items-center space-x-2">
                   <mat-spinner diameter="18" strokeWidth="3" *ngIf="isSaving" class="invert grayscale"></mat-spinner>
                   <span>{{ isEditing ? 'Update Template' : 'Publish Template' }}</span>
                </button>

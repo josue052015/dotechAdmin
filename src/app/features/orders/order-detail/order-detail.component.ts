@@ -30,13 +30,13 @@ import { MatButtonModule } from '@angular/material/button';
          </div>
          <div class="flex items-center space-x-4 w-full md:w-auto">
             <div class="relative flex-1 md:w-64 group">
-               <lucide-icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></lucide-icon>
-               <input type="text" placeholder="Search orders..." class="w-full bg-slate-100/50 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-100 transition-all">
+               <lucide-icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></lucide-icon>
+               <input type="text" placeholder="Search orders..." class="w-full bg-slate-100/50 border-none rounded-ui py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none">
             </div>
-            <button class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <button class="p-2 text-text-muted hover:text-text transition-colors">
                <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
             </button>
-            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-[11px] font-bold text-white uppercase">
+            <div class="w-8 h-8 rounded-ui bg-primary flex items-center justify-center text-[11px] font-bold text-white uppercase">
                ac
             </div>
          </div>
@@ -51,29 +51,29 @@ import { MatButtonModule } from '@angular/material/button';
             </span>
          </div>
          <div class="flex items-center space-x-3 w-full md:w-auto">
-            <button [matMenuTriggerFor]="statusMenu" class="flex-1 md:flex-none flex items-center justify-between space-x-4 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
+            <button [matMenuTriggerFor]="statusMenu" class="flex-1 md:flex-none flex items-center justify-between space-x-4 px-4 py-2 bg-white border border-border rounded-ui text-sm font-bold text-text hover:bg-slate-50 transition-all">
                <span>Change Status</span>
                <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
             </button>
             <mat-menu #statusMenu="matMenu" class="rounded-xl shadow-xl border border-slate-100 p-2">
                <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(s)" 
-                       class="hover:bg-slate-50 rounded-lg group px-2 py-1">
+                       class="hover:bg-slate-50 rounded-ui group px-2 py-1">
                   <span [class]="getStatusClass(s)" 
                         class="block w-full text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full text-center">
                      {{ s }}
                   </span>
                </button>
             </mat-menu>
-            <button class="flex-1 md:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg text-sm font-bold hover:bg-slate-200 transition-all">
-               <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-               <span>Edit Order</span>
-            </button>
+               <button *ngIf="order" [routerLink]="['/orders', order?.['_rowNumber'], 'edit']" class="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-ui transition-all font-bold text-sm flex items-center space-x-2 border border-transparent shadow-sm">
+                  <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                  <span>Edit Order</span>
+               </button>
          </div>
       </div>
 
       <!-- WhatsApp Main Action -->
       <button [matMenuTriggerFor]="whatsappMenu" 
-              class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.99]">
+              class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-ui flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.99]">
          <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
          <span class="text-base font-black uppercase tracking-widest">Send WhatsApp Message</span>
       </button>
@@ -102,14 +102,14 @@ import { MatButtonModule } from '@angular/material/button';
          <div class="lg:col-span-8 space-y-6">
             
             <!-- Customer Information -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-8 shadow-sm">
+            <div class="card-stitch p-8 space-y-8">
                <div class="flex items-center space-x-3">
-                  <lucide-icon name="user" class="text-blue-600 w-5 h-5"></lucide-icon>
+                  <lucide-icon name="user" class="text-primary w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Customer Information</h2>
                </div>
 
                <div class="flex items-center space-x-4">
-                   <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[11px] font-bold text-blue-700 shadow-sm mt-0.5">
+                   <div class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shadow-sm mt-0.5">
                       {{ order.fullName.charAt(0) }}{{ order.fullName.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
                    </div>
                   <div>
@@ -135,10 +135,10 @@ import { MatButtonModule } from '@angular/material/button';
             </div>
 
             <!-- Order Items -->
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="card-stitch overflow-hidden">
                <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
                   <div class="flex items-center space-x-3">
-                     <lucide-icon name="shopping-bag" class="text-blue-600 w-5 h-5"></lucide-icon>
+                     <lucide-icon name="shopping-bag" class="text-primary w-5 h-5"></lucide-icon>
                      <h2 class="text-base font-black text-slate-900 tracking-tight">Order Items</h2>
                   </div>
                   <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ order.productQuantity }} Items</span>
@@ -177,7 +177,7 @@ import { MatButtonModule } from '@angular/material/button';
 
                         <div class="pt-4 border-t border-slate-200 flex justify-between items-center mt-4">
                            <span class="text-lg font-black text-slate-900 uppercase tracking-tighter">Total</span>
-                           <span class="text-2xl font-black text-blue-600 tracking-tighter italic">RD$ {{ totalAmount | number:'1.2-2' }}</span>
+                           <span class="text-2xl font-black text-primary tracking-tighter italic">RD$ {{ totalAmount | number:'1.2-2' }}</span>
                         </div>
                      </div>
                   </div>
@@ -189,9 +189,9 @@ import { MatButtonModule } from '@angular/material/button';
          <div class="lg:col-span-4 space-y-6">
             
             <!-- Delivery Info -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
+            <div class="card-stitch p-8 space-y-6">
                <div class="flex items-center space-x-3 mb-2">
-                  <lucide-icon name="truck" class="text-blue-600 w-5 h-5"></lucide-icon>
+                  <lucide-icon name="truck" class="text-primary w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Delivery Info</h2>
                </div>
 
@@ -199,7 +199,7 @@ import { MatButtonModule } from '@angular/material/button';
                   <div>
                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Carrier</p>
                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-md bg-blue-600 flex items-center justify-center p-1">
+                        <div class="w-8 h-8 rounded-md bg-primary flex items-center justify-center p-1">
                            <span class="text-[8px] font-black text-white italic">FedEx</span>
                         </div>
                         <span class="text-sm font-bold text-slate-900">Priority Overnight</span>
@@ -218,13 +218,13 @@ import { MatButtonModule } from '@angular/material/button';
 
                   <div>
                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estimated Delivery</p>
-                     <span class="text-sm font-bold text-slate-900 italic underline decoration-blue-200 decoration-4 underline-offset-4">October 26, 2023</span>
+                     <span class="text-sm font-bold text-slate-900 italic underline decoration-primary/30 decoration-4 underline-offset-4">October 26, 2023</span>
                   </div>
 
                   <div class="w-full h-48 rounded-2xl border border-slate-100 overflow-hidden relative group">
                      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&auto=format&fit=crop&q=60" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                     <div class="absolute inset-0 bg-blue-900/10 flex items-center justify-center">
-                        <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-2xl border-4 border-white animate-bounce">
+                     <div class="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-2xl border-4 border-white animate-bounce">
                            <lucide-icon name="map-pin" class="w-5 h-5"></lucide-icon>
                         </div>
                      </div>
@@ -233,18 +233,18 @@ import { MatButtonModule } from '@angular/material/button';
             </div>
 
             <!-- Order Notes -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
+            <div class="card-stitch p-8 space-y-6">
                <div class="flex items-center space-x-3 mb-2">
-                  <lucide-icon name="file-text" class="text-blue-600 w-5 h-5"></lucide-icon>
+                  <lucide-icon name="file-text" class="text-primary w-5 h-5"></lucide-icon>
                   <h2 class="text-base font-black text-slate-900 tracking-tight">Order Notes</h2>
                </div>
 
                <div class="space-y-4">
-                  <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 relative overflow-hidden">
+                  <div class="bg-primary/5 p-4 rounded-xl border border-primary/20 relative overflow-hidden">
                      <div class="absolute top-0 right-0 p-2 opacity-10">
                         <lucide-icon name="message-square" class="w-6 h-6"></lucide-icon>
                      </div>
-                     <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Customer Note:</p>
+                     <p class="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Customer Note:</p>
                      <p class="text-xs text-slate-600 font-medium leading-relaxed italic">
                         "{{ order.notes || 'No customer notes provided for this order.' }}"
                      </p>
@@ -347,15 +347,15 @@ export class OrderDetailComponent implements OnInit {
    getStatusClass(status: string): string {
       const s = this.normalize(status || '');
 
-      if (s === 'cancelado') return 'bg-[#E9D5FF] text-[#7C3AED]';
-      if (s === 'desaparecido') return 'bg-[#581C87] text-white';
-      if (s === 'no confirmado') return 'bg-[#F1F5F9] text-[#475569]';
-      if (s === 'pendiente de ubicacion') return 'bg-[#FEE2E2] text-[#DC2626]';
-      if (s === 'confirmado completo') return 'bg-[#FEF3C7] text-[#D97706]';
-      if (s === 'empacado') return 'bg-[#DCFCE7] text-[#16A34A]';
-      if (s === 'envio en proceso') return 'bg-[#DBEAFE] text-[#2563EB]';
-      if (s === 'entregado') return 'bg-[#991B1B] text-white';
-      if (s === 'dinero recibido') return 'bg-[#1E40AF] text-white';
+      if (s === 'cancelado') return 'bg-danger text-danger-text';
+      if (s === 'desaparecido') return 'bg-danger text-danger-text';
+      if (s === 'no confirmado') return 'bg-warning text-warning-text';
+      if (s === 'pendiente de ubicacion') return 'bg-warning text-warning-text';
+      if (s === 'confirmado completo') return 'bg-info text-info-text';
+      if (s === 'empacado') return 'bg-info text-info-text';
+      if (s === 'envio en proceso') return 'bg-info text-info-text';
+      if (s === 'entregado') return 'bg-success text-success-text';
+      if (s === 'dinero recibido') return 'bg-success text-success-text';
 
       return 'bg-slate-100 text-slate-500';
    }

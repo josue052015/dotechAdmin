@@ -25,12 +25,12 @@ export class StatusBadgeComponent {
     get colorClass(): string {
         const s = this._status().toLowerCase();
 
-        if (s.includes('cancelado') || s.includes('desaparecido')) return 'bg-red-100 text-red-800';
-        if (s.includes('dinero recibido') || s.includes('entregado')) return 'bg-green-100 text-green-800';
-        if (s.includes('confirmado completo') || s.includes('empacado')) return 'bg-blue-100 text-blue-800';
-        if (s.includes('envio en proceso')) return 'bg-indigo-100 text-indigo-800';
+        if (s.includes('cancelado') || s.includes('desaparecido')) return 'bg-danger text-danger-text';
+        if (s.includes('dinero recibido') || s.includes('entregado') || s.includes('completado')) return 'bg-success text-success-text';
+        if (s.includes('confirmado completo') || s.includes('empacado') || s.includes('en proceso')) return 'bg-info text-info-text';
+        if (s.includes('envio')) return 'bg-primary/10 text-primary';
 
         // pending / unconfirmed
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning text-warning-text';
     }
 }
