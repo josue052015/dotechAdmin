@@ -6,11 +6,7 @@ export const authGuard: CanActivateFn = (route, state) => {
     const auth = inject(GoogleAuthService);
     const router = inject(Router);
 
-    // If we haven't checked sessionStorage yet, the component init of GoogleAuthService handles it.
-    // But wait! We need a small check.
-    const storedToken = sessionStorage.getItem('google_access_token');
-
-    if (auth.isAuthenticated() || storedToken) {
+    if (auth.isAuthenticated()) {
         return true;
     }
 

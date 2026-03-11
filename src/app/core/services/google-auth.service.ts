@@ -13,7 +13,19 @@ export class GoogleAuthService {
     public isScriptLoaded = signal<boolean>(false);
 
     constructor() {
+        this.loadTokenFromStorage();
         this.loadGoogleScript();
+    }
+
+    private loadTokenFromStorage() {
+        const storedToken = localStorage.getItem('google_access_token');
+        const expiresAtStr = localStorage.getItem('google_token_expires_at');
+        const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : 0;
+
+        if (storedToken && expiresAt > Date.now()) {
+            this.accessToken.set(storedToken);
+            this.isAuthenticated.set(true);
+        }
     }
 
     private loadGoogleScript() {
@@ -24,11 +36,13 @@ export class GoogleAuthService {
         script.onload = () => {
             this.initTokenClient();
             this.isScriptLoaded.set(true);
-            // Try to recover token from session storage
-            const storedToken = sessionStorage.getItem('google_access_token');
-            if (storedToken) {
-                this.accessToken.set(storedToken);
-                this.isAuthenticated.set(true);
+            
+            const storedToken = localStorage.getItem('google_access_token');
+            const expiresAtStr = localStorage.getItem('google_token_expires_at');
+            const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : 0;
+
+            if (storedToken && expiresAt <= Date.now()) {
+                this.autoRenewToken();
             }
         };
         document.head.appendChild(script);
@@ -42,7 +56,12 @@ export class GoogleAuthService {
                 if (tokenResponse && tokenResponse.access_token) {
                     this.accessToken.set(tokenResponse.access_token);
                     this.isAuthenticated.set(true);
-                    sessionStorage.setItem('google_access_token', tokenResponse.access_token);
+                    
+                    const expiresIn = tokenResponse.expires_in || 3599;
+                    const expiresAt = Date.now() + (expiresIn * 1000);
+                    
+                    localStorage.setItem('google_access_token', tokenResponse.access_token);
+                    localStorage.setItem('google_token_expires_at', expiresAt.toString());
                 }
             },
         });
@@ -50,7 +69,14 @@ export class GoogleAuthService {
 
     public login() {
         if (this.tokenClient) {
-            this.tokenClient.requestAccessToken();
+            this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        }
+    }
+
+    public autoRenewToken() {
+        if (this.tokenClient) {
+            // Request token silently if possible
+            this.tokenClient.requestAccessToken({ prompt: '' });
         }
     }
 
@@ -60,7 +86,8 @@ export class GoogleAuthService {
             google.accounts.oauth2.revoke(token, () => {
                 this.accessToken.set(null);
                 this.isAuthenticated.set(false);
-                sessionStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_token_expires_at');
             });
         }
     }

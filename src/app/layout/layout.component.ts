@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { GoogleAuthService } from '../core/services/google-auth.service';
 
@@ -174,8 +174,10 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
 })
 export class LayoutComponent {
   private auth = inject(GoogleAuthService);
+  private router = inject(Router);
 
   logout() {
     this.auth.logout();
+    this.router.navigate(['/login']);
   }
 }

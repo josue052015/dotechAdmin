@@ -1,20 +1,34 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { Product } from '../models/product.model';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ProductService {
     private sheetsService = inject(GoogleSheetsService);
+    private auth = inject(GoogleAuthService);
     private readonly SHEET_NAME = 'Products';
 
     public products = signal<Product[]>([]);
     public isLoading = signal<boolean>(false);
 
+    constructor() {
+        effect(() => {
+            if (this.auth.isAuthenticated()) {
+                untracked(() => this.loadProducts());
+            } else {
+                untracked(() => this.products.set([]));
+            }
+        });
+    }
+
     public loadProducts(): void {
+        if (!this.auth.isAuthenticated()) return;
+        
         this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).subscribe({
             next: (response) => {

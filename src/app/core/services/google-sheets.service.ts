@@ -16,18 +16,20 @@ export class GoogleSheetsService {
 
     private getHeaders(): HttpHeaders {
         const token = this.auth.accessToken();
-        if (!token) {
-            throw new Error('Not authenticated');
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', `Bearer ${token}`);
         }
-        return new HttpHeaders({
-            'Authorization': `Bearer ${token}`
-        });
+        return headers;
     }
 
     // Generic Read
     public readRange(range: string): Observable<any> {
         return this.http.get(`${this.API_URL}/values/${range}`, { headers: this.getHeaders() }).pipe(
             catchError(error => {
+                if (error.status === 401) {
+                    this.auth.autoRenewToken();
+                }
                 console.error('Error reading from Sheets API', error);
                 return throwError(() => error);
             })
@@ -41,6 +43,9 @@ export class GoogleSheetsService {
         };
         return this.http.post(`${this.API_URL}/values/${range}:append?valueInputOption=USER_ENTERED`, body, { headers: this.getHeaders() }).pipe(
             catchError(error => {
+                if (error.status === 401) {
+                    this.auth.autoRenewToken();
+                }
                 console.error('Error appending to Sheets API', error);
                 return throwError(() => error);
             })
@@ -54,6 +59,9 @@ export class GoogleSheetsService {
         };
         return this.http.put(`${this.API_URL}/values/${range}?valueInputOption=USER_ENTERED`, body, { headers: this.getHeaders() }).pipe(
             catchError(error => {
+                if (error.status === 401) {
+                    this.auth.autoRenewToken();
+                }
                 console.error('Error updating Sheets API', error);
                 return throwError(() => error);
             })
@@ -64,6 +72,9 @@ export class GoogleSheetsService {
     public clearRange(range: string): Observable<any> {
         return this.http.post(`${this.API_URL}/values/${range}:clear`, {}, { headers: this.getHeaders() }).pipe(
             catchError(error => {
+                if (error.status === 401) {
+                    this.auth.autoRenewToken();
+                }
                 console.error('Error clearing Sheets API', error);
                 return throwError(() => error);
             })

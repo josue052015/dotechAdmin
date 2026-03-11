@@ -1,14 +1,16 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { Order } from '../models/order.model';
 import { catchError, map, tap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
+import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class OrderService {
     private sheetsService = inject(GoogleSheetsService);
+    private auth = inject(GoogleAuthService);
     private readonly SHEET_NAME = 'ORDENES';
 
     // State
@@ -22,7 +24,19 @@ export class OrderService {
         'Phone', 'Address 1', 'Province', 'City', 'Status', 'Notes', 'Shipping Cost', 'Packaging', 'ID'
     ];
 
+    constructor() {
+        effect(() => {
+            if (this.auth.isAuthenticated()) {
+                untracked(() => this.loadOrders());
+            } else {
+                untracked(() => this.orders.set([]));
+            }
+        });
+    }
+
     public loadOrders(): void {
+        if (!this.auth.isAuthenticated()) return;
+        
         this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:O`).subscribe({
             next: (response) => {

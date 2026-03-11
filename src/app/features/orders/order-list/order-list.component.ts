@@ -44,7 +44,7 @@ import { Order } from '../../../core/models/order.model';
       </div>
 
       <!-- Filters Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" [formGroup]="filterForm">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4" [formGroup]="filterForm">
          <div class="relative">
             <select formControlName="status" class="select-stitch h-12 pl-4 pr-10 font-bold">
                <option value="">All Statuses</option>
@@ -65,6 +65,14 @@ import { Order } from '../../../core/models/order.model';
             <select formControlName="product" class="select-stitch h-12 pl-4 pr-10 font-bold">
                <option value="">All Products</option>
                <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
+            </select>
+            <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 pointer-events-none"></lucide-icon>
+         </div>
+
+         <div class="relative">
+            <select formControlName="carrier" class="select-stitch h-12 pl-4 pr-10 font-bold">
+               <option value="">All Carriers</option>
+               <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
             </select>
             <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 pointer-events-none"></lucide-icon>
          </div>
@@ -177,8 +185,8 @@ import { Order } from '../../../core/models/order.model';
         <!-- Styled Paginator -->
         <div class="px-8 py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-              Showing <span class="text-slate-900">{{ (paginator ? paginator.pageIndex * paginator.pageSize + 1 : 1) }}</span> to 
-              <span class="text-slate-900">{{ (paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.filteredData.length) : 10) }}</span> 
+              Showing <span class="text-slate-900">{{ dataSource.filteredData.length === 0 ? 0 : (paginator ? paginator.pageIndex * paginator.pageSize + 1 : 1) }}</span> to 
+              <span class="text-slate-900">{{ paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.filteredData.length) : Math.min(10, dataSource.filteredData.length) }}</span> 
               of <span class="text-slate-900">{{ dataSource.filteredData.length }}</span> results
            </div>
            <mat-paginator [pageSizeOptions]="[10, 25, 50]" class="!bg-transparent !border-none !text-xs !font-bold" hidePageSize></mat-paginator>
@@ -219,11 +227,14 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
   ];
 
+  carriers = ['envio local', 'aurel pack', 'gintracom'];
+
   filterForm: FormGroup = this.fb.group({
     search: [''],
     status: [''],
     product: [''],
-    province: ['']
+    province: [''],
+    carrier: ['']
   });
 
   constructor() {
@@ -263,7 +274,8 @@ export class OrderListComponent implements OnInit, AfterViewInit {
       search: '',
       status: '',
       product: '',
-      province: ''
+      province: '',
+      carrier: ''
     });
   }
 
@@ -284,8 +296,9 @@ export class OrderListComponent implements OnInit, AfterViewInit {
       const matchStatus = searchTerms.status ? data.status?.toLowerCase() === searchTerms.status.toLowerCase() : true;
       const matchProduct = searchTerms.product ? data.productName?.toLowerCase() === searchTerms.product.toLowerCase() : true;
       const matchProvince = searchTerms.province ? data.province?.toLowerCase() === searchTerms.province.toLowerCase() : true;
+      const matchCarrier = searchTerms.carrier ? (data.carrier?.toLowerCase() || 'envio local') === searchTerms.carrier.toLowerCase() : true;
 
-      return Boolean(matchSearch && matchStatus && matchProduct && matchProvince);
+      return Boolean(matchSearch && matchStatus && matchProduct && matchProvince && matchCarrier);
     };
   }
 
