@@ -51,7 +51,7 @@ import { Product } from '../../../core/models/product.model';
             <div class="flex-1">
                <div class="flex items-center justify-between">
                   <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</span>
-                  <span class="text-[10px] font-bold text-success-text bg-success px-2 py-0.5 rounded-full">+12.5% vs last month</span>
+       
                </div>
                <p class="text-2xl font-black text-slate-900 mt-1">{{ dataSource.data.length | number }}</p>
             </div>
