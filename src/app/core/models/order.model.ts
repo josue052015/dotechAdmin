@@ -11,6 +11,7 @@ export interface Order {
     productPrice: number;
     shippingCost: number;
     packaging: number;
+    carrier?: string;
     status: string;
     notes: string;
     [key: string]: any;

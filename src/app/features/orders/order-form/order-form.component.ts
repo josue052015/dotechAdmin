@@ -146,6 +146,14 @@ import { Order } from '../../../core/models/order.model';
                 </select>
                 <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
               </div>
+              
+              <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 block pt-2">Shipping Carrier</label>
+              <div class="relative">
+                <select formControlName="carrier" class="select-stitch cursor-pointer">
+                  <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
+                </select>
+                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></lucide-icon>
+              </div>
            </div>
 
            <div class="card-stitch p-8 bg-white space-y-4">
@@ -215,6 +223,8 @@ export class OrderFormComponent implements OnInit {
     'entregado', 'dinero recibido'
   ];
 
+  carriers = ['envio local', 'aurel pack', 'gintracom'];
+
   orderForm: FormGroup = this.fb.group({
     fullName: ['', Validators.required],
     phone: ['', Validators.required],
@@ -226,6 +236,7 @@ export class OrderFormComponent implements OnInit {
     productPrice: [0, Validators.required],
     shippingCost: [0],
     packaging: [0],
+    carrier: ['envio local'],
     status: ['no confirmado', Validators.required],
     notes: ['']
   });
@@ -292,6 +303,7 @@ export class OrderFormComponent implements OnInit {
               productPrice: order.productPrice,
               shippingCost: order.shippingCost,
               packaging: order.packaging,
+              carrier: order.carrier || 'envio local',
               status: order.status,
               notes: order.notes
           });

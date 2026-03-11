@@ -89,6 +89,7 @@ export class OrderService {
             province: row[8] || '',
             city: row[9] || '',
             packaging: parseFloat(row[10]) || 0,
+            carrier: row[11] ? row[11].toLowerCase().trim() : 'envio local',
             shippingCost: parseFloat(row[12]) || 0,
             status: row[13] || '',
             notes: row[14] || ''
@@ -112,8 +113,9 @@ export class OrderService {
                 city: row[8] || '',
                 status: row[13] || row[9] || '',
                 notes: row[10] || '',
-                shippingCost: parseFloat(row[11]) || 0,
-                packaging: parseFloat(row[12]) || 0,
+                carrier: row[11] ? row[11].toLowerCase().trim() : 'envio local',
+                shippingCost: parseFloat(row[12]) || 0,
+                packaging: parseFloat(row[13]) || 0,
                 id: row[14] || `${rowNumber}`
             };
         }
@@ -152,7 +154,7 @@ export class OrderService {
             order.province || '',           // I (8) - Province
             order.city || '',               // J (9) - City
             order.packaging || '',          // K (10) - empacado
-            '',                             // L (11) - Envio registrado en paqueteria (leave empty to not overwrite if exists, or just empty)
+            order.carrier || 'envio local', // L (11) - Envio registrado en paqueteria
             order.shippingCost || 0,        // M (12) - Costo de envio
             order.status || '',             // N (13) - Status
             order.notes || ''               // O (14) - Notes

@@ -199,10 +199,10 @@ import { MatButtonModule } from '@angular/material/button';
                   <div>
                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Carrier</p>
                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-md bg-primary flex items-center justify-center p-1">
-                           <span class="text-[8px] font-black text-white italic">FedEx</span>
+                        <div [class]="getCarrierClass(order?.carrier || '')" class="w-8 h-8 rounded-md flex items-center justify-center p-1 transition-colors shadow-sm">
+                           <lucide-icon name="truck" class="w-4 h-4 text-white"></lucide-icon>
                         </div>
-                        <span class="text-sm font-bold text-slate-900">Priority Overnight</span>
+                        <span class="text-sm font-bold text-slate-900 capitalize">{{ order.carrier || 'Envio Local' }}</span>
                      </div>
                   </div>
 
@@ -216,19 +216,7 @@ import { MatButtonModule } from '@angular/material/button';
                      </div>
                   </div>
 
-                  <div>
-                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estimated Delivery</p>
-                     <span class="text-sm font-bold text-slate-900 italic underline decoration-primary/30 decoration-4 underline-offset-4">October 26, 2023</span>
-                  </div>
-
-                  <div class="w-full h-48 rounded-2xl border border-slate-100 overflow-hidden relative group">
-                     <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&auto=format&fit=crop&q=60" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                     <div class="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                        <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-2xl border-4 border-white animate-bounce">
-                           <lucide-icon name="map-pin" class="w-5 h-5"></lucide-icon>
-                        </div>
-                     </div>
-                  </div>
+                
                </div>
             </div>
 
@@ -358,6 +346,13 @@ export class OrderDetailComponent implements OnInit {
       if (s === 'dinero recibido') return 'bg-success text-success-text';
 
       return 'bg-slate-100 text-slate-500';
+   }
+
+   getCarrierClass(carrier: string): string {
+      const c = this.normalize(carrier || 'envio local');
+      if (c === 'aurel pack') return 'bg-orange-500';
+      if (c === 'gintracom') return 'bg-red-500';
+      return 'bg-blue-600'; // default/local
    }
 
    goBack() {
