@@ -1,8 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { GoogleAuthService } from '../core/services/google-auth.service';
+import { OrderService } from '../core/services/order.service';
+import { ProductService } from '../core/services/product.service';
 
 @Component({
   selector: 'app-layout',
@@ -117,10 +119,56 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
           </div>
           
           <div class="flex items-center space-x-4">
-            <!-- Search Bar (Fake) -->
-            <div class="hidden lg:flex items-center bg-slate-50 rounded-xl px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white transition-all w-64 group">
-               <lucide-icon name="search" class="text-slate-400 w-4 h-4 mr-2 group-focus-within:text-blue-500"></lucide-icon>
-               <input type="text" placeholder="Search data..." class="bg-transparent border-none text-sm focus:outline-none w-full text-slate-700 placeholder:text-slate-400">
+            <!-- Search Bar (Functional) -->
+            <div class="relative hidden lg:flex items-center z-50 w-80">
+               <!-- Invisible backdrop to close on outside click -->
+               <div *ngIf="searchQuery().length >= 2" class="fixed inset-0 z-40" (click)="clearSearch(searchInput)"></div>
+               
+               <div class="flex-1 flex items-center bg-slate-50 rounded-xl px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white transition-all group relative z-50">
+                  <lucide-icon name="search" class="text-slate-400 w-4 h-4 mr-2 group-focus-within:text-blue-500"></lucide-icon>
+                  <input #searchInput type="text" (input)="onSearch($event)" (keydown.escape)="clearSearch(searchInput)" placeholder="Search orders, products..." class="bg-transparent border-none text-sm focus:outline-none w-full text-slate-700 placeholder:text-slate-400">
+               </div>
+               
+               <!-- Search Results Dropdown -->
+               <div *ngIf="searchQuery().length >= 2" class="absolute top-[120%] left-0 w-full bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden slide-in-from-top-2 animate-in fade-in duration-200 z-50">
+                  <div class="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
+                     
+                     <div *ngIf="searchResults().orders.length === 0 && searchResults().products.length === 0" class="p-4 text-center text-slate-500 text-sm">
+                        No results found for "<span class="font-bold text-slate-900">{{searchQuery()}}</span>"
+                     </div>
+
+                     <!-- Orders -->
+                     <div *ngIf="searchResults().orders.length > 0">
+                        <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Orders</div>
+                        <a *ngFor="let order of searchResults().orders" [routerLink]="['/orders', order['_rowNumber']]" (click)="clearSearch(searchInput)" class="flex items-center px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group">
+                           <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mr-3 font-bold text-xs">{{ order.id || '#' }}</div>
+                           <div class="flex-1 min-w-0">
+                              <p class="text-sm font-semibold text-slate-900 truncate">{{ order.fullName }}</p>
+                              <p class="text-xs text-slate-500 truncate">{{ order.productName }}</p>
+                           </div>
+                           <lucide-icon name="chevron-right" class="w-4 h-4 text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"></lucide-icon>
+                        </a>
+                     </div>
+
+                     <div *ngIf="searchResults().orders.length > 0 && searchResults().products.length > 0" class="h-px bg-slate-100 my-2 mx-3"></div>
+
+                     <!-- Products -->
+                     <div *ngIf="searchResults().products.length > 0">
+                        <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Products</div>
+                        <a *ngFor="let product of searchResults().products" routerLink="/products" (click)="clearSearch(searchInput)" class="flex items-center px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group">
+                           <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mr-3">
+                              <lucide-icon name="package" class="w-4 h-4"></lucide-icon>
+                           </div>
+                           <div class="flex-1 min-w-0">
+                              <p class="text-sm font-semibold text-slate-900 truncate">{{ product.name }}</p>
+                              <p class="text-xs text-slate-500 truncate">{{ product.sku || 'No SKU' }} - RD$ {{ product.price | number:'1.2-2' }}</p>
+                           </div>
+                           <lucide-icon name="chevron-right" class="w-4 h-4 text-slate-300 group-hover:text-emerald-500 opacity-0 group-hover:opacity-100 transition-all"></lucide-icon>
+                        </a>
+                     </div>
+
+                  </div>
+               </div>
             </div>
 
             <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
@@ -175,6 +223,37 @@ import { GoogleAuthService } from '../core/services/google-auth.service';
 export class LayoutComponent {
   private auth = inject(GoogleAuthService);
   private router = inject(Router);
+  private orderService = inject(OrderService);
+  private productService = inject(ProductService);
+
+  searchQuery = signal('');
+
+  searchResults = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query || query.length < 2) return { orders: [], products: [] };
+
+    const matchingOrders = this.orderService.orders().filter(o => 
+      o.fullName?.toLowerCase().includes(query) || 
+      o.phone?.includes(query) || 
+      o.id?.toLowerCase().includes(query)
+    ).slice(0, 5);
+
+    const matchingProducts = this.productService.products().filter(p => 
+      p.name?.toLowerCase().includes(query) || 
+      p.sku?.toLowerCase().includes(query)
+    ).slice(0, 4);
+
+    return { orders: matchingOrders, products: matchingProducts };
+  });
+
+  onSearch(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  clearSearch(inputElement: HTMLInputElement) {
+    this.searchQuery.set('');
+    inputElement.value = '';
+  }
 
   logout() {
     this.auth.logout();

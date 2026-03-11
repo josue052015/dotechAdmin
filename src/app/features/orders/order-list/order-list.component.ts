@@ -309,16 +309,15 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   getStatusClass(status: string): string {
     const s = this.normalize(status || '');
 
-    // Use Stitch status semantic token colors (they map directly here to tailwind utility classes)
-    if (s === 'cancelado') return 'bg-danger text-danger-text';
-    if (s === 'desaparecido') return 'bg-danger text-danger-text';
-    if (s === 'no confirmado') return 'bg-warning text-warning-text';
-    if (s === 'pendiente de ubicacion') return 'bg-warning text-warning-text';
-    if (s === 'confirmado completo') return 'bg-info text-info-text';
-    if (s === 'empacado') return 'bg-info text-info-text';
-    if (s === 'envio en proceso') return 'bg-info text-info-text';
-    if (s === 'entregado') return 'bg-success text-success-text';
-    if (s === 'dinero recibido') return 'bg-success text-success-text';
+    if (s === 'cancelado') return 'bg-[#ebd9fc] text-[#5e2b97]';
+    if (s === 'desaparecido') return 'bg-[#542b7c] text-white';
+    if (s === 'no confirmado') return 'bg-[#f0f0f0] text-[#4a4a4a]';
+    if (s === 'pendiente de ubicacion') return 'bg-[#fce0e3] text-[#cc2936]';
+    if (s === 'confirmado completo') return 'bg-[#fff2b2] text-[#b08d1a]';
+    if (s === 'empacado') return 'bg-[#d2ecb9] text-[#285b28]';
+    if (s === 'envio en proceso') return 'bg-[#c3e4fc] text-[#1e5d94]';
+    if (s === 'entregado') return 'bg-[#c30010] text-white';
+    if (s === 'dinero recibido') return 'bg-[#0b4f9a] text-white';
 
     return 'bg-slate-100 text-slate-500'; // Default
   }
