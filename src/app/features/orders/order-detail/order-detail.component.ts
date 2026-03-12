@@ -19,7 +19,7 @@ import { MatButtonModule } from '@angular/material/button';
       FormsModule, MatMenuModule, MatButtonModule
    ],
    template: `
-    <div class="max-w-[1200px] mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500 pb-20">
+    <div class="max-w-[1200px] mx-auto p-4 md:px-8 md:py-4 space-y-6 animate-in fade-in duration-500 pb-20">
       
       <!-- Top Bar: Breadcrumbs & Search -->
       <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">

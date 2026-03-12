@@ -2,6 +2,7 @@ import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterModule } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, registerables } from 'chart.js';
@@ -13,7 +14,7 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, MatProgressSpinnerModule, BaseChartDirective],
+  imports: [CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule, BaseChartDirective],
   template: `
     <div class="space-y-8 animate-in fade-in duration-700">
       
@@ -150,6 +151,28 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
          </div>
       </div>
 
+      <!-- Product Sales Bar Chart -->
+      <div class="card-stitch p-8">
+         <div class="flex justify-between items-center mb-8">
+             <div>
+                 <h2 class="text-lg font-bold text-slate-900">Sales by Product</h2>
+                 <p class="text-xs text-slate-400 font-medium">Top selling items across all channels</p>
+             </div>
+         </div>
+         <div class="h-[300px] w-full relative">
+            <canvas *ngIf="barChartData.labels && barChartData.labels.length > 0; else noBarData" baseChart
+                [data]="barChartData"
+                [options]="barChartOptions"
+                [type]="'bar'">
+            </canvas>
+            <ng-template #noBarData>
+               <div class="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-400">
+                  Not enough valid order data to display products.
+               </div>
+            </ng-template>
+         </div>
+      </div>
+
       <!-- Recent Orders Table -->
       <div class="card-stitch overflow-hidden">
          <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
@@ -157,7 +180,7 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                <h2 class="text-lg font-bold text-slate-900 uppercase tracking-tight">Recent Orders</h2>
                <p class="text-xs text-slate-400 font-medium">Showing the most recent activity across all stores</p>
             </div>
-            <button class="text-blue-600 text-xs font-bold hover:underline">View All Orders</button>
+            <button routerLink="/orders" class="text-blue-600 text-xs font-bold hover:underline">View All Orders</button>
          </div>
          <div class="overflow-x-auto">
             <table class="table-stitch">
@@ -172,16 +195,16 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                   </tr>
                </thead>
                <tbody>
-                  <tr *ngFor="let order of recentOrders" class="group cursor-pointer">
+                  <tr *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="group cursor-pointer hover:bg-slate-50 transition-colors">
                      <td>
-                        <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{{ order.id }}</span>
+                        <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{{ order.id || '#' + order['_rowNumber'] }}</span>
                      </td>
                      <td>
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
-                              {{ order.customerName.charAt(0) }}{{ order.customerName.split(' ')[1] ? order.customerName.split(' ')[1].charAt(0) : '' }}
+                              {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
                            </div>
-                           <span class="font-semibold">{{ order.customerName }}</span>
+                           <span class="font-semibold">{{ order.fullName }}</span>
                         </div>
                      </td>
                      <td>
@@ -191,12 +214,12 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                         <span class="font-bold">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
                      </td>
                      <td>
-                        <span [class]="getStatusClass(order.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        <span [class]="getStatusClass(order.status)" class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap">
                            {{ order.status }}
                         </span>
                      </td>
                      <td>
-                        <span class="text-text-muted font-medium whitespace-nowrap">{{ order.date }}</span>
+                        <span class="text-text-muted font-medium whitespace-nowrap">{{ order.date | date:'mediumDate' }}</span>
                      </td>
                   </tr>
                </tbody>
@@ -309,6 +332,45 @@ export class DashboardComponent implements OnInit {
     }
   };
 
+  // Bar Chart (Product Sales)
+  public barChartData: ChartConfiguration<'bar'>['data'] = {
+    labels: [],
+    datasets: [{
+      data: [],
+      label: 'Units Sold',
+      backgroundColor: '#3B82F6',
+      borderRadius: 6,
+      barThickness: 32
+    }]
+  };
+
+  public barChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1E293B',
+        padding: 12,
+        cornerRadius: 8,
+        titleFont: { size: 13, weight: 'bold' },
+        bodyFont: { size: 12 }
+      }
+    },
+    scales: {
+      y: {
+        grid: { color: '#f1f5f9' },
+        border: { display: false },
+        ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 }
+      },
+      x: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' }
+      }
+    }
+  };
+
   constructor() {
     effect(() => {
       const orders = this.orderService.orders();
@@ -332,6 +394,7 @@ export class DashboardComponent implements OnInit {
 
       this.updateDonutChart(orders);
       this.updateLineChart(orders);
+      this.updateBarChart(orders);
     });
   }
 
@@ -380,16 +443,50 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  private updateBarChart(orders: any[]) {
+    const productCounts: { [key: string]: number } = {};
+    
+    orders.forEach(o => {
+      const status = (o.status || '').toLowerCase();
+      const name = (o.productName || '').trim();
+      
+      // Exclude cancelled/lost orders and empty products from sales count
+      if (!status.includes('cancel') && !status.includes('desaparecido') && name.length > 0) {
+          const qty = typeof o.productQuantity === 'number' ? o.productQuantity : parseInt(o.productQuantity, 10);
+          const validQty = isNaN(qty) ? 1 : qty;
+          productCounts[name] = (productCounts[name] || 0) + validQty;
+      }
+    });
+
+    // Sort by volume, highest first, get top 6
+    const sortedProducts = Object.keys(productCounts)
+        .sort((a, b) => productCounts[b] - productCounts[a])
+        .slice(0, 6);
+
+    if (sortedProducts.length > 0) {
+        this.barChartData = {
+            labels: sortedProducts.map(p => p.length > 20 ? p.substring(0, 20) + '...' : p), // Truncate long names
+            datasets: [{
+                ...this.barChartData.datasets[0],
+                data: sortedProducts.map(p => productCounts[p])
+            }]
+        };
+    }
+  }
+
   getStatusClass(status: string): string {
-    const s = status?.toLowerCase() || '';
-    if (s.includes('entregado') || s.includes('recibido') || s.includes('completado'))
-      return 'bg-success text-success-text';
-    if (s.includes('cancelado') || s.includes('desaparecido'))
-      return 'bg-danger text-danger-text';
-    if (s.includes('pendiente') || s.includes('espera') || s.includes('no confirmado'))
-      return 'bg-warning text-warning-text';
-    if (s.includes('confirmado completo') || s.includes('empacado') || s.includes('en proceso'))
-      return 'bg-info text-info-text';
-    return 'bg-slate-100 text-slate-500';
+    const s = (status || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+    if (s === 'cancelado') return 'bg-[#ebd9fc] text-[#5e2b97]';
+    if (s === 'desaparecido') return 'bg-[#542b7c] text-white';
+    if (s === 'no confirmado') return 'bg-[#f0f0f0] text-[#4a4a4a]';
+    if (s === 'pendiente de ubicacion') return 'bg-[#fce0e3] text-[#cc2936]';
+    if (s === 'confirmado completo') return 'bg-[#fff2b2] text-[#b08d1a]';
+    if (s === 'empacado') return 'bg-[#d2ecb9] text-[#285b28]';
+    if (s === 'envio en proceso') return 'bg-[#c3e4fc] text-[#1e5d94]';
+    if (s === 'entregado') return 'bg-[#c30010] text-white';
+    if (s === 'dinero recibido') return 'bg-[#0b4f9a] text-white';
+
+    return 'bg-slate-100 text-slate-500'; // Default
   }
 }

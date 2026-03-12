@@ -5,6 +5,9 @@ import { LucideAngularModule } from 'lucide-angular';
 import { GoogleAuthService } from '../core/services/google-auth.service';
 import { OrderService } from '../core/services/order.service';
 import { ProductService } from '../core/services/product.service';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-layout',
@@ -171,28 +174,47 @@ import { ProductService } from '../core/services/product.service';
                </div>
             </div>
 
-            <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
-              <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-blue-600 mr-2 transition-colors"></lucide-icon>
-              <span class="text-[12px] font-semibold text-slate-600">Mar 9 - Mar 15</span>
-              <lucide-icon name="chevron-down" class="text-slate-300 w-4 h-4 ml-1"></lucide-icon>
-            </div>
+            <ng-container *ngIf="isDashboardRoute">
+               <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
+                 <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-blue-600 mr-2 transition-colors"></lucide-icon>
+                 <span class="text-[12px] font-semibold text-slate-600">{{ currentWeekRange }}</span>
+                 <lucide-icon name="chevron-down" class="text-slate-300 w-4 h-4 ml-1"></lucide-icon>
+               </div>
 
-            <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+               <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-            <button class="relative p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100 active:scale-95">
-              <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
-              <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 animate-bounce"></span>
-            </button>
-            
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 active:scale-95 transition-all text-[13px] font-bold flex items-center space-x-2">
-               <lucide-icon name="arrow-up-right" class="w-4 h-4"></lucide-icon>
-               <span>Export</span>
-            </button>
+               <button (click)="clearNotifications()" class="relative p-2.5 text-slate-500 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100 active:scale-95">
+                 <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
+                 <span *ngIf="hasNotifications()" class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 animate-bounce"></span>
+               </button>
+               
+               <!-- Export Dropdown -->
+               <div class="relative z-50">
+                 <div *ngIf="isExportMenuOpen()" class="fixed inset-0 z-40" (click)="isExportMenuOpen.set(false)"></div>
+                 
+                 <button (click)="isExportMenuOpen.set(!isExportMenuOpen())" class="relative z-50 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 active:scale-95 transition-all text-[13px] font-bold flex items-center space-x-2">
+                    <lucide-icon name="arrow-up-right" class="w-4 h-4"></lucide-icon>
+                    <span>Export</span>
+                    <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
+                 </button>
+                 
+                 <div *ngIf="isExportMenuOpen()" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden slide-in-from-top-2 animate-in fade-in duration-200 z-50">
+                    <button (click)="exportToExcel(); isExportMenuOpen.set(false)" class="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm font-semibold text-slate-700 transition-colors flex items-center space-x-2">
+                       <lucide-icon name="file-spreadsheet" class="w-4 h-4 text-emerald-600"></lucide-icon>
+                       <span>Export as Excel</span>
+                    </button>
+                    <button (click)="exportToPDF(); isExportMenuOpen.set(false)" class="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm font-semibold text-slate-700 transition-colors flex items-center space-x-2">
+                       <lucide-icon name="file-text" class="w-4 h-4 text-red-600"></lucide-icon>
+                       <span>Export as PDF</span>
+                    </button>
+                 </div>
+               </div>
+            </ng-container>
           </div>
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto p-8 lg:p-10 scroll-smooth pb-20 custom-scrollbar bg-background">
+        <div class="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth pb-20 custom-scrollbar bg-background">
            <router-outlet></router-outlet>
         </div>
         
@@ -227,6 +249,23 @@ export class LayoutComponent {
   private productService = inject(ProductService);
 
   searchQuery = signal('');
+  hasNotifications = signal(true);
+  isExportMenuOpen = signal(false);
+
+  get isDashboardRoute(): boolean {
+    return this.router.url === '/dashboard' || this.router.url === '/';
+  }
+
+  get currentWeekRange(): string {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(new Date().setDate(diff));
+    const sunday = new Date(new Date().setDate(diff + 6));
+    
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    return `${monday.toLocaleDateString('en-US', options)} - ${sunday.toLocaleDateString('en-US', options)}`;
+  }
 
   searchResults = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
@@ -253,6 +292,68 @@ export class LayoutComponent {
   clearSearch(inputElement: HTMLInputElement) {
     this.searchQuery.set('');
     inputElement.value = '';
+  }
+
+  clearNotifications() {
+    this.hasNotifications.set(false);
+  }
+
+  exportToExcel() {
+    const orders = this.orderService.orders();
+    if (!orders || orders.length === 0) return;
+    
+    const rows = orders.map(o => ({
+      'Order ID': o.id || '',
+      'Date': o.date || '',
+      'Customer Name': o.fullName || '',
+      'Phone': o.phone || '',
+      'Product Name': o.productName || '',
+      'Quantity': o.productQuantity || '',
+      'Price': o.productPrice || '',
+      'Total': (o.productQuantity || 0) * (o.productPrice || 0),
+      'Status': o.status || '',
+      'Carrier': o.carrier || ''
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    
+    XLSX.writeFile(workbook, `orders_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  exportToPDF() {
+    const orders = this.orderService.orders();
+    if (!orders || orders.length === 0) return;
+
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text('Orders Export', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    const headers = [['ID', 'Date', 'Customer', 'Product', 'Qty', 'Total', 'Status']];
+    const data = orders.map(o => [
+      o.id || '',
+      o.date || '',
+      o.fullName || '',
+      o.productName?.length > 20 ? o.productName.substring(0, 20) + '...' : (o.productName || ''),
+      (o.productQuantity || '').toString(),
+      `RD$ ${(o.productQuantity || 0) * (o.productPrice || 0)}`,
+      o.status || ''
+    ]);
+
+    autoTable(doc, {
+      head: headers,
+      body: data,
+      startY: 35,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [37, 99, 235] }
+    });
+
+    doc.save(`orders_export_${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   logout() {
