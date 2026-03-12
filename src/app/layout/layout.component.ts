@@ -5,9 +5,11 @@ import { LucideAngularModule } from 'lucide-angular';
 import { GoogleAuthService } from '../core/services/google-auth.service';
 import { OrderService } from '../core/services/order.service';
 import { ProductService } from '../core/services/product.service';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { DateFilterService } from '../core/services/date-filter.service';
+
+// Declare external libraries to bypass TS errors since they'll be loaded via CDN
+declare var pdfMake: any;
+declare var XLSX: any;
 
 @Component({
   selector: 'app-layout',
@@ -175,10 +177,109 @@ import autoTable from 'jspdf-autotable';
             </div>
 
             <ng-container *ngIf="isDashboardRoute">
-               <div class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group">
-                 <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-blue-600 mr-2 transition-colors"></lucide-icon>
-                 <span class="text-[12px] font-semibold text-slate-600">{{ currentWeekRange }}</span>
-                 <lucide-icon name="chevron-down" class="text-slate-300 w-4 h-4 ml-1"></lucide-icon>
+               <div class="relative">
+                  <div *ngIf="isDateMenuOpen()" class="fixed inset-0 z-40" (click)="isDateMenuOpen.set(false)"></div>
+                  <div (click)="isDateMenuOpen.set(!isDateMenuOpen())" class="hidden sm:flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm shadow-slate-50 hover:border-slate-300 transition-all cursor-pointer group relative z-50">
+                    <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-blue-600 mr-2 transition-colors"></lucide-icon>
+                    <span class="text-[12px] font-semibold text-slate-600">{{ dateFilterService.currentRange().label }}</span>
+                    <lucide-icon name="chevron-down" class="text-slate-300 w-4 h-4 ml-1"></lucide-icon>
+                  </div>
+
+                  <div *ngIf="isDateMenuOpen()" class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden slide-in-from-top-2 animate-in fade-in duration-200 z-50">
+                     <div class="px-4 py-3 border-b border-slate-50 flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select Range</span>
+                        <lucide-icon name="history" class="w-3 h-3 text-slate-300"></lucide-icon>
+                     </div>
+                     <div class="p-1.5">
+                        <button (click)="dateFilterService.setRangeType('all'); isDateMenuOpen.set(false)" 
+                             [class.bg-blue-50]="dateFilterService.activeRangeType() === 'all'"
+                             [class.text-blue-700]="dateFilterService.activeRangeType() === 'all'"
+                             class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all flex items-center justify-between group/item">
+                           <div class="flex items-center">
+                              <div class="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center mr-3 group-hover/item:bg-orange-100 transition-colors">
+                                 <lucide-icon name="filter-x" class="w-3 h-3 text-orange-600"></lucide-icon>
+                              </div>
+                              <span>All Time</span>
+                           </div>
+                           <lucide-icon *ngIf="dateFilterService.activeRangeType() === 'all'" name="check" class="w-3 h-3 text-blue-600"></lucide-icon>
+                        </button>
+
+                        <div class="h-px bg-slate-50 my-1 mx-2"></div>
+
+                        <button (click)="dateFilterService.setRangeType('today'); isDateMenuOpen.set(false)" 
+                             [class.bg-blue-50]="dateFilterService.activeRangeType() === 'today'"
+                             [class.text-blue-700]="dateFilterService.activeRangeType() === 'today'"
+                             class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all flex items-center justify-between group/item">
+                           <div class="flex items-center">
+                              <div class="w-6 h-6 rounded-lg bg-blue-100/50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
+                                 <lucide-icon name="calendar-days" class="w-3 h-3 text-blue-600"></lucide-icon>
+                              </div>
+                              <span>Today</span>
+                           </div>
+                           <lucide-icon *ngIf="dateFilterService.activeRangeType() === 'today'" name="check" class="w-3 h-3 text-blue-600"></lucide-icon>
+                        </button>
+                        <button (click)="dateFilterService.setRangeType('week'); isDateMenuOpen.set(false)" 
+                                [class.bg-blue-50]="dateFilterService.activeRangeType() === 'week'"
+                                [class.text-blue-700]="dateFilterService.activeRangeType() === 'week'"
+                                class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all flex items-center justify-between group/item">
+                           <div class="flex items-center">
+                              <div class="w-6 h-6 rounded-lg bg-indigo-100/50 flex items-center justify-center mr-3 group-hover/item:bg-indigo-100 transition-colors">
+                                 <lucide-icon name="calendar-range" class="w-3 h-3 text-indigo-600"></lucide-icon>
+                              </div>
+                              <span>This Week</span>
+                           </div>
+                           <lucide-icon *ngIf="dateFilterService.activeRangeType() === 'week'" name="check" class="w-3 h-3 text-blue-600"></lucide-icon>
+                        </button>
+                        <button (click)="dateFilterService.setRangeType('7days'); isDateMenuOpen.set(false)" 
+                                [class.bg-blue-50]="dateFilterService.activeRangeType() === '7days'"
+                                [class.text-blue-700]="dateFilterService.activeRangeType() === '7days'"
+                                class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all flex items-center justify-between group/item">
+                           <div class="flex items-center">
+                              <div class="w-6 h-6 rounded-lg bg-emerald-100/50 flex items-center justify-center mr-3 group-hover/item:bg-emerald-100 transition-colors">
+                                 <lucide-icon name="clock-3" class="w-3 h-3 text-emerald-600"></lucide-icon>
+                              </div>
+                              <span>Last 7 Days</span>
+                           </div>
+                           <lucide-icon *ngIf="dateFilterService.activeRangeType() === '7days'" name="check" class="w-3 h-3 text-blue-600"></lucide-icon>
+                        </button>
+                        <button (click)="dateFilterService.setRangeType('month'); isDateMenuOpen.set(false)" 
+                                [class.bg-blue-50]="dateFilterService.activeRangeType() === 'month'"
+                                [class.text-blue-700]="dateFilterService.activeRangeType() === 'month'"
+                                class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all flex items-center justify-between group/item">
+                           <div class="flex items-center">
+                              <div class="w-6 h-6 rounded-lg bg-amber-100/50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
+                                 <lucide-icon name="calendar-days" class="w-3 h-3 text-amber-600"></lucide-icon>
+                              </div>
+                              <span>This Month</span>
+                           </div>
+                           <lucide-icon *ngIf="dateFilterService.activeRangeType() === 'month'" name="check" class="w-3 h-3 text-blue-600"></lucide-icon>
+                        </button>
+                     </div>
+                     
+                     <div class="h-px bg-slate-50 my-1 mx-4"></div>
+                     
+                     <div class="px-5 py-4 bg-slate-50/50">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3">Custom Range</span>
+                        <div class="space-y-2.5">
+                           <div class="relative">
+                              <input type="date" #startDate class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
+                           </div>
+                           <div class="relative">
+                              <input type="date" #endDate class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
+                           </div>
+                           <div class="flex space-x-2">
+                              <button (click)="dateFilterService.setRangeType('all'); isDateMenuOpen.set(false)" 
+                                      class="flex-1 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-200 active:scale-[0.98] transition-all">
+                                 Limpiar
+                              </button>
+                              <button (click)="dateFilterService.setCustomRange(startDate.valueAsDate, endDate.valueAsDate); isDateMenuOpen.set(false)" 
+                                      class="flex-2 px-6 py-2.5 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 active:scale-[0.98] transition-all shadow-lg shadow-slate-200">
+                                 Apply
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
                </div>
 
                <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
@@ -247,25 +348,17 @@ export class LayoutComponent {
   private router = inject(Router);
   private orderService = inject(OrderService);
   private productService = inject(ProductService);
+  public dateFilterService = inject(DateFilterService);
 
   searchQuery = signal('');
   hasNotifications = signal(true);
   isExportMenuOpen = signal(false);
+  isDateMenuOpen = signal(false);
 
   get isDashboardRoute(): boolean {
     return this.router.url === '/dashboard' || this.router.url === '/';
   }
 
-  get currentWeekRange(): string {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(new Date().setDate(diff));
-    const sunday = new Date(new Date().setDate(diff + 6));
-    
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-    return `${monday.toLocaleDateString('en-US', options)} - ${sunday.toLocaleDateString('en-US', options)}`;
-  }
 
   searchResults = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
@@ -326,16 +419,7 @@ export class LayoutComponent {
     const orders = this.orderService.orders();
     if (!orders || orders.length === 0) return;
 
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text('Orders Export', 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    const headers = [['ID', 'Date', 'Customer', 'Product', 'Qty', 'Total', 'Status']];
-    const data = orders.map(o => [
+    const body = orders.map(o => [
       o.id || '',
       o.date || '',
       o.fullName || '',
@@ -345,15 +429,51 @@ export class LayoutComponent {
       o.status || ''
     ]);
 
-    autoTable(doc, {
-      head: headers,
-      body: data,
-      startY: 35,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [37, 99, 235] }
-    });
+    const docDefinition: any = {
+      content: [
+        { text: 'Orders Export', style: 'header' },
+        { text: `Generated on: ${new Date().toLocaleDateString()}`, style: 'subheader' },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['auto', 'auto', '*', '*', 'auto', 'auto', 'auto'],
+            body: [
+              ['ID', 'Date', 'Customer', 'Product', 'Qty', 'Total', 'Status'],
+              ...body
+            ]
+          },
+          layout: {
+            fillColor: (rowIndex: number) => {
+              return (rowIndex === 0) ? '#2563eb' : null;
+            },
+            hLineColor: '#e2e8f0',
+            vLineColor: '#e2e8f0'
+          }
+        }
+      ],
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          margin: [0, 0, 0, 10]
+        },
+        subheader: {
+          fontSize: 11,
+          color: '#64748b',
+          margin: [0, 0, 0, 20]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 9,
+          color: 'white'
+        }
+      },
+      defaultStyle: {
+        fontSize: 8
+      }
+    };
 
-    doc.save(`orders_export_${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfMake.createPdf(docDefinition).download(`orders_export_${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   logout() {

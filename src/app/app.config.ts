@@ -11,7 +11,8 @@ import {
   XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
   BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
   ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
-  ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote
+  ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
+  History, FilterX, Check, CalendarDays, CalendarRange, Clock3
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -30,7 +31,8 @@ export const appConfig: ApplicationConfig = {
       XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
       BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
       ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
-      ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote
+      ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
+      History, FilterX, Check, CalendarDays, CalendarRange, Clock3
     }))
   ]
 };

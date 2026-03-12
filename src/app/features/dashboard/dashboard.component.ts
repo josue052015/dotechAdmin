@@ -4,6 +4,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterModule } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
+import { DateFilterService } from '../../core/services/date-filter.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, registerables } from 'chart.js';
 
@@ -235,6 +236,7 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 })
 export class DashboardComponent implements OnInit {
   public orderService = inject(OrderService);
+  public dateFilterService = inject(DateFilterService);
 
   // Stats Data
   public ordersToday = 0;
@@ -373,8 +375,24 @@ export class DashboardComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const orders = this.orderService.orders();
-      if (!orders || orders.length === 0) return;
+      const allOrders = this.orderService.orders();
+      const range = this.dateFilterService.currentRange();
+      
+      if (!allOrders || allOrders.length === 0) return;
+
+      // Filter orders by date range
+      const orders = allOrders.filter(o => {
+        if (!o.date) return false;
+        
+        // Parse order date (expecting YYYY-MM-DD)
+        const [year, month, day] = o.date.split('-').map(Number);
+        const orderDate = new Date(year, month - 1, day);
+        orderDate.setHours(0, 0, 0, 0);
+        
+        if (range.start && orderDate < range.start) return false;
+        if (range.end && orderDate > range.end) return false;
+        return true;
+      });
 
       this.totalOrders = orders.length;
       this.recentOrders = [...orders].reverse().slice(0, 5);
