@@ -13,7 +13,15 @@ export interface DateRange {
 })
 export class DateFilterService {
   public readonly activeRangeType = signal<RangeType>('all');
-  private readonly customRange = signal<{ start: Date | null, end: Date | null }>({ start: null, end: null });
+  public readonly customRange = signal<{ start: Date | null, end: Date | null }>({ start: null, end: null });
+
+  public formatDateForInput(date: Date | null): string {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
   public readonly currentRange = computed<DateRange>(() => {
     const type = this.activeRangeType();

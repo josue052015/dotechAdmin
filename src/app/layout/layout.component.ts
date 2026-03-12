@@ -262,10 +262,14 @@ declare var XLSX: any;
                         <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-3">Custom Range</span>
                         <div class="space-y-2.5">
                            <div class="relative">
-                              <input type="date" #startDate class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
+                              <input type="date" #startDate 
+                                     [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().start)"
+                                     class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
                            </div>
                            <div class="relative">
-                              <input type="date" #endDate class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
+                              <input type="date" #endDate 
+                                     [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().end)"
+                                     class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white font-medium text-slate-700">
                            </div>
                            <div class="flex space-x-2">
                               <button (click)="dateFilterService.setRangeType('all'); isDateMenuOpen.set(false)" 
