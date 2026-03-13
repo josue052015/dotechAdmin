@@ -8,15 +8,18 @@ import { OrderService } from '../../../core/services/order.service';
 import { MessageService } from '../../../core/services/message.service';
 import { Order } from '../../../core/models/order.model';
 
-import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
+import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
 
 @Component({
    selector: 'app-order-detail',
    standalone: true,
    imports: [
       CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule,
-      FormsModule, MatMenuModule, MatButtonModule
+      FormsModule, MatButtonModule, MatSnackBarModule, MatDialogModule
    ],
    template: `
     <div class="max-w-[1200px] mx-auto p-4 md:px-8 md:py-4 space-y-6 animate-in fade-in duration-500 pb-20">
@@ -51,19 +54,10 @@ import { MatButtonModule } from '@angular/material/button';
             </span>
          </div>
          <div class="flex items-center space-x-2 w-full sm:w-auto">
-            <button [matMenuTriggerFor]="statusMenu" class="flex-1 sm:flex-none flex items-center justify-between space-x-3 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text hover:bg-slate-50 transition-all">
-               <span>Change Status</span>
-               <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
-            </button>
-            <mat-menu #statusMenu="matMenu" class="rounded-2xl shadow-2xl border border-slate-100 p-2">
-               <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(s)" 
-                       class="hover:bg-slate-50 rounded-xl group px-3 py-2 mb-1 last:mb-0">
-                  <span [class]="getStatusClass(s)" 
-                        class="block w-full text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full text-center">
-                     {{ s }}
-                  </span>
-               </button>
-            </mat-menu>
+             <button (click)="openStatusSelector()" class="flex-1 sm:flex-none flex items-center justify-between space-x-3 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text hover:bg-slate-50 transition-all">
+                <span>Change Status</span>
+                <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
+             </button>
             <button *ngIf="order" (click)="copyAllInfo()" class="p-2.5 bg-secondary hover:bg-slate-200 text-slate-700 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-slate-200">
                <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                <span class="hidden md:inline">Copy for Delivery</span>
@@ -76,25 +70,11 @@ import { MatButtonModule } from '@angular/material/button';
       </div>
 
       <!-- WhatsApp Main Action -->
-      <button [matMenuTriggerFor]="whatsappMenu" 
+      <button (click)="openWhatsAppSelector()" 
               class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 md:py-5 rounded-xl flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.98]">
          <lucide-icon name="message-square" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
          <span class="text-sm md:text-base font-black uppercase tracking-widest">Send WhatsApp Message</span>
       </button>
-
-      <mat-menu #whatsappMenu="matMenu" class="rounded-2xl shadow-2xl border border-slate-100 min-w-[300px] p-2">
-         <div class="px-4 py-3 border-b border-slate-50 mb-2">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Select Template</p>
-         </div>
-         <button mat-menu-item *ngFor="let tpl of messageService.templates()" (click)="sendWhatsApp(tpl.text)" 
-                 class="hover:bg-slate-50 rounded-xl px-4 py-3 transition-colors flex items-center justify-between group">
-            <div class="flex flex-col">
-               <span class="text-sm font-bold text-slate-800">{{ tpl.name }}</span>
-               <span class="text-[10px] text-slate-400 line-clamp-1">{{ tpl.text }}</span>
-            </div>
-            <lucide-icon name="send" class="text-emerald-500 w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></lucide-icon>
-         </button>
-      </mat-menu>
 
       <div *ngIf="isLoading" class="flex justify-center py-24">
          <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
@@ -266,13 +246,14 @@ import { MatButtonModule } from '@angular/material/button';
 export class OrderDetailComponent implements OnInit {
    private route = inject(ActivatedRoute);
    private location = inject(Location);
+   private snackBar = inject(MatSnackBar);
+   private dialog = inject(MatDialog);
    public orderService = inject(OrderService);
    public messageService = inject(MessageService);
 
    orderRowNumber: number | null = null;
    order: Order | null = null;
    isLoading = true;
-   selectedTemplateText: string = '';
 
    statuses = [
       'cancelado', 'desaparecido', 'no confirmado', 'pendiente de ubicacion',
@@ -294,13 +275,6 @@ export class OrderDetailComponent implements OnInit {
             this.isLoading = false;
          }
       });
-
-      effect(() => {
-         const tpls = this.messageService.templates();
-         if (tpls.length > 0 && !this.selectedTemplateText) {
-            this.selectedTemplateText = tpls[0].text;
-         }
-      });
    }
 
    ngOnInit() {
@@ -314,17 +288,52 @@ export class OrderDetailComponent implements OnInit {
       });
    }
 
-   updateStatus(newStatus: string) {
+   openStatusSelector() {
+    if (!this.order) return;
+    const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
+      data: { 
+        statuses: this.statuses,
+        currentStatus: this.order.status
+      },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(status => {
+      if (status) {
+        this.updateStatus(status);
+      }
+    });
+  }
+
+  updateStatus(newStatus: string) {
       if (this.order && this.order['_rowNumber']) {
          this.order.status = newStatus;
          this.orderService.updateOrder(this.order['_rowNumber'], this.order).subscribe();
       }
    }
 
-   sendWhatsApp(templateText?: string) {
-      const text = templateText || this.selectedTemplateText;
-      if (this.order && text) {
-         const url = this.messageService.generateWhatsAppUrl(this.order, text);
+   openWhatsAppSelector() {
+    if (!this.order) return;
+    const templates = this.messageService.templates();
+    const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
+      data: { templates },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(template => {
+      if (template) {
+        this.sendWhatsApp(template.text);
+      }
+    });
+  }
+
+  sendWhatsApp(templateText: string) {
+      if (this.order && templateText) {
+         const url = this.messageService.generateWhatsAppUrl(this.order, templateText);
          window.open(url, '_blank');
       }
    }

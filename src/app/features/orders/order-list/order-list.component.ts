@@ -9,11 +9,17 @@ import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
+import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
+import { DateFilterService } from '../../../core/services/date-filter.service';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
 import { LocationService } from '../../../core/services/location.service';
 import { Order } from '../../../core/models/order.model';
 import { Observable } from 'rxjs';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MessageService } from '../../../core/services/message.service';
 
 interface ColumnFilter {
   operator: 'eq' | 'neq';
@@ -26,7 +32,7 @@ interface ColumnFilter {
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
     MatPaginatorModule, MatSortModule, LucideAngularModule, MatProgressSpinnerModule,
-    MatMenuModule, MatCheckboxModule
+    MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule
   ],
   template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -53,12 +59,26 @@ interface ColumnFilter {
       </div>
 
       <!-- Filters Grid (Responsive Layout) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
          <ng-container *ngIf="orderService.isLoading()">
             <div *ngFor="let i of [1,2,3,4]" class="h-10 md:h-12 rounded-xl skeleton"></div>
          </ng-container>
 
          <ng-container *ngIf="!orderService.isLoading()">
+            <div class="relative group" [formGroup]="filterForm">
+               <div class="absolute left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 group-focus-within:bg-blue-50 group-focus-within:border-blue-100 transition-colors">
+                  <lucide-icon name="calendar" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
+               </div>
+               <select #dateRangeSelect (change)="onDateRangeChange(dateRangeSelect.value)" class="select-stitch h-10 md:h-12 pl-14 pr-10 font-bold text-xs">
+                  <option value="all" [selected]="dateFilterService.activeRangeType() === 'all'">All Time</option>
+                  <option value="today" [selected]="dateFilterService.activeRangeType() === 'today'">Today</option>
+                  <option value="7days" [selected]="dateFilterService.activeRangeType() === '7days'">Last 7 Days</option>
+                  <option value="month" [selected]="dateFilterService.activeRangeType() === 'month'">This Month</option>
+                  <option value="custom" [selected]="dateFilterService.activeRangeType() === 'custom'">Custom Range</option>
+               </select>
+               <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 pointer-events-none"></lucide-icon>
+            </div>
+
             <div class="relative group" [formGroup]="filterForm">
                <div class="absolute left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 group-focus-within:bg-blue-50 group-focus-within:border-blue-100 transition-colors">
                   <lucide-icon name="activity" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
@@ -105,8 +125,37 @@ interface ColumnFilter {
          </ng-container>
       </div>
 
+       <!-- Custom Date Range Inputs -->
+       <div *ngIf="dateFilterService.activeRangeType() === 'custom'" 
+            class="p-4 bg-white rounded-2xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+          <div class="flex items-center justify-between mb-4">
+             <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Rango de Fecha</span>
+             <button (click)="onDateRangeChange('all')" class="text-[10px] font-bold text-primary uppercase hover:underline">Limpiar Rango</button>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1 space-y-1.5">
+               <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Inicio</label>
+               <div class="relative group">
+                  <lucide-icon name="calendar" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-primary transition-colors"></lucide-icon>
+                  <input type="date" #start [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().start)" 
+                         (change)="onCustomDateChange(start.value, end.value)"
+                         class="input-stitch pl-11 h-11 text-xs font-bold uppercase">
+               </div>
+            </div>
+            <div class="flex-1 space-y-1.5">
+               <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Fin</label>
+               <div class="relative group">
+                  <lucide-icon name="calendar" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-primary transition-colors"></lucide-icon>
+                  <input type="date" #end [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().end)" 
+                         (change)="onCustomDateChange(start.value, end.value)"
+                         class="input-stitch pl-11 h-11 text-xs font-bold uppercase">
+               </div>
+            </div>
+          </div>
+       </div>
+
       <!-- Advanced Column Filters (Adaptive / Mobile First) -->
-      <div class="flex flex-col space-y-3 px-1 md:hidden" *ngIf="!orderService.isLoading()">
+      <div class="hidden md:flex flex-col space-y-3 px-1" *ngIf="!orderService.isLoading()">
          <div class="flex items-center justify-between">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filter by Column</p>
             <button *ngIf="hasActiveColumnFilters()" (click)="columnFilters.set({})" class="text-[9px] font-bold text-primary active:scale-95 uppercase tracking-tighter">Clear All</button>
@@ -317,8 +366,9 @@ interface ColumnFilter {
                    </div>
                 </th>
                 <td mat-cell *matCellDef="let row" class="text-center">
-                  <div [class]="getStatusClass(row.status)" class="inline-flex items-center px-3 py-1 rounded-pill text-[10px] font-bold uppercase tracking-wider">
-                     {{row.status}}
+                  <div [class]="getStatusClass(row.status)" (click)="openStatusSelector(row); $event.stopPropagation()" class="inline-flex items-center px-3 py-1 rounded-pill text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:brightness-95 active:scale-95 transition-all">
+                      {{row.status}}
+                      <lucide-icon name="chevron-down" class="ml-1 w-3 h-3 text-current opacity-70"></lucide-icon>
                   </div>
                 </td>
               </ng-container>
@@ -327,9 +377,14 @@ interface ColumnFilter {
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
                 <td mat-cell *matCellDef="let row" class="text-right">
-                  <button [routerLink]="['/orders', row['_rowNumber']]" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
-                    <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
-                  </button>
+                  <div class="flex items-center justify-end space-x-1">
+                      <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all active:scale-90 group focus:outline-none" title="Send WhatsApp">
+                         <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                      </button>
+                      <button [routerLink]="['/orders', row['_rowNumber']]" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
+                        <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
+                      </button>
+                  </div>
                 </td>
               </ng-container>
 
@@ -371,9 +426,15 @@ interface ColumnFilter {
                          </div>
                       </div>
                    </div>
-                   <div [class]="getStatusClass(row.status)" class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
-                      {{row.status}}
+                   <div [class]="getStatusClass(row.status)" [matMenuTriggerFor]="mobileStatusMenu" (click)="$event.stopPropagation()" class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap cursor-pointer flex items-center space-x-1">
+                       <span>{{row.status}}</span>
+                       <lucide-icon name="chevron-down" class="w-2.5 h-2.5"></lucide-icon>
                    </div>
+                   <mat-menu #mobileStatusMenu="matMenu" class="status-menu-popover">
+                       <button mat-menu-item *ngFor="let s of statuses" (click)="updateOrderStatus(row, s)">
+                          <span class="text-xs font-bold" [class.text-primary]="row.status === s">{{ s | titlecase }}</span>
+                       </button>
+                    </mat-menu>
                 </div>
 
                 <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
@@ -395,13 +456,21 @@ interface ColumnFilter {
                 </div>
 
                 <div class="flex justify-between items-center pt-1 px-1">
-                   <div class="flex flex-col">
-                      <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
-                      <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}</span>
+                   <div class="flex items-center space-x-3">
+                      <button (click)="openWhatsApp(row); $event.stopPropagation()" class="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">
+                          <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                          <span>WhatsApp</span>
+                      </button>
                    </div>
-                   <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm">
-                      <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
-                   </button>
+                   <div class="flex items-center space-x-3">
+                      <div class="flex flex-col items-end">
+                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-right">Total Amount</span>
+                         <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}</span>
+                      </div>
+                      <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm">
+                         <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+                      </button>
+                   </div>
                 </div>
              </div>
           </div>
@@ -452,9 +521,9 @@ interface ColumnFilter {
              <button (click)="toggleSelectAll(col, valSearch.value)" 
                      class="w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
                 <mat-checkbox [checked]="isAllSelected(col, valSearch.value)" 
-                              [indeterminate]="isPartiallySelected(col, valSearch.value)"
-                              (change)="toggleSelectAll(col, valSearch.value)" 
-                              color="primary" class="pointer-events-none"></mat-checkbox>
+                               [indeterminate]="isPartiallySelected(col, valSearch.value)"
+                               (change)="toggleSelectAll(col, valSearch.value)" 
+                               color="primary" class="pointer-events-none"></mat-checkbox>
                 <span class="text-xs font-bold text-slate-800 uppercase tracking-tighter">Select All</span>
              </button>
           </div>
@@ -481,7 +550,11 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   public orderService = inject(OrderService);
   public productService = inject(ProductService);
   public locationService = inject(LocationService);
+  public dateFilterService = inject(DateFilterService);
+  private messageService = inject(MessageService);
+  private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog);
   public Math = Math;
 
   displayedColumns: string[] = ['date', 'customer', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
@@ -530,8 +603,10 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     });
 
     effect(() => {
-      // Access signal to register dependency
+      // Access signals to register dependencies
       this.columnFilters(); 
+      this.dateFilterService.activeRangeType();
+      this.dateFilterService.customRange();
       this.applyFilters();
     }, { allowSignalWrites: true });
   }
@@ -553,8 +628,32 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   applyFilters() {
     const colFilters = this.columnFilters();
     const formValues = this.filterForm.value;
+    const dateRange = this.dateFilterService.currentRange();
     // We add a timestamp to force the filter to re-run even if terms seem same
-    this.dataSource.filter = JSON.stringify({ ...formValues, colFilters, _ts: Date.now() });
+    this.dataSource.filter = JSON.stringify({ 
+      ...formValues, 
+      colFilters, 
+      dateRange: { 
+        start: dateRange.start ? (dateRange.start as Date).getTime() : null, 
+        end: dateRange.end ? (dateRange.end as Date).getTime() : null 
+      },
+      _ts: Date.now() 
+    });
+  }
+
+  onDateRangeChange(type: any) {
+    this.dateFilterService.setRangeType(type);
+  }
+
+  onCustomDateChange(start: string, end: string) {
+    const parseLocal = (s: string) => {
+      if (!s) return null;
+      const [y, m, d] = s.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const startDate = parseLocal(start);
+    const endDate = parseLocal(end);
+    this.dateFilterService.setCustomRange(startDate, endDate);
   }
 
   ngAfterViewInit() {
@@ -567,6 +666,50 @@ export class OrderListComponent implements OnInit, AfterViewInit {
         default: return (item as any)[property];
       }
     };
+  }
+
+  openStatusSelector(row: Order) {
+    const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
+      data: { 
+        statuses: this.statuses,
+        currentStatus: row.status
+      },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(status => {
+      if (status) {
+        this.updateOrderStatus(row, status);
+      }
+    });
+  }
+
+  updateOrderStatus(row: Order, newStatus: string) {
+    if (row.status === newStatus) return;
+    const updatedOrder = { ...row, status: newStatus };
+    this.orderService.updateOrder(row['_rowNumber'], updatedOrder).subscribe({
+      next: () => this.snackBar.open(`Status updated to ${newStatus}`, 'Close', { duration: 3000 }),
+      error: () => this.snackBar.open('Error updating status', 'Close', { duration: 3000 })
+    });
+  }
+
+  openWhatsApp(row: Order) {
+    const templates = this.messageService.templates();
+    const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
+      data: { templates },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(template => {
+      if (template) {
+        const url = this.messageService.generateWhatsAppUrl(row, template.text);
+        window.open(url, '_blank');
+      }
+    });
   }
 
   resetFilters() {
@@ -650,7 +793,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     } else {
       // Select all currently visible unique values
       uniqueVals.forEach(v => {
-        if (!newValues.includes(v)) newValues.push(v);
+         if (!newValues.includes(v)) newValues.push(v);
       });
     }
 
@@ -692,7 +835,17 @@ export class OrderListComponent implements OnInit, AfterViewInit {
         return true;
       }
 
-      const { colFilters, ...searchTerms } = filterTerms;
+      const { colFilters, dateRange, ...searchTerms } = filterTerms as any;
+
+      // 0. Date Range Filter
+      if (dateRange && (dateRange.start || dateRange.end)) {
+        const orderDate = this.parseDate(data.date);
+        if (!orderDate) return false;
+        const orderTime = orderDate.getTime();
+        
+        if (dateRange.start && orderTime < dateRange.start) return false;
+        if (dateRange.end && orderTime > dateRange.end) return false;
+      }
 
       // 1. Basic Filters (Search & Dropdowns)
       const matchSearch = searchTerms.search ?
@@ -728,6 +881,30 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
       return true;
     };
+  }
+
+  private parseDate(dateStr: any): Date | null {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    
+    const s = String(dateStr).trim();
+    if (!s) return null;
+
+    // Try YYYY-MM-DD
+    let match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+
+    // Try DD/MM/YYYY
+    match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (match) {
+      return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    }
+
+    // Standard fallback
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
   }
 
   private normalize(s: string): string {

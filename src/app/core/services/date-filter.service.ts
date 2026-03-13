@@ -76,14 +76,11 @@ export class DateFilterService {
       }
       case 'custom': {
         const custom = this.customRange();
-        if (custom.start && custom.end) {
-          return {
-            start: custom.start,
-            end: custom.end,
-            label: this.formatRange(custom.start, custom.end)
-          };
-        }
-        return { start: null, end: null, label: 'Select Date' };
+        return {
+          start: custom.start,
+          end: custom.end,
+          label: (custom.start && custom.end) ? this.formatRange(custom.start, custom.end) : 'Custom Range'
+        };
       }
     }
   });

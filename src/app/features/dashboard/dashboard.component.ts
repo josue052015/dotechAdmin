@@ -12,10 +12,21 @@ Chart.register(...registerables);
 
 import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 
+import { Order } from '../../core/models/order.model';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MessageService } from '../../core/services/message.service';
+import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
+import { StatusSelectorDialogComponent } from '../../shared/components/status-selector-dialog/status-selector-dialog.component';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule, BaseChartDirective],
+  imports: [
+    CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule, 
+    BaseChartDirective, MatMenuModule, MatSnackBarModule, MatDialogModule
+  ],
   template: `
     <div class="space-y-8 animate-in fade-in duration-700">
       
@@ -233,16 +244,17 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                      <th>Customer</th>
                      <th>Product</th>
                      <th>Amount</th>
-                     <th>Status</th>
+                     <th class="text-center">Status</th>
                      <th>Date</th>
+                     <th class="text-right">Actions</th>
                   </tr>
                </thead>
                <tbody>
-                  <tr *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="group cursor-pointer hover:bg-slate-50 transition-colors">
-                     <td>
+                  <tr *ngFor="let order of recentOrders" class="group hover:bg-slate-50 transition-colors">
+                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
                         <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{{ order.id || '#' + order['_rowNumber'] }}</span>
                      </td>
-                     <td>
+                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
                               {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
@@ -250,20 +262,32 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                            <span class="font-semibold text-sm">{{ order.fullName }}</span>
                         </div>
                      </td>
-                     <td>
+                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
                         <span class="font-medium text-sm">{{ order.productName }}</span>
                      </td>
-                     <td>
+                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
                         <span class="font-bold text-sm">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
                      </td>
-                     <td>
-                        <span [class]="getStatusClass(order.status)" class="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap">
+                     <td class="text-center">
+                        <div [class]="getStatusClass(order.status)" 
+                             (click)="openStatusSelector(order); $event.stopPropagation()"
+                             class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider cursor-pointer hover:brightness-95 active:scale-95 transition-all">
                            {{ order.status }}
-                        </span>
+                           <lucide-icon name="chevron-down" class="ml-1 w-2.5 h-2.5 opacity-70"></lucide-icon>
+                        </div>
                      </td>
-                     <td>
+                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
                         <span class="text-text-muted font-medium text-sm whitespace-nowrap">{{ order.date | date:'mediumDate' }}</span>
                      </td>
+                      <td class="text-right">
+                         <div class="flex items-center justify-end">
+                            <button (click)="openWhatsApp(order); $event.stopPropagation()" 
+                                    class="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all active:scale-90" 
+                                    title="Send WhatsApp">
+                               <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                            </button>
+                         </div>
+                      </td>
                   </tr>
                </tbody>
             </table>
@@ -271,7 +295,7 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 
          <!-- Mobile Card View -->
          <div class="md:hidden flex flex-col gap-4 p-4">
-            <div *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
+            <div *ngFor="let order of recentOrders" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
                <div class="flex justify-between items-start">
                   <div class="flex items-center space-x-3">
                      <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
@@ -286,10 +310,13 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                         </div>
                      </div>
                   </div>
-                  <div [class]="getStatusClass(order.status)" class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
-                     {{order.status}}
-                  </div>
-               </div>
+                   <div [class]="getStatusClass(order.status)" 
+                        (click)="openStatusSelector(order); $event.stopPropagation()"
+                        class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap cursor-pointer flex items-center space-x-1">
+                      <span>{{order.status}}</span>
+                      <lucide-icon name="chevron-down" class="w-2.5 h-2.5"></lucide-icon>
+                   </div>
+                </div>
 
                <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
                   <div class="flex items-center justify-between text-xs">
@@ -302,15 +329,24 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                   </div>
                </div>
 
-               <div class="flex justify-between items-center pt-1 px-1">
-                   <div class="flex flex-col">
-                      <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
-                      <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
+                <div class="flex justify-between items-center pt-1 px-1">
+                   <div class="flex items-center space-x-3">
+                      <button (click)="openWhatsApp(order); $event.stopPropagation()" 
+                              class="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">
+                          <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                          <span>WhatsApp</span>
+                      </button>
                    </div>
-                   <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm">
-                      <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
-                   </button>
-               </div>
+                   <div class="flex items-center space-x-3">
+                      <div class="flex flex-col items-end">
+                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
+                         <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
+                      </div>
+                      <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm" [routerLink]="['/orders', order['_rowNumber']]">
+                         <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+                      </button>
+                   </div>
+                </div>
             </div>
             
             <a routerLink="/orders" class="mt-2 block w-full py-3 rounded-xl text-center text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors uppercase tracking-widest leading-none">
@@ -328,6 +364,15 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 export class DashboardComponent implements OnInit {
   public orderService = inject(OrderService);
   public dateFilterService = inject(DateFilterService);
+  public messageService = inject(MessageService);
+  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+
+  statuses = [
+    'cancelado', 'desaparecido', 'no confirmado',
+    'pendiente de ubicacion', 'confirmado completo',
+    'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
+  ];
 
   // Stats Data
   public ordersToday = 0;
@@ -473,11 +518,9 @@ export class DashboardComponent implements OnInit {
 
       // Filter orders by date range
       const orders = allOrders.filter(o => {
-        if (!o.date) return false;
+        const orderDate = this.parseDate(o.date);
+        if (!orderDate) return false;
         
-        // Parse order date (expecting YYYY-MM-DD)
-        const [year, month, day] = o.date.split('-').map(Number);
-        const orderDate = new Date(year, month - 1, day);
         orderDate.setHours(0, 0, 0, 0);
         
         if (range.start && orderDate < range.start) return false;
@@ -581,6 +624,74 @@ export class DashboardComponent implements OnInit {
             }]
         };
     }
+  }
+
+  private parseDate(dateStr: any): Date | null {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    
+    const s = String(dateStr).trim();
+    if (!s) return null;
+
+    // Try YYYY-MM-DD
+    let match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+
+    // Try DD/MM/YYYY
+    match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (match) {
+      return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    }
+
+    // Standard fallback
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  openStatusSelector(order: any) {
+    const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
+      data: { 
+        statuses: this.statuses,
+        currentStatus: order.status
+      },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(status => {
+      if (status) {
+        this.updateOrderStatus(order, status);
+      }
+    });
+  }
+
+  updateOrderStatus(row: any, newStatus: string) {
+    if (row.status === newStatus) return;
+    const updatedOrder = { ...row, status: newStatus };
+    this.orderService.updateOrder(row['_rowNumber'], updatedOrder).subscribe({
+      next: () => this.snackBar.open(`Status updated to ${newStatus}`, 'Close', { duration: 3000 }),
+      error: () => this.snackBar.open('Error updating status', 'Close', { duration: 3000 })
+    });
+  }
+
+  openWhatsApp(row: any) {
+    const templates = this.messageService.templates();
+    const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
+      data: { templates },
+      width: '400px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(template => {
+      if (template) {
+        const url = this.messageService.generateWhatsAppUrl(row, template.text);
+        window.open(url, '_blank');
+      }
+    });
   }
 
   getStatusClass(status: string): string {
