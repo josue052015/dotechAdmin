@@ -108,10 +108,10 @@ declare var XLSX: any;
 
           <div class="flex items-center space-x-3 px-4 py-3 mt-2 bg-white rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50">
             <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200 transition-all hover:ring-4 hover:ring-blue-50 cursor-pointer overflow-hidden">
-               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Avatar" class="w-full h-full object-cover">
+               <span class="text-[13px] font-bold text-blue-700">{{ userInitials() }}</span>
             </div>
             <div class="flex-1 min-w-0">
-               <p class="text-[13px] font-bold text-slate-900 truncate leading-tight">Alex Rivera</p>
+               <p class="text-[13px] font-bold text-slate-900 truncate leading-tight">{{ userName() }}</p>
                <p class="text-[11px] text-slate-500 truncate">Administrator</p>
             </div>
             <button (click)="logout()" class="text-slate-400 hover:text-red-500 transition-all p-1.5 rounded-xl hover:bg-red-50 group">
@@ -375,6 +375,20 @@ export class LayoutComponent {
   isDateMenuOpen = signal(false);
   isSidebarOpen = signal(false);
   isMobileSearchOpen = signal(false);
+
+  userName = computed(() => this.auth.userProfile()?.name || 'User');
+  
+  userInitials = computed(() => {
+    const name = this.userName();
+    if (!name || name === 'User') return '??';
+    
+    return name
+      .split(' ')
+      .filter(part => part.length > 0)
+      .map(part => part[0].toUpperCase())
+      .slice(0, 2)
+      .join('');
+  });
 
   toggleSidebar() {
     this.isSidebarOpen.set(!this.isSidebarOpen());

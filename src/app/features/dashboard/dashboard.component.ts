@@ -428,7 +428,7 @@ export class DashboardComponent implements OnInit {
       });
 
       this.totalOrders = orders.length;
-      this.recentOrders = [...orders].reverse().slice(0, 5);
+      this.recentOrders = [...orders].slice(0, 5);
 
       const todayStr = new Date().toISOString().split('T')[0];
 
