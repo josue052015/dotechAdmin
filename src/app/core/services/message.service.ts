@@ -35,12 +35,14 @@ export class MessageService {
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).subscribe({
             next: (response) => {
                 const rows = response.values || [];
-                const parsed: MessageTemplate[] = rows.map((row: any[], index: number) => ({
-                    _rowNumber: index + 2,
-                    id: row[0] || '',
-                    name: row[1] || '',
-                    text: row[2] || ''
-                }));
+                const parsed: MessageTemplate[] = rows
+                    .map((row: any[], index: number) => ({
+                        _rowNumber: index + 2,
+                        id: row[0] || '',
+                        name: row[1] || '',
+                        text: row[2] || ''
+                    }))
+                    .filter((msg: MessageTemplate) => msg.id || msg.name);
 
                 // Fallback if no templates found
                 if (parsed.length === 0) {
@@ -100,5 +102,11 @@ export class MessageService {
             cleanPhone = '1' + cleanPhone;
         }
         return `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    }
+
+    public deleteTemplate(rowNumber: number): Observable<any> {
+        return this.sheetsService.clearRange(`${this.SHEET_NAME}!A${rowNumber}:C${rowNumber}`).pipe(
+            tap(() => this.loadTemplates())
+        );
     }
 }

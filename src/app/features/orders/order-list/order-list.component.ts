@@ -34,7 +34,7 @@ import { Order } from '../../../core/models/order.model';
               <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 md:w-5 md:h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" formControlName="search" 
                      placeholder="Search..." 
-                     class="input-stitch pl-10 md:pl-12 h-10 md:h-12 text-sm">
+                     class="input-stitch pl-12 md:pl-14 h-10 md:h-12 text-sm">
            </div>
            
            <button routerLink="/orders/new" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 md:p-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center">

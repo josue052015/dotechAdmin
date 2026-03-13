@@ -33,15 +33,17 @@ export class ProductService {
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:F`).subscribe({
             next: (response) => {
                 const rows = response.values || [];
-                const parsed: Product[] = rows.map((row: any[], index: number) => ({
-                    _rowNumber: index + 2,
-                    id: row[0] || '',
-                    name: row[1] || '',
-                    price: parseFloat(row[2]) || 0,
-                    stock: parseInt(row[3]) || 0,
-                    sku: row[4] || '',
-                    category: row[5] || 'General'
-                }));
+                const parsed: Product[] = rows
+                    .map((row: any[], index: number) => ({
+                        _rowNumber: index + 2,
+                        id: row[0] || '',
+                        name: row[1] || '',
+                        price: parseFloat(row[2]) || 0,
+                        stock: parseInt(row[3]) || 0,
+                        sku: row[4] || '',
+                        category: row[5] || 'General'
+                    }))
+                    .filter((p: Product) => p.id || p.name);
                 this.products.set(parsed);
                 this.isLoading.set(false);
             },

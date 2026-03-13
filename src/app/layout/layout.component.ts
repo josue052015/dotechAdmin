@@ -161,7 +161,7 @@ declare var XLSX: any;
                   <div *ngIf="searchQuery().length >= 2 || isMobileSearchOpen()" class="fixed inset-0 z-40 bg-slate-900/10 backdrop-blur-[2px] lg:hidden" (click)="isMobileSearchOpen.set(false)"></div>
                   
                   <div class="flex-1 flex items-center bg-slate-50 rounded-xl px-4 py-2 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-100 focus-within:bg-white transition-all group relative z-50 shadow-sm lg:shadow-none">
-                     <lucide-icon name="search" class="text-slate-400 w-4 h-4 mr-2 group-focus-within:text-blue-500"></lucide-icon>
+                     <lucide-icon name="search" class="text-slate-400 w-4 h-4 mr-3 group-focus-within:text-blue-500"></lucide-icon>
                      <input #searchInput type="text" (input)="onSearch($event)" (keydown.escape)="clearSearch(searchInput); isMobileSearchOpen.set(false)" placeholder="Search..." class="bg-transparent border-none text-sm focus:outline-none w-full text-slate-700 placeholder:text-slate-400">
                      <button *ngIf="isMobileSearchOpen()" (click)="isMobileSearchOpen.set(false)" class="lg:hidden ml-2 text-slate-400 hover:text-slate-600">
                         <lucide-icon name="x" class="w-4 h-4"></lucide-icon>

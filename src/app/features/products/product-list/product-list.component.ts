@@ -31,7 +31,7 @@ import { Product } from '../../../core/models/product.model';
               <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 md:w-5 md:h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
                      placeholder="Search products..." 
-                     class="input-stitch pl-10 md:pl-12 h-11 md:h-12 text-xs md:text-sm">
+                     class="input-stitch pl-12 md:pl-14 h-11 md:h-12 text-xs md:text-sm">
            </div>
            
            <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-4 md:px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-xs md:text-sm font-bold">

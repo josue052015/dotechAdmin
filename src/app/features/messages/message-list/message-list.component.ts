@@ -27,11 +27,11 @@ import { MessageTemplate } from '../../../core/models/message.model';
               <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 md:w-5 md:h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
                      placeholder="Search templates..." 
-                     class="input-stitch pl-10 md:pl-12 h-11 md:h-12 text-xs md:text-sm">
+                     class="input-stitch pl-12 md:pl-14 h-11 md:h-12 text-xs md:text-sm">
            </div>
            
            <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-4 md:px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-xs md:text-sm font-bold">
-              <lucide-icon name="plus" class="w-4 h-4 md:w-5 md:h-5"></lucide-icon>
+              <lucide-icon name="plus" class="w-4 h-4 md:w-5 h-5"></lucide-icon>
               <span class="hidden xs:inline">Create Template</span>
               <span class="xs:hidden">New</span>
            </button>
@@ -70,7 +70,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
                   <button class="p-2 text-text-muted hover:text-text hover:bg-slate-100 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                   </button>
-                  <button class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all active:scale-90">
+                  <button (click)="deleteTemplate(template)" class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
                   </button>
                </div>
@@ -301,6 +301,13 @@ export class MessageListComponent implements OnInit {
             },
             error: () => this.isSaving = false
          });
+      }
+   }
+
+   deleteTemplate(template: MessageTemplate) {
+      if (!template._rowNumber) return;
+      if (confirm(`¿Estás seguro de que quieres eliminar la plantilla "${template.name}"?`)) {
+         this.messageService.deleteTemplate(template._rowNumber).subscribe();
       }
    }
 
