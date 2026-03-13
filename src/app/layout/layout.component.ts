@@ -213,7 +213,7 @@ declare var XLSX: any;
             </div>
 
             <ng-container *ngIf="isDashboardRoute">
-               <div class="relative hidden xs:block">
+               <div class="relative">
                   <div *ngIf="isDateMenuOpen()" class="fixed inset-0 z-40" (click)="isDateMenuOpen.set(false)"></div>
                   <div (click)="isDateMenuOpen.set(!isDateMenuOpen())" class="flex items-center bg-white rounded-xl px-2.5 py-2 border border-slate-200 shadow-sm hover:border-slate-300 transition-all cursor-pointer group relative z-50">
                     <lucide-icon name="calendar" class="text-slate-400 w-4 h-4 group-hover:text-primary md:mr-2 transition-colors"></lucide-icon>
@@ -279,11 +279,11 @@ declare var XLSX: any;
                         
                         <div class="h-px bg-slate-100/50 my-1 mx-4"></div>
                         
-                        <div class="px-4 py-4 bg-slate-900 rounded-2xl mt-2 mx-1 shadow-xl">
+                        <div class="px-4 py-4 bg-slate-50 rounded-2xl mt-2 mx-1 border border-slate-100">
                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-3 italic">Custom Range Selector</span>
                            <div class="space-y-2">
-                              <input type="date" #startDate [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().start)" class="w-full px-3 py-2 text-xs border border-white/10 rounded-xl bg-white/5 text-white font-bold focus:outline-none focus:ring-1 focus:ring-blue-500">
-                              <input type="date" #endDate [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().end)" class="w-full px-3 py-2 text-xs border border-white/10 rounded-xl bg-white/5 text-white font-bold focus:outline-none focus:ring-1 focus:ring-blue-500">
+                              <input type="date" #startDate [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().start)" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300">
+                              <input type="date" #endDate [value]="dateFilterService.formatDateForInput(dateFilterService.customRange().end)" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300">
                               <button (click)="dateFilterService.setCustomRange(startDate.valueAsDate, endDate.valueAsDate); isDateMenuOpen.set(false)" 
                                       class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 mt-2">
                                  Apply Range
@@ -302,7 +302,7 @@ declare var XLSX: any;
                </button>
                
                <!-- Export Dropdown -->
-               <div class="relative z-50 hidden xs:block">
+               <div class="relative z-50 hidden md:block">
                   <div *ngIf="isExportMenuOpen()" class="fixed inset-0 z-40" (click)="isExportMenuOpen.set(false)"></div>
                   
                   <button (click)="isExportMenuOpen.set(!isExportMenuOpen())" class="relative z-50 bg-primary hover:bg-blue-700 text-white p-2 md:px-5 md:py-2.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all text-[12px] font-bold flex items-center space-x-2">

@@ -18,7 +18,7 @@ export class ProductService {
 
     constructor() {
         effect(() => {
-            if (this.auth.isAuthenticated()) {
+            if (this.auth.isAuthorized()) {
                 untracked(() => this.loadProducts());
             } else {
                 untracked(() => this.products.set([]));
@@ -27,7 +27,7 @@ export class ProductService {
     }
 
     public loadProducts(): void {
-        if (!this.auth.isAuthenticated()) return;
+        if (!this.auth.isAuthorized()) return;
         
         this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:F`).subscribe({

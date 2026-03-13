@@ -151,8 +151,8 @@ import { MatButtonModule } from '@angular/material/button';
                         <div class="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center p-2 border border-slate-100 flex-shrink-0">
                            <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + order.productName" class="w-full h-full object-contain">
                         </div>
-                        <div class="flex-1 min-w-0">
-                           <h4 class="text-sm md:text-base font-bold text-slate-900 truncate">{{ order.productName }}</h4>
+                        <div class="flex-1 min-w-0 overflow-hidden w-full">
+                           <h4 class="text-sm md:text-base font-bold text-slate-900 overflow-hidden text-ellipsis whitespace-nowrap" style="max-width: calc(100vw - 6rem);">{{ order.productName }}</h4>
                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-1 uppercase tracking-widest">SKU: {{ 'SKU-' + order['_rowNumber'] }}</p>
                            <div class="sm:hidden mt-2 flex items-center justify-between">
                               <span class="text-xs font-bold text-slate-900">{{ order.productQuantity }} units</span>
@@ -221,7 +221,7 @@ import { MatButtonModule } from '@angular/material/button';
                   <div>
                      <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tracking Number</p>
                      <div class="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-                        <span class="text-[10px] md:text-xs font-bold text-slate-700 font-mono tracking-tighter">FX-9928-1120-002</span>
+                        <span class="text-[10px] md:text-xs font-bold text-slate-700 font-mono tracking-tighter">{{ order.id || order['_rowNumber'] }}</span>
                         <button (click)="copyTracking()" class="text-slate-300 hover:text-blue-600 transition-colors">
                            <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                         </button>
@@ -326,7 +326,7 @@ export class OrderDetailComponent implements OnInit {
    }
 
    copyTracking() {
-      const tracking = 'FX-9928-1120-002';
+      const tracking = this.order?.id || this.order?.['_rowNumber']?.toString() || '';
       navigator.clipboard.writeText(tracking).then(() => {
          // Visual feedback can be added later
       });

@@ -4,19 +4,33 @@ import { MessageTemplate } from '../models/message.model';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Order } from '../models/order.model';
+import { GoogleAuthService } from './google-auth.service';
+import { effect, untracked } from '@angular/core';
 
 @Injectable({
     providedIn: 'root'
 })
 export class MessageService {
     private sheetsService = inject(GoogleSheetsService);
+    private auth = inject(GoogleAuthService);
     private readonly SHEET_NAME = 'Templates';
     private readonly BUSINESS_PHONE = '+18297024201';
 
     public templates = signal<MessageTemplate[]>([]);
     public isLoading = signal<boolean>(false);
 
+    constructor() {
+        effect(() => {
+            if (this.auth.isAuthorized()) {
+                untracked(() => this.loadTemplates());
+            } else {
+                untracked(() => this.templates.set([]));
+            }
+        });
+    }
+
     public loadTemplates(): void {
+        if (!this.auth.isAuthorized()) return;
         this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).subscribe({
             next: (response) => {

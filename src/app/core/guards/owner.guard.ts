@@ -2,13 +2,13 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { GoogleAuthService } from '../services/google-auth.service';
 
-export const authGuard: CanActivateFn = () => {
+export const ownerGuard: CanActivateFn = () => {
   const auth = inject(GoogleAuthService);
   const router = inject(Router);
 
-  if (auth.isAuthenticated()) {
+  if (auth.isAuthorized()) {
     return true;
   }
 
-  return router.createUrlTree(['/login']);
+  return router.createUrlTree(['/access-denied']);
 };

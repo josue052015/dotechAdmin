@@ -196,8 +196,8 @@ import { Order } from '../../../core/models/order.model';
           </div>
 
           <!-- Mobile Card View (Displays on small screens) -->
-          <div class="md:hidden divide-y divide-slate-50">
-             <div *ngFor="let row of dataSource.filteredData" [routerLink]="['/orders', row['_rowNumber']]" class="p-4 active:bg-slate-50 transition-colors space-y-4">
+          <div class="md:hidden flex flex-col gap-4 p-4">
+             <div *ngFor="let row of dataSource.filteredData" [routerLink]="['/orders', row['_rowNumber']]" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
                 <div class="flex justify-between items-start">
                    <div class="flex items-center space-x-3">
                       <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">

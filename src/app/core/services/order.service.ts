@@ -26,7 +26,7 @@ export class OrderService {
 
     constructor() {
         effect(() => {
-            if (this.auth.isAuthenticated()) {
+            if (this.auth.isAuthorized()) {
                 untracked(() => this.loadOrders());
             } else {
                 untracked(() => this.orders.set([]));

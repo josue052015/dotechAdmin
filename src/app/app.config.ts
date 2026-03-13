@@ -12,7 +12,9 @@ import {
   BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
   ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
   ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
-  History, FilterX, Check, CalendarDays, CalendarRange, Clock3
+  History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
+  Shield, ShieldCheck, ShieldAlert,
+  Download, X, FileSpreadsheet
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -32,7 +34,9 @@ export const appConfig: ApplicationConfig = {
       BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
       ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
       ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
-      History, FilterX, Check, CalendarDays, CalendarRange, Clock3
+      History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
+      Shield, ShieldCheck, ShieldAlert,
+      Download, X, FileSpreadsheet
     }))
   ]
 };

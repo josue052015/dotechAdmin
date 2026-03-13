@@ -217,8 +217,8 @@ import { Product } from '../../../core/models/product.model';
           </table>
 
           <!-- Mobile Cards View (<md) -->
-          <div class="md:hidden divide-y divide-slate-100">
-             <div *ngFor="let row of dataSource.connect() | async" class="p-5 space-y-4 hover:bg-slate-50/50 transition-all">
+          <div class="md:hidden flex flex-col gap-4 p-4">
+             <div *ngFor="let row of dataSource.connect() | async" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
                 <div class="flex items-center space-x-4">
                    <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
                       <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
