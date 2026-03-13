@@ -64,6 +64,10 @@ import { MatButtonModule } from '@angular/material/button';
                   </span>
                </button>
             </mat-menu>
+            <button *ngIf="order" (click)="copyAllInfo()" class="p-2.5 bg-secondary hover:bg-slate-200 text-slate-700 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-slate-200">
+               <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
+               <span class="hidden md:inline">Copy for Delivery</span>
+            </button>
             <button *ngIf="order" [routerLink]="['/orders', order?.['_rowNumber'], 'edit']" class="p-2.5 bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
                <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                <span class="hidden md:inline">Edit Order</span>
@@ -329,6 +333,23 @@ export class OrderDetailComponent implements OnInit {
       const tracking = this.order?.id || this.order?.['_rowNumber']?.toString() || '';
       navigator.clipboard.writeText(tracking).then(() => {
          // Visual feedback can be added later
+      });
+   }
+
+   copyAllInfo() {
+      if (!this.order) return;
+      const o = this.order;
+      const text = `
+ID: #${o.id || o['_rowNumber']}
+CLIENTE: ${o.fullName}
+CEL: ${o.phone}
+DIR: ${o.address1}, ${o.city}
+PROD: ${o.productQuantity}x ${o.productName}
+TOTAL: RD$ ${this.totalAmount.toLocaleString()}
+      `.trim();
+
+      navigator.clipboard.writeText(text).then(() => {
+         // Visual feedback could be added here
       });
    }
 

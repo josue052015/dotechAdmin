@@ -85,12 +85,26 @@ export class MessageService {
     }
 
     public generateWhatsAppUrl(order: Order, templateText: string): string {
-        let replacedText = templateText
-            .replace(/{{FullName}}/gi, String(order.fullName || ''))
-            .replace(/{{ProductName}}/gi, String(order.productName || ''))
-            .replace(/{{Price}}/gi, String(order.productPrice || 0))
-            .replace(/{{Status}}/gi, String(order.status || ''))
-            .replace(/{{City}}/gi, String(order.city || ''));
+        let replacedText = templateText;
+
+        // Map of friendly aliases and all direct order fields
+        const variables: Record<string, any> = {
+            ...order,
+            'FullName': order.fullName,
+            'ProductName': order.productName,
+            'Price': order.productPrice,
+            'Status': order.status,
+            'OrderID': order.id || order['_rowNumber'],
+            'Address': order.address1 || '',
+            'TrackingNumber': order.id || order['_rowNumber']
+        };
+
+        // Dynamically replace any {{variable}} that matches a key in our map
+        Object.keys(variables).forEach(key => {
+            const value = variables[key];
+            const regex = new RegExp(`{{${key}}}`, 'gi');
+            replacedText = replacedText.replace(regex, String(value ?? ''));
+        });
 
         const encodedText = encodeURIComponent(replacedText);
 

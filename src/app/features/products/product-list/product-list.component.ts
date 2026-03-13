@@ -44,46 +44,52 @@ import { Product } from '../../../core/models/product.model';
 
       <!-- Quick Stats Row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-         <!-- Total Products -->
-         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-blue-200 transition-all">
-            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="package" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
-            </div>
-            <div class="flex-1">
-               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</span>
-               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ dataSource.data.length | number }}</p>
-            </div>
-         </div>
+         <ng-container *ngIf="productService.isLoading()">
+            <div *ngFor="let i of [1,2,3]" class="card-stitch p-4 md:p-6 h-28 skeleton"></div>
+         </ng-container>
 
-         <!-- Low Stock -->
-         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-amber-200 transition-all">
-            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-warning/20 flex items-center justify-center text-warning-text group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="alert-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
-            </div>
-            <div class="flex-1">
-               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Low Stock</span>
-               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ lowStockCount }}</p>
-               <div class="flex items-center space-x-1 mt-0.5 text-warning-text">
-                  <lucide-icon name="alert-circle" class="w-2.5 h-2.5"></lucide-icon>
-                  <span class="text-[9px] font-bold uppercase tracking-tight">Attention</span>
+         <ng-container *ngIf="!productService.isLoading()">
+            <!-- Total Products -->
+            <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-blue-200 transition-all">
+               <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+                  <lucide-icon name="package" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+               </div>
+               <div class="flex-1">
+                  <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</span>
+                  <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ dataSource.data.length | number }}</p>
                </div>
             </div>
-         </div>
 
-         <!-- Out of Stock -->
-         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-red-200 transition-all sm:col-span-2 lg:col-span-1">
-            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-danger/20 flex items-center justify-center text-danger-text group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="x-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
-            </div>
-            <div class="flex-1">
-               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Out of Stock</span>
-               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ outOfStockCount }}</p>
-               <div class="flex items-center space-x-1 mt-0.5 text-danger-text">
-                  <lucide-icon name="x-circle" class="w-2.5 h-2.5"></lucide-icon>
-                  <span class="text-[9px] font-bold uppercase tracking-tight">Urgent</span>
+            <!-- Low Stock -->
+            <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-amber-200 transition-all">
+               <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-warning/20 flex items-center justify-center text-warning-text group-hover:scale-110 transition-transform shadow-sm">
+                  <lucide-icon name="alert-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+               </div>
+               <div class="flex-1">
+                  <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Low Stock</span>
+                  <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ lowStockCount }}</p>
+                  <div class="flex items-center space-x-1 mt-0.5 text-warning-text">
+                     <lucide-icon name="alert-circle" class="w-2.5 h-2.5"></lucide-icon>
+                     <span class="text-[9px] font-bold uppercase tracking-tight">Attention</span>
+                  </div>
                </div>
             </div>
-         </div>
+
+            <!-- Out of Stock -->
+            <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-red-200 transition-all sm:col-span-2 lg:col-span-1">
+               <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-danger/20 flex items-center justify-center text-danger-text group-hover:scale-110 transition-transform shadow-sm">
+                  <lucide-icon name="x-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+               </div>
+               <div class="flex-1">
+                  <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Out of Stock</span>
+                  <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ outOfStockCount }}</p>
+                  <div class="flex items-center space-x-1 mt-0.5 text-danger-text">
+                     <lucide-icon name="x-circle" class="w-2.5 h-2.5"></lucide-icon>
+                     <span class="text-[9px] font-bold uppercase tracking-tight">Urgent</span>
+                  </div>
+               </div>
+            </div>
+         </ng-container>
       </div>
 
       <!-- Add/Edit Form Overlay -->
@@ -131,12 +137,69 @@ import { Product } from '../../../core/models/product.model';
       <!-- Main Table Container -->
       <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col">
         <div class="relative flex-1 overflow-auto custom-scrollbar">
-          <div *ngIf="productService.isLoading()" class="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
-            <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
+          <!-- Desktop Table Skeleton (md+) -->
+          <div *ngIf="productService.isLoading()" class="hidden md:block">
+            <table class="table-stitch">
+              <thead>
+                <tr>
+                  <th class="w-1/3">Product</th>
+                  <th class="text-center">Category</th>
+                  <th class="text-right">Price</th>
+                  <th class="text-center">Stock</th>
+                  <th class="text-center">Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let i of [1,2,3,4,5,6,7,8]">
+                  <td>
+                    <div class="flex items-center space-x-5">
+                       <div class="w-12 h-12 rounded-xl skeleton"></div>
+                       <div class="space-y-2 flex-1">
+                          <div class="h-4 w-3/4 rounded skeleton"></div>
+                          <div class="h-3 w-1/4 rounded skeleton"></div>
+                       </div>
+                    </div>
+                  </td>
+                  <td><div class="h-5 w-20 mx-auto rounded skeleton"></div></td>
+                  <td><div class="h-5 w-24 ml-auto rounded skeleton"></div></td>
+                  <td><div class="h-5 w-16 mx-auto rounded skeleton"></div></td>
+                  <td><div class="h-8 w-24 mx-auto rounded-full skeleton"></div></td>
+                  <td><div class="w-8 h-8 rounded-lg skeleton"></div></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <!-- Desktop Table (md+) -->
-          <table mat-table [dataSource]="dataSource" matSort class="table-stitch hidden md:table">
+          <!-- Mobile Card Skeleton (<md) -->
+          <div *ngIf="productService.isLoading()" class="md:hidden flex flex-col gap-4 p-4">
+             <div *ngFor="let i of [1,2,3,4]" class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
+                <div class="flex items-center space-x-4">
+                   <div class="w-14 h-14 rounded-xl skeleton"></div>
+                   <div class="flex-1 space-y-2">
+                      <div class="h-4 w-3/4 rounded skeleton"></div>
+                      <div class="h-3 w-1/2 rounded skeleton"></div>
+                   </div>
+                   <div class="text-right space-y-1">
+                      <div class="h-5 w-16 rounded skeleton"></div>
+                      <div class="h-2 w-10 ml-auto rounded skeleton"></div>
+                   </div>
+                </div>
+                <div class="flex justify-between items-center">
+                   <div class="h-6 w-24 rounded-full skeleton"></div>
+                   <div class="flex items-center space-x-2">
+                      <div class="h-3 w-16 rounded skeleton"></div>
+                      <div class="w-8 h-8 rounded-lg skeleton"></div>
+                      <div class="w-8 h-8 rounded-lg skeleton"></div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <!-- Actual Content (Visible when NOT loading) -->
+          <div *ngIf="!productService.isLoading()" class="animate-in fade-in duration-500">
+            <!-- Desktop Table (md+) -->
+            <table mat-table [dataSource]="dataSource" matSort class="table-stitch hidden md:table">
             
             <!-- Product Column -->
             <ng-container matColumnDef="product">
@@ -258,7 +321,7 @@ import { Product } from '../../../core/models/product.model';
           </div>
         </div>
 
-        <div class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div *ngIf="!productService.isLoading()" class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span class="text-slate-900">{{ (paginator ? paginator.pageIndex * paginator.pageSize + 1 : 1) }}</span> to 
               <span class="text-slate-900">{{ (paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.filteredData.length) : Math.min(10, dataSource.filteredData.length)) }}</span> 

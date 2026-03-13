@@ -219,7 +219,7 @@ export class MessageListComponent implements OnInit {
 
    templates: MessageTemplate[] = [];
    filteredTemplates: MessageTemplate[] = [];
-   variables = ['FullName', 'ProductName', 'Price', 'Status', 'OrderID', 'City'];
+   variables = ['FullName', 'ProductName', 'Price', 'Status', 'OrderID', 'City', 'Address1', 'Province', 'Notes'];
 
    showForm = false;
    isEditing = false;
@@ -319,11 +319,14 @@ export class MessageListComponent implements OnInit {
    private processPreview(text: string): string {
       // Naively replace variables for preview
       return text
-         .replace(/{ {FullName} }/img, 'John Doe')
-         .replace(/{ {ProductName} }/img, 'Premium Wireless Headphones')
-         .replace(/{ {Price} }/img, 'RD$ 7,500')
-         .replace(/{ {Status} }/img, 'Delivered')
-         .replace(/{ {OrderID} }/img, 'w001234')
-         .replace(/{ {City} }/img, 'Santo Domingo');
+         .replace(/{{\s*FullName\s*}}/img, 'John Doe')
+         .replace(/{{\s*ProductName\s*}}/img, 'Irrigador Oral Portátil')
+         .replace(/{{\s*Price\s*}}/img, '2,199')
+         .replace(/{{\s*Status\s*}}/img, 'Confirmado')
+         .replace(/{{\s*OrderID\s*}}/img, 'W00105')
+         .replace(/{{\s*City\s*}}/img, 'Santo Domingo')
+         .replace(/{{\s*Address1\s*}}/img, 'Calle Principal #123')
+         .replace(/{{\s*Province\s*}}/img, 'Distrito Nacional')
+         .replace(/{{\s*Notes\s*}}/img, 'Entregar tarde');
    }
 }

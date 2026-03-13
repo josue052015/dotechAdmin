@@ -19,10 +19,50 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
   template: `
     <div class="space-y-8 animate-in fade-in duration-700">
       
-      <!-- Loading Overlay -->
-      <div *ngIf="orderService.isLoading()" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex justify-center items-center">
-        <mat-spinner diameter="40" strokeWidth="3" color="primary"></mat-spinner>
-      </div>
+      <!-- Dashboard Loading Skeleton -->
+      <ng-container *ngIf="orderService.isLoading()">
+        <!-- Stats Grid Skeleton -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div *ngFor="let i of [1,2,3,4]" class="card-stitch p-6 space-y-4">
+            <div class="flex justify-between">
+              <div class="w-12 h-12 rounded-xl skeleton"></div>
+              <div class="w-12 h-5 rounded-full skeleton"></div>
+            </div>
+            <div class="space-y-2">
+              <div class="h-3 w-20 rounded skeleton"></div>
+              <div class="h-8 w-32 rounded skeleton"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Skeleton -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+           <div class="xl:col-span-8 card-stitch p-8">
+              <div class="h-6 w-48 rounded skeleton mb-4"></div>
+              <div class="h-[320px] w-full rounded-2xl skeleton"></div>
+           </div>
+           <div class="xl:col-span-4 card-stitch p-8">
+              <div class="h-6 w-32 mx-auto rounded skeleton mb-8"></div>
+              <div class="h-[280px] w-[280px] rounded-full skeleton mx-auto"></div>
+           </div>
+        </div>
+
+        <!-- Recent Orders Skeleton -->
+        <div class="card-stitch overflow-hidden">
+           <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+              <div class="space-y-2">
+                 <div class="h-5 w-32 rounded skeleton"></div>
+                 <div class="h-3 w-48 rounded skeleton"></div>
+              </div>
+           </div>
+           <div class="p-6 space-y-4">
+              <div *ngFor="let i of [1,2,3,4,5]" class="h-16 w-full rounded-2xl skeleton"></div>
+           </div>
+        </div>
+      </ng-container>
+
+      <!-- Actual Dashboard Content -->
+      <div *ngIf="!orderService.isLoading()" class="space-y-8">
 
       <!-- Stats Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -230,37 +270,55 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
          </div>
 
          <!-- Mobile Card View -->
-         <div class="md:hidden divide-y divide-slate-50">
-            <div *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="p-4 active:bg-slate-50 transition-colors space-y-3">
-               <div class="flex justify-between items-center">
-                  <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">{{ order.id || '#' + order['_rowNumber'] }}</span>
-                  <span class="text-[10px] text-slate-400 font-bold uppercase">{{ order.date | date:'mediumDate' }}</span>
-               </div>
-               
-               <div class="flex items-center space-x-3">
-                  <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-100">
-                     {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+         <div class="md:hidden flex flex-col gap-4 p-4">
+            <div *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
+               <div class="flex justify-between items-start">
+                  <div class="flex items-center space-x-3">
+                     <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                     </div>
+                     <div class="flex flex-col min-w-0">
+                        <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName}}</p>
+                        <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
+                           <span>ID: {{order.id || '#' + order['_rowNumber']}}</span>
+                           <span>•</span>
+                           <span class="text-primary/70">{{order.date | date:'dd/MM/yy'}}</span>
+                        </div>
+                     </div>
                   </div>
-                  <div class="flex-1 min-w-0">
-                     <p class="text-sm font-bold text-slate-900 truncate">{{ order.fullName }}</p>
-                     <p class="text-xs text-slate-500 truncate">{{ order.productName }}</p>
+                  <div [class]="getStatusClass(order.status)" class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
+                     {{order.status}}
                   </div>
                </div>
 
-               <div class="flex justify-between items-center pt-2">
-                  <span [class]="getStatusClass(order.status)" class="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
-                     {{ order.status }}
-                  </span>
-                  <span class="text-sm font-black text-slate-900">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
+               <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                     <span class="text-slate-400 font-semibold">Product</span>
+                     <span class="text-slate-900 font-bold truncate ml-4">{{order.productName}}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                     <span class="text-slate-400 font-semibold">Quantity</span>
+                     <span class="text-slate-900 font-bold">{{order.productQuantity}} units</span>
+                  </div>
+               </div>
+
+               <div class="flex justify-between items-center pt-1 px-1">
+                   <div class="flex flex-col">
+                      <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
+                      <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
+                   </div>
+                   <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm">
+                      <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+                   </button>
                </div>
             </div>
             
-            <a routerLink="/orders" class="block p-4 text-center text-xs font-bold text-primary bg-slate-50/50 hover:bg-slate-50 transition-colors">
-               View All Activity
+            <a routerLink="/orders" class="mt-2 block w-full py-3 rounded-xl text-center text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors uppercase tracking-widest leading-none">
+               View All Orders
             </a>
          </div>
-      </div>
-
+          </div>
+       </div>
     </div>
   `,
   styles: [`
