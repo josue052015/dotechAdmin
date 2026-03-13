@@ -12,6 +12,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
 import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
+import { OrderDetailComponent } from '../order-detail/order-detail.component';
 import { DateFilterService } from '../../../core/services/date-filter.service';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -381,7 +382,7 @@ interface ColumnFilter {
                       <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all active:scale-90 group focus:outline-none" title="Send WhatsApp">
                          <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
                       </button>
-                      <button [routerLink]="['/orders', row['_rowNumber']]" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
+                      <button (click)="openOrderDetail(row); $event.stopPropagation()" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
                         <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
                       </button>
                   </div>
@@ -389,7 +390,9 @@ interface ColumnFilter {
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="cursor-pointer group" [routerLink]="['/orders', row['_rowNumber']]"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                  (click)="openOrderDetail(row)"
+                  class="hover:bg-slate-50/80 transition-all cursor-pointer group border-transparent"></tr>
 
               <!-- No Data Row -->
               <tr class="mat-row bg-white" *matNoDataRow>
@@ -411,7 +414,7 @@ interface ColumnFilter {
 
           <!-- Mobile Card View -->
           <div class="md:hidden flex flex-col gap-4 p-4">
-             <div *ngFor="let row of dataSource.filteredData" [routerLink]="['/orders', row['_rowNumber']]" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
+             <div *ngFor="let row of dataSource.filteredData" (click)="openOrderDetail(row)" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
                 <div class="flex justify-between items-start">
                    <div class="flex items-center space-x-3">
                       <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
@@ -431,7 +434,7 @@ interface ColumnFilter {
                        <lucide-icon name="chevron-down" class="w-2.5 h-2.5"></lucide-icon>
                    </div>
                    <mat-menu #mobileStatusMenu="matMenu" class="status-menu-popover">
-                       <button mat-menu-item *ngFor="let s of statuses" (click)="updateOrderStatus(row, s)">
+                       <button mat-menu-item *ngFor="let s of statuses" (click)="updateStatus(row, s)">
                           <span class="text-xs font-bold" [class.text-primary]="row.status === s">{{ s | titlecase }}</span>
                        </button>
                     </mat-menu>
@@ -656,6 +659,16 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     this.dateFilterService.setCustomRange(startDate, endDate);
   }
 
+  openOrderDetail(order: Order) {
+    this.dialog.open(OrderDetailComponent, {
+      data: { order },
+      width: '1200px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'custom-dialog-container'
+    });
+  }
+
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
@@ -681,15 +694,24 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe(status => {
       if (status) {
-        this.updateOrderStatus(row, status);
+        this.updateStatus(row, status);
       }
     });
   }
 
-  updateOrderStatus(row: Order, newStatus: string) {
-    if (row.status === newStatus) return;
-    const updatedOrder = { ...row, status: newStatus };
-    this.orderService.updateOrder(row['_rowNumber'], updatedOrder).subscribe({
+  onSort(column: string) {
+    if (this.sort.active === column) {
+      this.sort.direction = this.sort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sort.active = column;
+      this.sort.direction = 'asc';
+    }
+  }
+
+  updateStatus(order: Order, newStatus: string) {
+    if (order.status === newStatus) return;
+    const updatedOrder = { ...order, status: newStatus };
+    this.orderService.updateOrder(order['_rowNumber']!, updatedOrder).subscribe({
       next: () => this.snackBar.open(`Status updated to ${newStatus}`, 'Close', { duration: 3000 }),
       error: () => this.snackBar.open('Error updating status', 'Close', { duration: 3000 })
     });

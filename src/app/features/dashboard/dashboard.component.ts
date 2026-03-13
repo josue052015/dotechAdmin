@@ -16,9 +16,10 @@ import { Order } from '../../core/models/order.model';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { StatusSelectorDialogComponent } from '../../shared/components/status-selector-dialog/status-selector-dialog.component';
+import { OrderDetailComponent } from '../orders/order-detail/order-detail.component';
 import { MessageService } from '../../core/services/message.service';
 import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
-import { StatusSelectorDialogComponent } from '../../shared/components/status-selector-dialog/status-selector-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -251,21 +252,32 @@ import { StatusSelectorDialogComponent } from '../../shared/components/status-se
                </thead>
                <tbody>
                   <tr *ngFor="let order of recentOrders" class="group hover:bg-slate-50 transition-colors">
-                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
-                        <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{{ order.id || '#' + order['_rowNumber'] }}</span>
+                     <td (click)="openOrderDetail(order)" class="cursor-pointer">
+                       <!-- Order Info -->
+                       <div class="flex-1 min-w-0 flex items-center space-x-4 cursor-pointer hover:opacity-80">
+                          <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                             #{{ order.id || order['_rowNumber'] }}
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                             <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName}}</p>
+                             <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
+                                <span>{{order.date | date:'dd/MM/yy'}}</span>
+                             </div>
+                          </div>
+                       </div>
                      </td>
-                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
+                     <td (click)="openOrderDetail(order)" class="cursor-pointer">
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
-                              {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                              {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                            </div>
                            <span class="font-semibold text-sm">{{ order.fullName }}</span>
                         </div>
                      </td>
-                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
+                     <td (click)="openOrderDetail(order)" class="cursor-pointer">
                         <span class="font-medium text-sm">{{ order.productName }}</span>
                      </td>
-                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
+                     <td (click)="openOrderDetail(order)" class="cursor-pointer">
                         <span class="font-bold text-sm">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
                      </td>
                      <td class="text-center">
@@ -276,7 +288,7 @@ import { StatusSelectorDialogComponent } from '../../shared/components/status-se
                            <lucide-icon name="chevron-down" class="ml-1 w-2.5 h-2.5 opacity-70"></lucide-icon>
                         </div>
                      </td>
-                     <td [routerLink]="['/orders', order['_rowNumber']]" class="cursor-pointer">
+                     <td (click)="openOrderDetail(order)" class="cursor-pointer">
                         <span class="text-text-muted font-medium text-sm whitespace-nowrap">{{ order.date | date:'mediumDate' }}</span>
                      </td>
                       <td class="text-right">
@@ -299,7 +311,7 @@ import { StatusSelectorDialogComponent } from '../../shared/components/status-se
                <div class="flex justify-between items-start">
                   <div class="flex items-center space-x-3">
                      <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                        {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                        {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                      </div>
                      <div class="flex flex-col min-w-0">
                         <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName}}</p>
@@ -342,7 +354,7 @@ import { StatusSelectorDialogComponent } from '../../shared/components/status-se
                          <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
                          <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
                       </div>
-                      <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm" [routerLink]="['/orders', order['_rowNumber']]">
+                      <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm" (click)="openOrderDetail(order)">
                          <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
                       </button>
                    </div>
@@ -380,7 +392,7 @@ export class DashboardComponent implements OnInit {
   public ordersDelivered = 0;
   public moneyReceived = 0;
   public totalOrders = 0;
-  public recentOrders: any[] = [];
+  public recentOrders: Order[] = [];
 
   // Line Chart
   public lineChartData: ChartConfiguration['data'] = {
@@ -650,6 +662,16 @@ export class DashboardComponent implements OnInit {
     return isNaN(d.getTime()) ? null : d;
   }
 
+  openOrderDetail(order: Order) {
+    this.dialog.open(OrderDetailComponent, {
+      data: { order },
+      width: '1200px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'custom-dialog-container'
+    });
+  }
+
   openStatusSelector(order: any) {
     const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
       data: { 
@@ -668,16 +690,16 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  updateOrderStatus(row: any, newStatus: string) {
-    if (row.status === newStatus) return;
-    const updatedOrder = { ...row, status: newStatus };
-    this.orderService.updateOrder(row['_rowNumber'], updatedOrder).subscribe({
+  updateOrderStatus(order: any, newStatus: string) {
+    if (order.status === newStatus) return;
+    const updatedOrder = { ...order, status: newStatus };
+    this.orderService.updateOrder(order['_rowNumber'], updatedOrder).subscribe({
       next: () => this.snackBar.open(`Status updated to ${newStatus}`, 'Close', { duration: 3000 }),
       error: () => this.snackBar.open('Error updating status', 'Close', { duration: 3000 })
     });
   }
 
-  openWhatsApp(row: any) {
+  openWhatsApp(order: Order) {
     const templates = this.messageService.templates();
     const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
       data: { templates },
@@ -686,12 +708,18 @@ export class DashboardComponent implements OnInit {
       panelClass: 'custom-dialog-container'
     });
 
-    dialogRef.afterClosed().subscribe(template => {
+    dialogRef.afterClosed().subscribe((template: any) => {
       if (template) {
-        const url = this.messageService.generateWhatsAppUrl(row, template.text);
-        window.open(url, '_blank');
+        this.sendWhatsApp(order, template.text);
       }
     });
+  }
+
+  sendWhatsApp(order: Order, templateText: string) {
+    if (order && templateText) {
+      const url = this.messageService.generateWhatsAppUrl(order, templateText);
+      window.open(url, '_blank');
+    }
   }
 
   getStatusClass(status: string): string {

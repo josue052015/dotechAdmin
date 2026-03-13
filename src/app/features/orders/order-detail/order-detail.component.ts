@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
+import { Component, OnInit, inject, effect, Optional } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -10,9 +10,10 @@ import { Order } from '../../../core/models/order.model';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
 import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
    selector: 'app-order-detail',
@@ -22,10 +23,17 @@ import { StatusSelectorDialogComponent } from '../../../shared/components/status
       FormsModule, MatButtonModule, MatSnackBarModule, MatDialogModule
    ],
    template: `
-    <div class="max-w-[1200px] mx-auto p-4 md:px-8 md:py-4 space-y-6 animate-in fade-in duration-500 pb-20">
+    <div [class.max-w-[1200px]]="!isDialog" [class.mx-auto]="!isDialog" 
+         class="p-8 md:p-12 space-y-10 animate-in fade-in duration-500 pb-20 relative">
       
+      <!-- Close Button (Always visible but styled for context) -->
+      <button (click)="closeDialog()" 
+              class="absolute right-6 top-6 md:right-8 md:top-8 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all z-50">
+        <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
+      </button>
+
       <!-- Top Bar: Breadcrumbs & Actions -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+      <div *ngIf="!isDialog" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
          <div class="flex items-center space-x-2 text-[10px] md:text-sm text-slate-400 font-medium">
             <a routerLink="/orders" class="hover:text-blue-600 transition-colors uppercase tracking-widest font-bold">Orders</a>
             <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
@@ -62,10 +70,10 @@ import { StatusSelectorDialogComponent } from '../../../shared/components/status
                <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
                <span class="hidden md:inline">Copy for Delivery</span>
             </button>
-            <button *ngIf="order" [routerLink]="['/orders', order?.['_rowNumber'], 'edit']" class="p-2.5 bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
-               <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-               <span class="hidden md:inline">Edit Order</span>
-            </button>
+             <button *ngIf="order" (click)="onEditOrder()" class="p-2.5 bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
+                <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                <span class="hidden md:inline">Edit Order</span>
+             </button>
          </div>
       </div>
 
@@ -93,8 +101,8 @@ import { StatusSelectorDialogComponent } from '../../../shared/components/status
                </div>
 
                <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] md:text-[12px] font-bold text-primary shadow-sm">
-                       {{ order.fullName.charAt(0) }}{{ order.fullName.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                       {{ order?.fullName?.charAt(0) }}{{ order?.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                     </div>
                   <div class="min-w-0">
                      <h3 class="text-lg md:text-xl font-bold text-slate-900 leading-tight truncate">{{ order.fullName }}</h3>
@@ -250,6 +258,11 @@ export class OrderDetailComponent implements OnInit {
    private dialog = inject(MatDialog);
    public orderService = inject(OrderService);
    public messageService = inject(MessageService);
+   private router = inject(Router);
+   private dialogRef = inject(MatDialogRef<OrderDetailComponent>, { optional: true });
+   private dialogData = inject(MAT_DIALOG_DATA, { optional: true });
+
+   isDialog = false;
 
    orderRowNumber: number | null = null;
    order: Order | null = null;
@@ -279,13 +292,21 @@ export class OrderDetailComponent implements OnInit {
 
    ngOnInit() {
       this.messageService.loadTemplates();
-      this.route.paramMap.subscribe(params => {
-         const idStr = params.get('id');
-         if (idStr) {
-            this.orderRowNumber = parseInt(idStr, 10);
-            this.orderService.loadOrders();
-         }
-      });
+      
+      if (this.dialogData?.order) {
+         this.isDialog = true;
+         this.order = { ...this.dialogData.order };
+         this.orderRowNumber = this.order?.['_rowNumber'] || null;
+         this.isLoading = false;
+      } else {
+         this.route.paramMap.subscribe(params => {
+            const idStr = params.get('id');
+            if (idStr) {
+               this.orderRowNumber = parseInt(idStr, 10);
+               this.orderService.loadOrders();
+            }
+         });
+      }
    }
 
    openStatusSelector() {
@@ -389,7 +410,24 @@ TOTAL: RD$ ${this.totalAmount.toLocaleString()}
       return 'bg-blue-600'; // default/local
    }
 
+   onEditOrder() {
+       if (!this.order) return;
+       const row = this.order?.['_rowNumber'];
+       if (this.isDialog) {
+           this.dialogRef?.close();
+       }
+       this.router.navigate(['/orders', row, 'edit']);
+   }
+
+   closeDialog() {
+       this.dialogRef?.close();
+   }
+
    goBack() {
-      this.location.back();
+      if (this.isDialog) {
+          this.closeDialog();
+      } else {
+          this.location.back();
+      }
    }
 }

@@ -34,10 +34,10 @@ export class OrderService {
         });
     }
 
-    public loadOrders(): void {
+    public loadOrders(quiet: boolean = false): void {
         if (!this.auth.isAuthenticated()) return;
         
-        this.isLoading.set(true);
+        if (!quiet) this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:O`).subscribe({
             next: (response) => {
                 const rows = response.values || [];
@@ -78,9 +78,18 @@ export class OrderService {
     }
 
     public updateOrder(rowNumber: number, order: Order): Observable<any> {
+        // Optimistic UI update
+        const currentOrders = this.orders();
+        const index = currentOrders.findIndex(o => o['_rowNumber'] === rowNumber);
+        if (index !== -1) {
+            const updatedOrders = [...currentOrders];
+            updatedOrders[index] = { ...order };
+            this.orders.set(updatedOrders);
+        }
+
         const row = this.mapOrderToRow(order);
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:O${rowNumber}`, [row]).pipe(
-            tap(() => this.loadOrders())
+            tap(() => this.loadOrders(true)) // Silent sync
         );
     }
 
