@@ -20,113 +20,107 @@ import { Product } from '../../../core/models/product.model';
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
       <!-- Header Area -->
-      <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div class="space-y-1">
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight">Product Inventory</h1>
+          <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Product Inventory</h1>
           <p class="text-sm text-slate-500 font-medium">Manage your catalog, pricing, and stock levels.</p>
         </div>
         
-        <div class="flex items-center space-x-3 w-full xl:w-auto">
-           <div class="relative flex-1 xl:w-80 group">
-              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
+        <div class="flex items-center space-x-3 w-full sm:w-auto">
+           <div class="relative flex-1 sm:w-64 lg:w-80 group">
+              <lucide-icon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4 md:w-5 md:h-5 group-focus-within:text-primary transition-colors"></lucide-icon>
               <input type="text" (keyup)="applyFilter($event)" 
-                     placeholder="Search products, SKUs..." 
-                     class="input-stitch pl-12 h-12">
+                     placeholder="Search products..." 
+                     class="input-stitch pl-10 md:pl-12 h-11 md:h-12 text-xs md:text-sm">
            </div>
            
-           <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-ui shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-sm font-bold">
-              <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
-              <span>Add Product</span>
+           <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-4 md:px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-xs md:text-sm font-bold">
+              <lucide-icon name="plus" class="w-4 h-4 md:w-5 md:h-5"></lucide-icon>
+              <span class="hidden xs:inline">Add Product</span>
+              <span class="xs:hidden">Add</span>
            </button>
         </div>
       </div>
 
       <!-- Quick Stats Row -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
          <!-- Total Products -->
-         <div class="card-stitch p-6 flex items-center space-x-5 group hover:border-blue-200 transition-all">
-            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="package" class="w-6 h-6"></lucide-icon>
+         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-blue-200 transition-all">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+               <lucide-icon name="package" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
             </div>
             <div class="flex-1">
-               <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</span>
-       
-               </div>
-               <p class="text-2xl font-black text-slate-900 mt-1">{{ dataSource.data.length | number }}</p>
+               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</span>
+               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ dataSource.data.length | number }}</p>
             </div>
          </div>
 
          <!-- Low Stock -->
-         <div class="card-stitch p-6 flex items-center space-x-5 group hover:border-amber-200 transition-all">
-            <div class="w-14 h-14 rounded-2xl bg-warning/20 flex items-center justify-center text-warning-text group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="alert-circle" class="w-6 h-6"></lucide-icon>
+         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-amber-200 transition-all">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-warning/20 flex items-center justify-center text-warning-text group-hover:scale-110 transition-transform shadow-sm">
+               <lucide-icon name="alert-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
             </div>
             <div class="flex-1">
-               <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Low Stock Alert</span>
-               </div>
-               <p class="text-2xl font-black text-slate-900 mt-1">{{ lowStockCount }}</p>
-               <div class="flex items-center space-x-1 mt-1 text-warning-text">
-                  <lucide-icon name="alert-circle" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-                  <span class="text-[10px] font-bold uppercase tracking-tight">Needs attention</span>
+               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Low Stock</span>
+               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ lowStockCount }}</p>
+               <div class="flex items-center space-x-1 mt-0.5 text-warning-text">
+                  <lucide-icon name="alert-circle" class="w-2.5 h-2.5"></lucide-icon>
+                  <span class="text-[9px] font-bold uppercase tracking-tight">Attention</span>
                </div>
             </div>
          </div>
 
          <!-- Out of Stock -->
-         <div class="card-stitch p-6 flex items-center space-x-5 group hover:border-red-200 transition-all">
-            <div class="w-14 h-14 rounded-2xl bg-danger/20 flex items-center justify-center text-danger-text group-hover:scale-110 transition-transform shadow-sm">
-               <lucide-icon name="x-circle" class="w-6 h-6"></lucide-icon>
+         <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-red-200 transition-all sm:col-span-2 lg:col-span-1">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-danger/20 flex items-center justify-center text-danger-text group-hover:scale-110 transition-transform shadow-sm">
+               <lucide-icon name="x-circle" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
             </div>
             <div class="flex-1">
-               <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Out of Stock</span>
-               </div>
-               <p class="text-2xl font-black text-slate-900 mt-1">{{ outOfStockCount }}</p>
-               <div class="flex items-center space-x-1 mt-1 text-danger-text">
-                  <lucide-icon name="x-circle" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-                  <span class="text-[10px] font-bold uppercase tracking-tight">Action required</span>
+               <span class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Out of Stock</span>
+               <p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5">{{ outOfStockCount }}</p>
+               <div class="flex items-center space-x-1 mt-0.5 text-danger-text">
+                  <lucide-icon name="x-circle" class="w-2.5 h-2.5"></lucide-icon>
+                  <span class="text-[9px] font-bold uppercase tracking-tight">Urgent</span>
                </div>
             </div>
          </div>
       </div>
 
-      <!-- Add/Edit Form Overlay (Simplified for this replica) -->
-      <div *ngIf="showForm" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
-         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-             <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+      <!-- Add/Edit Form Overlay -->
+      <div *ngIf="showForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in zoom-in-95 duration-200">
+         <div class="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+             <div class="p-5 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                <div>
-                  <h2 class="text-xl font-black text-slate-900 tracking-tight">{{ isEditing ? 'Edit Product' : 'New Product' }}</h2>
-                  <p class="text-sm text-text-muted font-medium">Configure product details and pricing</p>
+                  <h2 class="text-lg md:text-xl font-black text-slate-900 tracking-tight uppercase tracking-wider">{{ isEditing ? 'Edit Product' : 'New Product' }}</h2>
+                  <p class="text-[11px] md:text-sm text-text-muted font-medium">Configure product details and pricing</p>
                </div>
-               <button (click)="closeForm()" class="text-text-muted hover:text-text p-2 rounded-xl hover:bg-slate-50 transition-all">
-                  <lucide-icon name="x-circle" class="w-5 h-5"></lucide-icon>
+               <button (click)="closeForm()" class="text-text-muted hover:text-danger p-2 rounded-xl hover:bg-danger/5 transition-all">
+                  <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
                </button>
             </div>
-            <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="p-8 space-y-6">
-               <div class="space-y-1.5">
+            <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="p-5 md:p-8 space-y-6">
+               <div class="space-y-2">
                   <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Product Name</label>
                   <input type="text" formControlName="name" placeholder="e.g. Wireless Headphones" 
-                         class="input-stitch">
+                         class="input-stitch h-11 md:h-12 text-sm">
                </div>
-               <div class="grid grid-cols-2 gap-6">
-                  <div class="space-y-1.5">
+               <div class="grid grid-cols-2 gap-4 md:gap-6">
+                  <div class="space-y-2">
                      <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Price (RD$)</label>
                      <input type="number" formControlName="price" placeholder="0.00" 
-                            class="input-stitch">
+                            class="input-stitch h-11 md:h-12 text-sm">
                   </div>
-                  <div class="space-y-1.5">
+                  <div class="space-y-2">
                      <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Stock Units</label>
                      <input type="number" formControlName="stock" placeholder="0" 
-                            class="input-stitch">
+                            class="input-stitch h-11 md:h-12 text-sm">
                   </div>
                </div>
-               <div class="flex justify-end space-x-3 pt-4 border-t border-slate-50 mt-8">
-                  <button type="button" (click)="closeForm()" class="px-6 py-2.5 rounded-ui border border-border text-text font-bold text-sm bg-white hover:bg-slate-50 transition-all active:scale-95">Cancel</button>
+               <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-50 mt-8">
+                  <button type="button" (click)="closeForm()" class="order-2 sm:order-1 px-6 py-2.5 rounded-xl border border-border text-slate-600 font-bold text-sm bg-white hover:bg-slate-50 transition-all active:scale-95">Cancel</button>
                   <button type="submit" [disabled]="productForm.invalid || isSaving" 
-                          class="bg-primary hover:bg-blue-700 text-white px-8 py-2.5 rounded-ui shadow-md hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 text-sm font-bold flex items-center justify-center space-x-2">
-                     <mat-spinner diameter="16" strokeWidth="2.5" *ngIf="isSaving"></mat-spinner>
+                          class="order-1 sm:order-2 bg-primary hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 text-sm font-bold flex items-center justify-center space-x-2">
+                     <mat-spinner diameter="16" strokeWidth="2.5" class="mr-2" *ngIf="isSaving"></mat-spinner>
                      <span>{{ isEditing ? 'Update Product' : 'Save Product' }}</span>
                   </button>
                </div>
@@ -135,13 +129,14 @@ import { Product } from '../../../core/models/product.model';
       </div>
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white overflow-hidden min-h-[500px]">
+      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col">
         <div class="relative flex-1 overflow-auto custom-scrollbar">
           <div *ngIf="productService.isLoading()" class="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
             <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
           </div>
 
-          <table mat-table [dataSource]="dataSource" matSort class="table-stitch">
+          <!-- Desktop Table (md+) -->
+          <table mat-table [dataSource]="dataSource" matSort class="table-stitch hidden md:table">
             
             <!-- Product Column -->
             <ng-container matColumnDef="product">
@@ -153,7 +148,7 @@ import { Product } from '../../../core/models/product.model';
                    </div>
                    <div class="flex flex-col">
                       <span class="text-sm font-bold text-slate-900 leading-tight">{{row.name}}</span>
-                      <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row._rowNumber }}</span>
+                      <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</span>
                    </div>
                 </div>
               </td>
@@ -201,10 +196,10 @@ import { Product } from '../../../core/models/product.model';
               <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
               <td mat-cell *matCellDef="let row" class="text-right space-x-1">
                 <button (click)="editProduct(row)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90">
-                  <lucide-icon name="pencil" class="w-5 h-5"></lucide-icon>
+                   <lucide-icon name="pencil" class="w-5 h-5"></lucide-icon>
                 </button>
                 <button (click)="deleteProduct(row)" class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all active:scale-90">
-                  <lucide-icon name="trash-2" class="w-5 h-5"></lucide-icon>
+                   <lucide-icon name="trash-2" class="w-5 h-5"></lucide-icon>
                 </button>
               </td>
             </ng-container>
@@ -220,13 +215,54 @@ import { Product } from '../../../core/models/product.model';
               </td>
             </tr>
           </table>
+
+          <!-- Mobile Cards View (<md) -->
+          <div class="md:hidden divide-y divide-slate-100">
+             <div *ngFor="let row of dataSource.connect() | async" class="p-5 space-y-4 hover:bg-slate-50/50 transition-all">
+                <div class="flex items-center space-x-4">
+                   <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
+                      <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
+                   </div>
+                   <div class="flex-1 min-w-0">
+                      <h4 class="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{{ row.name }}</h4>
+                      <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</p>
+                   </div>
+                   <div class="text-right">
+                      <p class="text-[15px] font-black text-slate-900 italic">RD$ {{ row.price | number }}</p>
+                      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Unit Price</span>
+                   </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                   <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full border shadow-sm">
+                      <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
+                      <span class="text-[9px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
+                   </div>
+                   <div class="flex items-center space-x-2">
+                      <span class="text-[10px] font-bold text-slate-500">{{ row.stock || 0 }} in stock</span>
+                      <div class="h-4 w-px bg-slate-200"></div>
+                      <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors">
+                         <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                      </button>
+                      <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors">
+                         <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                      </button>
+                   </div>
+                </div>
+             </div>
+
+             <div *ngIf="dataSource.filteredData.length === 0" class="p-12 text-center">
+                <lucide-icon name="package" class="w-12 h-12 mx-auto mb-3 text-slate-100"></lucide-icon>
+                <p class="text-sm font-bold text-slate-500">No products found</p>
+             </div>
+          </div>
         </div>
 
-        <div class="px-8 py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col md:flex-row items-center justify-between gap-4">
-           <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+        <div class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+           <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span class="text-slate-900">{{ (paginator ? paginator.pageIndex * paginator.pageSize + 1 : 1) }}</span> to 
               <span class="text-slate-900">{{ (paginator ? Math.min((paginator.pageIndex + 1) * paginator.pageSize, dataSource.filteredData.length) : Math.min(10, dataSource.filteredData.length)) }}</span> 
-              of <span class="text-slate-900">{{ dataSource.filteredData.length }}</span> results
+              of <span class="text-slate-900">{{ dataSource.filteredData.length }}</span>
            </div>
            <mat-paginator [pageSizeOptions]="[10, 25, 100]" class="!bg-transparent !border-none !font-bold" hidePageSize></mat-paginator>
         </div>

@@ -97,26 +97,26 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
       </div>
 
       <!-- Analysis Charts Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
          <!-- Daily Orders Area Chart -->
-         <div class="lg:col-span-8 card-stitch p-8">
-            <div class="flex justify-between items-center mb-10">
+         <div class="xl:col-span-8 card-stitch p-4 md:p-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-10">
                <div>
-                  <h2 class="text-lg font-bold text-slate-900">Daily Orders Analytics</h2>
-                  <p class="text-xs text-slate-400 font-medium">Monitoring order volume over the last week</p>
+                  <h2 class="text-base md:text-lg font-bold text-slate-900">Daily Orders Analytics</h2>
+                  <p class="text-[10px] md:text-xs text-slate-400 font-medium whitespace-nowrap">Monitoring order volume over the last week</p>
                </div>
                <div class="flex items-center space-x-4">
                   <div class="flex items-center space-x-2">
-                     <span class="w-3 h-3 rounded-full bg-blue-600"></span>
-                     <span class="text-xs font-semibold text-slate-600 lowercase">Current Period</span>
+                     <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                     <span class="text-[10px] md:text-xs font-semibold text-slate-600 lowercase">Current Period</span>
                   </div>
                   <div class="flex items-center space-x-2">
-                     <span class="w-3 h-3 rounded-full bg-slate-200"></span>
-                     <span class="text-xs font-semibold text-slate-600 lowercase">Previous</span>
+                     <span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span>
+                     <span class="text-[10px] md:text-xs font-semibold text-slate-600 lowercase">Previous</span>
                   </div>
                </div>
             </div>
-            <div class="h-[320px] w-full">
+            <div class="h-[240px] md:h-[320px] w-full">
                <canvas baseChart
                    [data]="lineChartData"
                    [options]="lineChartOptions"
@@ -126,41 +126,41 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
          </div>
 
          <!-- Orders by Status Donut -->
-         <div class="lg:col-span-4 card-stitch p-8 flex flex-col">
-            <div class="mb-8 text-center">
-                <h2 class="text-lg font-bold text-slate-900">Orders by Status</h2>
-                <p class="text-xs text-slate-400 font-medium">Global distribution</p>
+         <div class="xl:col-span-4 card-stitch p-6 md:p-8 flex flex-col">
+            <div class="mb-6 md:mb-8 text-center">
+                <h2 class="text-base md:text-lg font-bold text-slate-900">Orders by Status</h2>
+                <p class="text-[10px] md:text-xs text-slate-400 font-medium">Global distribution</p>
             </div>
-            <div class="flex-1 relative flex items-center justify-center scale-110">
+            <div class="flex-1 relative flex items-center justify-center scale-100 md:scale-110 aspect-square max-w-[280px] mx-auto">
                <canvas baseChart
                    [data]="donutChartData"
                    [options]="donutChartOptions"
                    [type]="'doughnut'">
                </canvas>
                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span class="text-4xl font-black text-slate-900 leading-none">{{ totalOrders }}</span>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
+                  <span class="text-2xl md:text-4xl font-black text-slate-900 leading-none">{{ totalOrders }}</span>
+                  <span class="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
                </div>
             </div>
-            <div class="mt-10 grid grid-cols-2 gap-4">
+            <div class="mt-8 md:mt-10 grid grid-cols-2 gap-3 md:gap-4">
                <div *ngFor="let label of donutChartData.labels; let i = index" class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full" [style.backgroundColor]="donutChartColors[i]"></span>
-                  <span class="text-[11px] font-semibold text-slate-600">{{ label }}</span>
-                  <span class="text-[11px] text-slate-400 ml-auto">{{ donutChartData.datasets[0].data[i] }}</span>
+                  <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full" [style.backgroundColor]="donutChartColors[i]"></span>
+                  <span class="text-[10px] md:text-[11px] font-semibold text-slate-600 truncate">{{ label }}</span>
+                  <span class="text-[10px] md:text-[11px] text-slate-400 ml-auto">{{ donutChartData.datasets[0].data[i] }}</span>
                </div>
             </div>
          </div>
       </div>
 
       <!-- Product Sales Bar Chart -->
-      <div class="card-stitch p-8">
+      <div class="card-stitch p-6 md:p-8">
          <div class="flex justify-between items-center mb-8">
              <div>
-                 <h2 class="text-lg font-bold text-slate-900">Sales by Product</h2>
-                 <p class="text-xs text-slate-400 font-medium">Top selling items across all channels</p>
+                 <h2 class="text-base md:text-lg font-bold text-slate-900">Sales by Product</h2>
+                 <p class="text-[10px] md:text-xs text-slate-400 font-medium">Top selling items across all channels</p>
              </div>
          </div>
-         <div class="h-[300px] w-full relative">
+         <div class="h-[250px] md:h-[300px] w-full relative">
             <canvas *ngIf="barChartData.labels && barChartData.labels.length > 0; else noBarData" baseChart
                 [data]="barChartData"
                 [options]="barChartOptions"
@@ -174,16 +174,18 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
          </div>
       </div>
 
-      <!-- Recent Orders Table -->
+      <!-- Recent Orders Section (Responsive Layout) -->
       <div class="card-stitch overflow-hidden">
-         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+         <div class="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-white">
             <div>
-               <h2 class="text-lg font-bold text-slate-900 uppercase tracking-tight">Recent Orders</h2>
-               <p class="text-xs text-slate-400 font-medium">Showing the most recent activity across all stores</p>
+               <h2 class="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">Recent Orders</h2>
+               <p class="text-[10px] md:text-xs text-slate-400 font-medium">Showing the most recent activity across all stores</p>
             </div>
-            <button routerLink="/orders" class="text-blue-600 text-xs font-bold hover:underline">View All Orders</button>
+            <button routerLink="/orders" class="text-blue-600 text-[10px] md:text-xs font-bold hover:underline">View All</button>
          </div>
-         <div class="overflow-x-auto">
+
+         <!-- Desktop Table View -->
+         <div class="hidden md:block overflow-x-auto">
             <table class="table-stitch">
                <thead>
                   <tr>
@@ -205,26 +207,57 @@ import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
                               {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
                            </div>
-                           <span class="font-semibold">{{ order.fullName }}</span>
+                           <span class="font-semibold text-sm">{{ order.fullName }}</span>
                         </div>
                      </td>
                      <td>
-                        <span class="font-medium">{{ order.productName }}</span>
+                        <span class="font-medium text-sm">{{ order.productName }}</span>
                      </td>
                      <td>
-                        <span class="font-bold">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
+                        <span class="font-bold text-sm">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
                      </td>
                      <td>
-                        <span [class]="getStatusClass(order.status)" class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap">
+                        <span [class]="getStatusClass(order.status)" class="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap">
                            {{ order.status }}
                         </span>
                      </td>
                      <td>
-                        <span class="text-text-muted font-medium whitespace-nowrap">{{ order.date | date:'mediumDate' }}</span>
+                        <span class="text-text-muted font-medium text-sm whitespace-nowrap">{{ order.date | date:'mediumDate' }}</span>
                      </td>
                   </tr>
                </tbody>
             </table>
+         </div>
+
+         <!-- Mobile Card View -->
+         <div class="md:hidden divide-y divide-slate-50">
+            <div *ngFor="let order of recentOrders" [routerLink]="['/orders', order['_rowNumber']]" class="p-4 active:bg-slate-50 transition-colors space-y-3">
+               <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">{{ order.id || '#' + order['_rowNumber'] }}</span>
+                  <span class="text-[10px] text-slate-400 font-bold uppercase">{{ order.date | date:'mediumDate' }}</span>
+               </div>
+               
+               <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-100">
+                     {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')[1] ? order.fullName.split(' ')[1].charAt(0) : '' }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                     <p class="text-sm font-bold text-slate-900 truncate">{{ order.fullName }}</p>
+                     <p class="text-xs text-slate-500 truncate">{{ order.productName }}</p>
+                  </div>
+               </div>
+
+               <div class="flex justify-between items-center pt-2">
+                  <span [class]="getStatusClass(order.status)" class="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                     {{ order.status }}
+                  </span>
+                  <span class="text-sm font-black text-slate-900">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
+               </div>
+            </div>
+            
+            <a routerLink="/orders" class="block p-4 text-center text-xs font-bold text-primary bg-slate-50/50 hover:bg-slate-50 transition-colors">
+               View All Activity
+            </a>
          </div>
       </div>
 

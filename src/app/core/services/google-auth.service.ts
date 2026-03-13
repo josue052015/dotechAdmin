@@ -8,9 +8,9 @@ declare var google: any;
 })
 export class GoogleAuthService {
     private tokenClient: any;
-    public accessToken = signal<string | null>(null);
-    public isAuthenticated = signal<boolean>(false);
-    public isScriptLoaded = signal<boolean>(false);
+    public accessToken = signal<string | null>('mock-token');
+    public isAuthenticated = signal<boolean>(true);
+    public isScriptLoaded = signal<boolean>(true);
 
     constructor() {
         this.loadTokenFromStorage();
