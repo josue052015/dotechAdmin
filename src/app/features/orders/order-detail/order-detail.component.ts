@@ -145,9 +145,9 @@ import { MatButtonModule } from '@angular/material/button';
                   <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{{ order.productQuantity }} Units</span>
                </div>
                
-               <div class="p-0">
-                  <div class="divide-y divide-slate-100">
-                     <div class="p-5 md:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 hover:bg-slate-50/50 transition-colors relative">
+               <div class="p-4">
+                  <div class="flex flex-col gap-4">
+                     <div class="p-5 md:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 hover:bg-slate-50/50 transition-colors relative bg-white border border-slate-100 rounded-2xl shadow-sm sm:border-none sm:shadow-none sm:bg-transparent">
                         <div class="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center p-2 border border-slate-100 flex-shrink-0">
                            <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + order.productName" class="w-full h-full object-contain">
                         </div>
