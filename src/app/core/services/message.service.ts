@@ -36,12 +36,15 @@ export class MessageService {
             next: (response) => {
                 const rows = response.values || [];
                 const parsed: MessageTemplate[] = rows
-                    .map((row: any[], index: number) => ({
-                        _rowNumber: index + 2,
-                        id: row[0] || '',
-                        name: row[1] || '',
-                        text: row[2] || ''
-                    }))
+                    .map((row: any[], index: number) => {
+                        const rowNumber = index + 2;
+                        return {
+                            _rowNumber: rowNumber,
+                            id: row[0] || rowNumber.toString(),
+                            name: row[1] || '',
+                            text: row[2] || ''
+                        };
+                    })
                     .filter((msg: MessageTemplate) => msg.id || msg.name);
 
                 // Fallback if no templates found
@@ -70,8 +73,7 @@ export class MessageService {
     }
 
     public createTemplate(template: MessageTemplate): Observable<any> {
-        template.id = crypto.randomUUID();
-        const row = [template.id, template.name, template.text];
+        const row = ['', template.name, template.text];
         return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:C`, [row]).pipe(
             tap(() => this.loadTemplates())
         );

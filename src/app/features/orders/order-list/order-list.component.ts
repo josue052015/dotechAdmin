@@ -271,8 +271,8 @@ interface ColumnFilter {
                         {{ row.fullName.charAt(0) }}{{ row.fullName.split(' ')[1]?.charAt(0) || '' }}
                      </div>
                      <div class="flex flex-col">
-                        <span class="text-sm font-bold leading-tight">{{row.fullName}}</span>
-                        <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">ID: {{row.id || row['_rowNumber']}}</span>
+                        <span class="text-sm font-bold leading-tight">{{row.fullName || 'Cliente sin identificar'}}</span>
+                        <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">ID: {{row.id || '#' + row['_rowNumber']}}</span>
                      </div>
                   </div>
                 </td>
@@ -379,12 +379,15 @@ interface ColumnFilter {
                 <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
                 <td mat-cell *matCellDef="let row" class="text-right">
                   <div class="flex items-center justify-end space-x-1">
-                      <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all active:scale-90 group focus:outline-none" title="Send WhatsApp">
-                         <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
-                      </button>
-                      <button (click)="openOrderDetail(row); $event.stopPropagation()" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
-                        <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
-                      </button>
+                       <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all active:scale-90 group focus:outline-none" title="Send WhatsApp">
+                          <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                       </button>
+                       <button (click)="confirmDelete(row); $event.stopPropagation()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90 group focus:outline-none" title="Delete Order">
+                          <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                       </button>
+                       <button (click)="openOrderDetail(row); $event.stopPropagation()" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group focus:outline-none">
+                         <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
+                       </button>
                   </div>
                 </td>
               </ng-container>
@@ -421,9 +424,9 @@ interface ColumnFilter {
                          {{ row.fullName?.charAt(0) }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                       </div>
                       <div class="flex flex-col min-w-0">
-                         <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{row.fullName}}</p>
+                         <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{row.fullName || 'Cliente sin identificar'}}</p>
                          <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
-                            <span>ID: {{row.id || row['_rowNumber']}}</span>
+                            <span>ID: {{row.id || '#' + row['_rowNumber']}}</span>
                             <span>•</span>
                             <span class="text-primary/70">{{row.date | date:'dd/MM/yy'}}</span>
                          </div>
@@ -460,10 +463,13 @@ interface ColumnFilter {
 
                 <div class="flex justify-between items-center pt-1 px-1">
                    <div class="flex items-center space-x-3">
-                      <button (click)="openWhatsApp(row); $event.stopPropagation()" class="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                          <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
-                          <span>WhatsApp</span>
-                      </button>
+                       <button (click)="openWhatsApp(row); $event.stopPropagation()" class="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">
+                           <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                           <span>WhatsApp</span>
+                       </button>
+                       <button (click)="confirmDelete(row); $event.stopPropagation()" class="p-2 text-red-500 bg-red-50 rounded-xl transition-all active:scale-90 focus:outline-none" title="Delete Order">
+                           <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                       </button>
                    </div>
                    <div class="flex items-center space-x-3">
                       <div class="flex flex-col items-end">
@@ -601,7 +607,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
   constructor() {
     effect(() => {
-      const data = this.orderService.orders();
+      const data = this.orderService.activeOrders();
       this.dataSource.data = data;
     });
 
@@ -945,5 +951,14 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     if (s === 'entregado') return 'bg-[#c30010] text-white';
     if (s === 'dinero recibido') return 'bg-[#0b4f9a] text-white';
     return 'bg-slate-100 text-slate-500';
+  }
+
+  confirmDelete(order: Order) {
+    if (confirm('¿Seguro que deseas eliminar este pedido?')) {
+      this.orderService.deleteOrder(order['_rowNumber']!).subscribe({
+        next: () => this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 }),
+        error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
+      });
+    }
   }
 }

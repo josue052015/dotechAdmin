@@ -34,15 +34,18 @@ export class ProductService {
             next: (response) => {
                 const rows = response.values || [];
                 const parsed: Product[] = rows
-                    .map((row: any[], index: number) => ({
-                        _rowNumber: index + 2,
-                        id: row[0] || '',
-                        name: row[1] || '',
-                        price: parseFloat(row[2]) || 0,
-                        stock: parseInt(row[3]) || 0,
-                        sku: row[4] || '',
-                        category: row[5] || 'General'
-                    }))
+                    .map((row: any[], index: number) => {
+                        const rowNumber = index + 2;
+                        return {
+                            _rowNumber: rowNumber,
+                            id: row[0] || rowNumber.toString(),
+                            name: row[1] || '',
+                            price: parseFloat(row[2]) || 0,
+                            stock: parseInt(row[3]) || 0,
+                            sku: row[4] || '',
+                            category: row[5] || 'General'
+                        };
+                    })
                     .filter((p: Product) => p.id || p.name);
                 this.products.set(parsed);
                 this.isLoading.set(false);
@@ -55,7 +58,25 @@ export class ProductService {
     }
 
     public createProduct(product: Product): Observable<any> {
-        product.id = crypto.randomUUID();
+        // Generate sequential ID starting with 'W'
+        const wProducts = this.products().filter(p => {
+            const idStr = (p.id || '').toString().toLowerCase();
+            return idStr.includes('w');
+        });
+        let nextNumber = 1;
+        if (wProducts.length > 0) {
+            const numbers = wProducts.map(p => {
+                const idStr = p.id?.toString() || '';
+                const match = idStr.match(/\d+/);
+                return match ? parseInt(match[0], 10) : 0;
+            }).filter(n => !isNaN(n));
+
+            if (numbers.length > 0) {
+                nextNumber = Math.max(...numbers) + 1;
+            }
+        }
+        product.id = `W${nextNumber.toString().padStart(5, '0')}`;
+
         const row = [
             product.id, 
             product.name, 

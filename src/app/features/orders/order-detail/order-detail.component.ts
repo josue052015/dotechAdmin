@@ -56,12 +56,15 @@ import { Router } from '@angular/router';
       <!-- Header: Title & Status -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
          <div class="flex flex-wrap items-center gap-3">
-            <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Order {{ order?.id || order?.['_rowNumber'] }}</h1>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Order {{ order?.id || '#' + order?.['_rowNumber'] }}</h1>
             <span [class]="getStatusClass(order?.status || '')" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider">
-               {{ order?.status || 'SIN ESTADO' }}
+               {{ (order?.status || 'SIN ESTADO') | uppercase }}
+            </span>
+            <span *ngIf="order?.isDeleted" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow-sm animate-pulse">
+               ELIMINADO
             </span>
          </div>
-         <div class="flex items-center space-x-2 w-full sm:w-auto">
+         <div class="flex items-center space-x-2 w-full sm:w-auto" *ngIf="!order?.isDeleted">
              <button (click)="openStatusSelector()" class="flex-1 sm:flex-none flex items-center justify-between space-x-3 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text hover:bg-slate-50 transition-all">
                 <span>Change Status</span>
                 <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
@@ -74,11 +77,18 @@ import { Router } from '@angular/router';
                 <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                 <span class="hidden md:inline">Edit Order</span>
              </button>
+             <button *ngIf="order" (click)="confirmDelete()" class="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
+                <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                <span class="hidden md:inline">Delete Order</span>
+             </button>
          </div>
       </div>
 
       <!-- WhatsApp Main Action -->
       <button (click)="openWhatsAppSelector()" 
+              [disabled]="order?.isDeleted"
+              [class.opacity-50]="order?.isDeleted"
+              [class.cursor-not-allowed]="order?.isDeleted"
               class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 md:py-5 rounded-xl flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.98]">
          <lucide-icon name="message-square" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
          <span class="text-sm md:text-base font-black uppercase tracking-widest">Send WhatsApp Message</span>
@@ -105,7 +115,7 @@ import { Router } from '@angular/router';
                        {{ order?.fullName?.charAt(0) }}{{ order?.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                     </div>
                   <div class="min-w-0">
-                     <h3 class="text-lg md:text-xl font-bold text-slate-900 leading-tight truncate">{{ order.fullName }}</h3>
+                     <h3 class="text-lg md:text-xl font-bold text-slate-900 leading-tight truncate">{{ order.fullName || 'Cliente sin identificar' }}</h3>
                      <p class="text-[11px] md:text-sm text-slate-500 font-medium truncate">Since {{ order.date | date:'MMMM yyyy' }}</p>
                   </div>
                </div>
@@ -122,7 +132,10 @@ import { Router } from '@angular/router';
                      <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Address</p>
                      <div class="flex items-start space-x-2">
                         <lucide-icon name="map-pin" class="w-3 h-3 text-slate-400 mt-0.5"></lucide-icon>
-                        <p class="text-sm font-bold text-slate-800 leading-snug">{{ order.address1 }}, {{ order.city }}, {{ order.province }}</p>
+                        <p class="text-sm font-bold text-slate-800 leading-snug">
+                           {{ order.address1 || 'Dirección pendiente' }}
+                           <ng-container *ngIf="order.city || order.province">, {{ order.city }}, {{ order.province }}</ng-container>
+                        </p>
                      </div>
                   </div>
                </div>
@@ -236,7 +249,7 @@ import { Router } from '@angular/router';
                      </div>
                      <p class="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-widest mb-2">Customer Note:</p>
                      <p class="text-xs text-slate-600 font-medium leading-relaxed italic">
-                        "{{ order.notes || 'No customer notes provided for this order.' }}"
+                        "{{ order['notes'] || 'No customer notes provided for this order.' }}"
                      </p>
                   </div>
                </div>
@@ -370,10 +383,10 @@ export class OrderDetailComponent implements OnInit {
       if (!this.order) return;
       const o = this.order;
       const text = `
-ID: #${o.id || o['_rowNumber']}
-CLIENTE: ${o.fullName}
-CEL: ${o.phone}
-DIR: ${o.address1}, ${o.city}
+ID: ${o.id || '#' + o['_rowNumber']}
+CLIENTE: ${o.fullName || 'Cliente sin identificar'}
+CEL: ${o.phone || 'N/A'}
+DIR: ${o.address1 || 'Dirección pendiente'}, ${o.city || ''}, ${o.province || ''}
 PROD: ${o.productQuantity}x ${o.productName}
 TOTAL: RD$ ${this.totalAmount.toLocaleString()}
       `.trim();
@@ -429,5 +442,18 @@ TOTAL: RD$ ${this.totalAmount.toLocaleString()}
       } else {
           this.location.back();
       }
+   }
+
+   confirmDelete() {
+       if (!this.order) return;
+       if (confirm('¿Seguro que deseas eliminar este pedido?')) {
+           this.orderService.deleteOrder(this.order['_rowNumber']!).subscribe({
+               next: () => {
+                   this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 });
+                   this.goBack();
+               },
+               error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
+           });
+       }
    }
 }

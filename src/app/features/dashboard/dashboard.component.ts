@@ -258,10 +258,10 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                        <!-- Order Info -->
                        <div class="flex-1 min-w-0 flex items-center space-x-4 cursor-pointer hover:opacity-80">
                           <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                             #{{ order.id || order['_rowNumber'] }}
+                              {{ order.id || '#' + order['_rowNumber'] }}
                           </div>
                           <div class="flex flex-col min-w-0">
-                             <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName}}</p>
+                             <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName || 'Cliente sin identificar'}}</p>
                              <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
                                 <span>{{order.date | date:'dd/MM/yy'}}</span>
                              </div>
@@ -271,9 +271,9 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                      <td (click)="openOrderDetail(order)" class="cursor-pointer">
                         <div class="flex items-center space-x-3">
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
-                              {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
+                              {{ (order.fullName || 'C').charAt(0) }}{{ (order.fullName || '').split(' ')?.[1]?.charAt(0) || '' }}
                            </div>
-                           <span class="font-semibold text-sm">{{ order.fullName }}</span>
+                           <span class="font-semibold text-sm">{{ order.fullName || 'Cliente sin identificar' }}</span>
                         </div>
                      </td>
                      <td (click)="openOrderDetail(order)" class="cursor-pointer">
@@ -313,10 +313,10 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                <div class="flex justify-between items-start">
                   <div class="flex items-center space-x-3">
                      <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                        {{ order.fullName?.charAt(0) }}{{ order.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
+                        {{ (order.fullName || 'C').charAt(0) }}{{ (order.fullName || '').split(' ')?.[1]?.charAt(0) || '' }}
                      </div>
                      <div class="flex flex-col min-w-0">
-                        <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName}}</p>
+                        <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName || 'Cliente sin identificar'}}</p>
                         <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
                            <span>ID: {{order.id || '#' + order['_rowNumber']}}</span>
                            <span>•</span>
@@ -540,7 +540,7 @@ export class DashboardComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const allOrders = this.orderService.orders();
+      const allOrders = this.orderService.activeOrders();
       const range = this.dateFilterService.currentRange();
       
       if (!allOrders || allOrders.length === 0) return;

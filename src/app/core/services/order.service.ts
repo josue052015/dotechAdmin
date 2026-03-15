@@ -15,6 +15,7 @@ export class OrderService {
 
     // State
     public orders = signal<Order[]>([]);
+    public activeOrders = signal<Order[]>([]); // We'll update this in loadOrders
     public isLoading = signal<boolean>(false);
 
     private currentHeaders: string[] = [];
@@ -50,7 +51,8 @@ export class OrderService {
         'status': 'status',
         'estado': 'status',
         'notes': 'notes',
-        'notas': 'notes'
+        'notas': 'notes',
+        'eliminado': 'isDeleted'
     };
 
     constructor() {
@@ -67,16 +69,18 @@ export class OrderService {
         if (!this.auth.isAuthenticated()) return;
         
         if (!quiet) this.isLoading.set(true);
-        // Start from A1 to get headers
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:O`).subscribe({
+        // Start from A1 to get headers. Increased range to P for soft delete column.
+        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:P`).subscribe({
             next: (response) => {
                 const rows = response.values || [];
                 if (rows.length > 0) {
                     this.currentHeaders = rows[0];
                     const orders = this.mapRowsToOrders(rows);
                     this.orders.set(orders.reverse());
+                    this.activeOrders.set(orders.filter(o => o.isDeleted !== true));
                 } else {
                     this.orders.set([]);
+                    this.activeOrders.set([]);
                 }
                 this.isLoading.set(false);
             },
@@ -98,7 +102,13 @@ export class OrderService {
             const order: any = { _rowNumber: rowNumber };
             
             headerRow.forEach((header, colIndex) => {
-                const property = this.HEADER_MAP[header] || header;
+                let property = this.HEADER_MAP[header] || header;
+                
+                // CRITICAL: If this is the first column and header is empty or unrecognized, force map to 'id'
+                if (colIndex === 0 && (!property || property === '')) {
+                    property = 'id';
+                }
+                
                 const value = row[colIndex];
                 
                 if (property && typeof property === 'string') {
@@ -130,34 +140,48 @@ export class OrderService {
             return isNaN(num) ? 0 : num;
         }
         
+        if (property === 'isDeleted') return sValue.toLowerCase() === 'eliminado';
+        
         return sValue;
     }
 
-    private isValidOrder(order: Order): boolean {
+    private isValidOrder(order: any): boolean {
+        // Basic validation: must have at least Phone, Product, or Name to be valid
+        // Also ensure it's not a header row or empty row
         return !!(
-            (order.fullName && order.fullName.length > 1) || 
-            (order.id && order.id.toString().length > 1) || 
-            (order.productName && order.productName.length > 1)
-        );
+            (order.phone && order.phone.toString().length > 3) || 
+            (order.productName && order.productName.toString().length > 1) ||
+            (order.fullName && order.fullName.toString().length > 1)
+        ) && order.fullName !== 'NOMBRE';
     }
 
     public createOrder(order: Order): Observable<any> {
         order.date = new Date().toISOString().split('T')[0];
+        order.isDeleted = false;
 
-        // Generate sequential ID starting with 'w'
-        const wOrders = this.orders().filter(o => o.id && /w/i.test(o.id.toString()));
+        // Generate sequential ID starting with 'W'
+        // More robust detection: look for any ID containing 'w' (case-insensitive)
+        const allOrders = this.orders();
+        const wOrders = allOrders.filter(o => {
+            const idStr = (o.id || '').toString().toLowerCase();
+            return idStr.includes('w');
+        });
+        
         let nextNumber = 1;
         if (wOrders.length > 0) {
             const numbers = wOrders.map(o => {
                 const idStr = o.id?.toString() || '';
-                const match = idStr.match(/\d+/g);
-                return match ? parseInt(match[match.length - 1], 10) : 0;
-            }).filter(n => n > 0);
+                // Extract only digits from the ID string (handles #w00105 or W00105)
+                const match = idStr.match(/\d+/);
+                return match ? parseInt(match[0], 10) : 0;
+            }).filter(n => !isNaN(n));
 
             if (numbers.length > 0) {
                 nextNumber = Math.max(...numbers) + 1;
             }
         }
+        
+        // Generate NEW ID with 5-digit padding as requested (WXXXXX)
         order.id = `W${nextNumber.toString().padStart(5, '0')}`;
 
         const row = this.mapOrderToRow(order);
@@ -182,6 +206,20 @@ export class OrderService {
         );
     }
 
+    public deleteOrder(rowNumber: number): Observable<any> {
+        // Optimistic UI update
+        const currentOrders = this.orders();
+        this.orders.set(currentOrders.filter(o => o['_rowNumber'] !== rowNumber));
+
+        // Find the "eliminado" column index
+        const colIndex = this.currentHeaders.findIndex(h => this.normalizeHeader(h) === 'eliminado');
+        const colLetter = colIndex >= 0 ? String.fromCharCode(65 + colIndex) : 'P'; // Fallback to P
+
+        return this.sheetsService.updateRow(`${this.SHEET_NAME}!${colLetter}${rowNumber}`, [['eliminado']]).pipe(
+            tap(() => this.loadOrders(true))
+        );
+    }
+
     private mapOrderToRow(order: Order): any[] {
         if (this.currentHeaders.length === 0) {
             return [
@@ -189,14 +227,25 @@ export class OrderService {
                 order.productPrice || 0, order.productName || '', order.fullName || '',
                 order.phone || '', order.address1 || '', order.province || '',
                 order.city || '', order.packaging || '', order.carrier || 'envio local',
-                order.shippingCost || 0, order.status || '', order.notes || ''
+                order.shippingCost || 0, order.status || '', order['notes'] || ''
             ];
         }
 
-        return this.currentHeaders.map(header => {
+        return this.currentHeaders.map((header, index) => {
             const normalized = this.normalizeHeader(header);
-            const property = this.HEADER_MAP[normalized] || normalized;
-            const value = (order as any)[property];
+            let property = this.HEADER_MAP[normalized] || normalized;
+            
+            // CRITICAL: Mirror mapRowsToOrders logic to force first column to 'id'
+            if (index === 0 && (!property || property === '')) {
+                property = 'id';
+            }
+            
+            let value = (order as any)[property];
+            
+            if (property === 'isDeleted') {
+                value = order['isDeleted'] === true ? 'eliminado' : '';
+            }
+            
             return value !== undefined && value !== null ? value : '';
         });
     }

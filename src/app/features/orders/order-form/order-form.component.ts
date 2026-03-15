@@ -50,7 +50,7 @@ import { Order } from '../../../core/models/order.model';
             </div>
 
             <div class="space-y-1.5">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number <span class="text-red-500">*</span></label>
               <input type="text" formControlName="phone" placeholder="+1 (555) 000-0000" 
                      class="input-stitch text-sm">
             </div>
@@ -68,7 +68,7 @@ import { Order } from '../../../core/models/order.model';
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
             <div class="md:col-span-6 space-y-1.5">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Product Selection</label>
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Product Selection <span class="text-red-500">*</span></label>
               <div class="relative">
                 <select formControlName="productName" class="select-stitch cursor-pointer text-sm">
                   <option value="">Select a product</option>
@@ -79,7 +79,7 @@ import { Order } from '../../../core/models/order.model';
             </div>
 
             <div class="md:col-span-3 space-y-1.5">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label>
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity <span class="text-red-500">*</span></label>
               <input type="number" formControlName="productQuantity" min="1" 
                      class="input-stitch text-sm">
             </div>
@@ -138,7 +138,7 @@ import { Order } from '../../../core/models/order.model';
         <!-- Status & Notes -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div class="card-stitch p-5 md:p-8 bg-white space-y-4">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Order Status</label>
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Order Status <span class="text-red-500">*</span></label>
               <div class="relative">
                 <select formControlName="status" class="select-stitch cursor-pointer text-sm">
                   <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
@@ -225,11 +225,11 @@ export class OrderFormComponent implements OnInit {
   carriers = ['envio local', 'aurel pack', 'gintracom'];
 
   orderForm: FormGroup = this.fb.group({
-    fullName: ['', Validators.required],
+    fullName: [''],
     phone: ['', Validators.required],
     address1: [''],
-    province: ['', Validators.required],
-    city: [{ value: '', disabled: true }, Validators.required],
+    province: [''],
+    city: [{ value: '', disabled: true }],
     productName: ['', Validators.required],
     productQuantity: [1, [Validators.required, Validators.min(1)]],
     productPrice: [0, Validators.required],

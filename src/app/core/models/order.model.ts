@@ -14,5 +14,6 @@ export interface Order {
     carrier?: string;
     status: string;
     notes: string;
+    isDeleted?: boolean;
     [key: string]: any;
 }
