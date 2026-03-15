@@ -271,7 +271,7 @@ interface ColumnFilter {
                         {{ row.fullName.charAt(0) }}{{ row.fullName.split(' ')[1]?.charAt(0) || '' }}
                      </div>
                      <div class="flex flex-col">
-                        <span class="text-sm font-bold leading-tight">{{row.fullName || 'Cliente sin identificar'}}</span>
+                        <span class="text-sm font-bold leading-tight" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</span>
                         <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">ID: {{row.id || '#' + row['_rowNumber']}}</span>
                      </div>
                   </div>
@@ -424,7 +424,7 @@ interface ColumnFilter {
                          {{ row.fullName?.charAt(0) }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                       </div>
                       <div class="flex flex-col min-w-0">
-                         <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{row.fullName || 'Cliente sin identificar'}}</p>
+                         <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</p>
                          <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
                             <span>ID: {{row.id || '#' + row['_rowNumber']}}</span>
                             <span>•</span>

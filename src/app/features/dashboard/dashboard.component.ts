@@ -261,7 +261,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                               {{ order.id || '#' + order['_rowNumber'] }}
                           </div>
                           <div class="flex flex-col min-w-0">
-                             <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName || 'Cliente sin identificar'}}</p>
+                             <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!order.fullName || order.fullName.toLowerCase() === 'cliente sin identificar'">{{order.fullName || 'Cliente sin identificar'}}</p>
                              <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
                                 <span>{{order.date | date:'dd/MM/yy'}}</span>
                              </div>
@@ -273,7 +273,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
                               {{ (order.fullName || 'C').charAt(0) }}{{ (order.fullName || '').split(' ')?.[1]?.charAt(0) || '' }}
                            </div>
-                           <span class="font-semibold text-sm">{{ order.fullName || 'Cliente sin identificar' }}</span>
+                            <span class="font-semibold text-sm" [class.text-red-600]="!order.fullName || order.fullName.toLowerCase() === 'cliente sin identificar'">{{ order.fullName || 'Cliente sin identificar' }}</span>
                         </div>
                      </td>
                      <td (click)="openOrderDetail(order)" class="cursor-pointer">
@@ -316,7 +316,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                         {{ (order.fullName || 'C').charAt(0) }}{{ (order.fullName || '').split(' ')?.[1]?.charAt(0) || '' }}
                      </div>
                      <div class="flex flex-col min-w-0">
-                        <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{order.fullName || 'Cliente sin identificar'}}</p>
+                        <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!order.fullName || order.fullName.toLowerCase() === 'cliente sin identificar'">{{order.fullName || 'Cliente sin identificar'}}</p>
                         <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
                            <span>ID: {{order.id || '#' + order['_rowNumber']}}</span>
                            <span>•</span>
