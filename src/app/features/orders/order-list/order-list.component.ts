@@ -292,10 +292,10 @@ interface ColumnFilter {
                    </div>
                 </th>
                 <td mat-cell *matCellDef="let row">
-                  <div class="flex items-center space-x-2">
-                    <lucide-icon name="phone" class="text-text-muted w-4 h-4"></lucide-icon>
-                    <span class="text-xs font-bold">{{row.phone}}</span>
-                  </div>
+                   <div class="flex items-center space-x-2" *ngIf="row.phone">
+                     <lucide-icon name="phone" class="text-text-muted w-4 h-4"></lucide-icon>
+                     <span class="text-xs font-bold">{{row.phone}}</span>
+                   </div>
                 </td>
               </ng-container>
 
@@ -390,7 +390,7 @@ interface ColumnFilter {
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"
                   (click)="openOrderDetail(row)"
                   class="hover:bg-slate-50/80 transition-all cursor-pointer group border-transparent"></tr>
 
@@ -418,7 +418,7 @@ interface ColumnFilter {
                 <div class="flex justify-between items-start">
                    <div class="flex items-center space-x-3">
                       <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                         {{ row.fullName.charAt(0) }}{{ row.fullName.split(' ')[1]?.charAt(0) || '' }}
+                         {{ row.fullName?.charAt(0) }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                       </div>
                       <div class="flex flex-col min-w-0">
                          <p class="text-sm font-bold text-slate-900 leading-tight truncate max-w-[140px]">{{row.fullName}}</p>
@@ -449,7 +449,7 @@ interface ColumnFilter {
                       <span class="text-slate-400 font-semibold">Quantity</span>
                       <span class="text-slate-900 font-bold">{{row.productQuantity}} units</span>
                    </div>
-                   <div class="flex items-center justify-between text-xs">
+                   <div class="flex items-center justify-between text-xs" *ngIf="row.phone">
                       <span class="text-slate-400 font-semibold">Phone</span>
                       <div class="flex items-center space-x-1.5 font-bold text-slate-900">
                          <lucide-icon name="phone" class="w-3 h-3 text-slate-400"></lucide-icon>

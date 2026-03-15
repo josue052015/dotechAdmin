@@ -195,10 +195,12 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                </div>
             </div>
             <div class="mt-8 md:mt-10 grid grid-cols-2 gap-3 md:gap-4">
-               <div *ngFor="let label of donutChartData.labels; let i = index" class="flex items-center space-x-2">
-                  <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full" [style.backgroundColor]="donutChartColors[i]"></span>
-                  <span class="text-[10px] md:text-[11px] font-semibold text-slate-600 truncate">{{ label }}</span>
-                  <span class="text-[10px] md:text-[11px] text-slate-400 ml-auto">{{ donutChartData.datasets[0].data[i] }}</span>
+               <div *ngFor="let label of donutChartData.labels; let i = index">
+                  <div *ngIf="donutChartData.datasets[0].data[i] > 0" class="flex items-center space-x-2">
+                     <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full" [style.backgroundColor]="donutChartColors[i]"></span>
+                     <span class="text-[10px] md:text-[11px] font-semibold text-slate-600 truncate">{{ label }}</span>
+                     <span class="text-[10px] md:text-[11px] text-slate-400 ml-auto">{{ donutChartData.datasets[0].data[i] }}</span>
+                  </div>
                </div>
             </div>
          </div>
@@ -278,7 +280,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                         <span class="font-medium text-sm">{{ order.productName }}</span>
                      </td>
                      <td (click)="openOrderDetail(order)" class="cursor-pointer">
-                        <span class="font-bold text-sm">RD$ {{ (order.productPrice * order.productQuantity) | number:'1.0-0' }}</span>
+                        <span class="font-bold text-sm">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
                      </td>
                      <td class="text-center">
                         <div [class]="getStatusClass(order.status)" 
@@ -455,11 +457,26 @@ export class DashboardComponent implements OnInit {
   };
 
   // Donut Chart
-  public donutChartColors = ['#2563EB', '#16A34A', '#D97706', '#DC2626'];
+  public donutChartColors = [
+    '#5e2b97', // cancelado
+    '#3c1f5a', // desaparecido
+    '#94a3b8', // no confirmado
+    '#cc2936', // pendiente de ubicacion
+    '#b08d1a', // confirmado completo
+    '#285b28', // empacado
+    '#1e5d94', // envio en proceso
+    '#c30010', // entregado
+    '#0b4f9a'  // dinero recibido
+  ];
+
   public donutChartData: ChartConfiguration<'doughnut'>['data'] = {
-    labels: ['Processing', 'Delivered', 'On Hold', 'Cancelled'],
+    labels: [
+      'Cancelado', 'Desaparecido', 'No Confirmado', 
+      'Pendiente Ubicación', 'Confirmado', 
+      'Empacado', 'Envío en Proceso', 'Entregado', 'Pagado'
+    ],
     datasets: [{
-      data: [0, 0, 0, 0],
+      data: Array(9).fill(0),
       backgroundColor: this.donutChartColors,
       hoverBackgroundColor: this.donutChartColors,
       borderWidth: 0,
@@ -567,16 +584,27 @@ export class DashboardComponent implements OnInit {
   }
 
   private updateDonutChart(orders: any[]) {
-    const processing = orders.filter(o => o.status?.toLowerCase().includes('proceso') || o.status?.toLowerCase().includes('pendiente')).length;
-    const delivered = orders.filter(o => o.status?.toLowerCase().includes('entregado') || o.status?.toLowerCase().includes('recibido')).length;
-    const onHold = orders.filter(o => o.status?.toLowerCase().includes('espera') || o.status?.toLowerCase().includes('no confirmado')).length;
-    const cancelled = orders.filter(o => o.status?.toLowerCase().includes('cancelado')).length;
+    const counts = Array(9).fill(0);
+    
+    orders.forEach(o => {
+      const s = (o.status || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      
+      if (s === 'cancelado') counts[0]++;
+      else if (s === 'desaparecido') counts[1]++;
+      else if (s === 'no confirmado') counts[2]++;
+      else if (s === 'pendiente de ubicacion') counts[3]++;
+      else if (s === 'confirmado completo') counts[4]++;
+      else if (s === 'empacado') counts[5]++;
+      else if (s === 'envio en proceso') counts[6]++;
+      else if (s === 'entregado') counts[7]++;
+      else if (s === 'dinero recibido') counts[8]++;
+    });
 
     this.donutChartData = {
       ...this.donutChartData,
       datasets: [{
         ...this.donutChartData.datasets[0],
-        data: [processing, delivered, onHold, cancelled]
+        data: counts
       }]
     };
   }

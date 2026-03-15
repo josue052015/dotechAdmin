@@ -17,12 +17,41 @@ export class OrderService {
     public orders = signal<Order[]>([]);
     public isLoading = signal<boolean>(false);
 
-    // Define column mapping (assuming standard order for rows)
-    // Date, Product Quantity, Product Price, Product Name, Full Name, Phone, Address 1, Province, City, Status, Notes, Shipping Cost, Packaging
-    private readonly COLUMNS = [
-        'Date', 'Product Quantity', 'Product Price', 'Product Name', 'Full Name',
-        'Phone', 'Address 1', 'Province', 'City', 'Status', 'Notes', 'Shipping Cost', 'Packaging', 'ID'
-    ];
+    private currentHeaders: string[] = [];
+    private readonly HEADER_MAP: { [key: string]: keyof Order } = {
+        '#': 'id',
+        'id': 'id',
+        'date': 'date',
+        'fecha': 'date',
+        'product quantity': 'productQuantity',
+        'cantidad': 'productQuantity',
+        'product price': 'productPrice',
+        'precio': 'productPrice',
+        'product name': 'productName',
+        'producto': 'productName',
+        'full name': 'fullName',
+        'nombre': 'fullName',
+        'phone': 'phone',
+        'telefono': 'phone',
+        'teléfono': 'phone',
+        'address 1': 'address1',
+        'direccion': 'address1',
+        'dirección': 'address1',
+        'province': 'province',
+        'provincia': 'province',
+        'city': 'city',
+        'ciudad': 'city',
+        'empacado': 'packaging',
+        'envio registrado': 'carrier',
+        'envio registrado en paquetera': 'carrier',
+        'carrier': 'carrier',
+        'costo de envio': 'shippingCost',
+        'envio': 'shippingCost',
+        'status': 'status',
+        'estado': 'status',
+        'notes': 'notes',
+        'notas': 'notes'
+    };
 
     constructor() {
         effect(() => {
@@ -38,11 +67,17 @@ export class OrderService {
         if (!this.auth.isAuthenticated()) return;
         
         if (!quiet) this.isLoading.set(true);
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A2:O`).subscribe({
+        // Start from A1 to get headers
+        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:O`).subscribe({
             next: (response) => {
                 const rows = response.values || [];
-                const parsedOrders: Order[] = rows.map((row: any[], index: number) => this.mapRowToOrder(row, index + 2));
-                this.orders.set(parsedOrders.reverse());
+                if (rows.length > 0) {
+                    this.currentHeaders = rows[0];
+                    const orders = this.mapRowsToOrders(rows);
+                    this.orders.set(orders.reverse());
+                } else {
+                    this.orders.set([]);
+                }
                 this.isLoading.set(false);
             },
             error: (err) => {
@@ -50,6 +85,60 @@ export class OrderService {
                 this.isLoading.set(false);
             }
         });
+    }
+
+    private mapRowsToOrders(rows: any[][]): Order[] {
+        if (rows.length < 2) return [];
+        
+        const headerRow = rows[0].map(h => this.normalizeHeader(h));
+        const dataRows = rows.slice(1);
+        
+        return dataRows.map((row, index) => {
+            const rowNumber = index + 2;
+            const order: any = { _rowNumber: rowNumber };
+            
+            headerRow.forEach((header, colIndex) => {
+                const property = this.HEADER_MAP[header] || header;
+                const value = row[colIndex];
+                
+                if (property && typeof property === 'string') {
+                    order[property] = this.parseValue(property, value);
+                }
+            });
+            
+            return order as Order;
+        }).filter(o => this.isValidOrder(o));
+    }
+
+    private normalizeHeader(header: any): string {
+        return (header || '')
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    }
+
+    private parseValue(property: string, value: any): any {
+        if (value === undefined || value === null) return '';
+        const sValue = value.toString().trim();
+        if (!sValue) return '';
+
+        if (property === 'productQuantity') return parseInt(sValue.replace(/[^0-9]/g, '')) || 1;
+        if (property === 'productPrice' || property === 'shippingCost' || property === 'packaging') {
+            const num = parseFloat(sValue.replace(/[^0-9.-]/g, ""));
+            return isNaN(num) ? 0 : num;
+        }
+        
+        return sValue;
+    }
+
+    private isValidOrder(order: Order): boolean {
+        return !!(
+            (order.fullName && order.fullName.length > 1) || 
+            (order.id && order.id.toString().length > 1) || 
+            (order.productName && order.productName.length > 1)
+        );
     }
 
     public createOrder(order: Order): Observable<any> {
@@ -73,7 +162,7 @@ export class OrderService {
 
         const row = this.mapOrderToRow(order);
         return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:O`, [row]).pipe(
-            tap(() => this.loadOrders()) // Reload to get fresh data
+            tap(() => this.loadOrders())
         );
     }
 
@@ -89,98 +178,26 @@ export class OrderService {
 
         const row = this.mapOrderToRow(order);
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:O${rowNumber}`, [row]).pipe(
-            tap(() => this.loadOrders(true)) // Silent sync
+            tap(() => this.loadOrders(true))
         );
     }
 
-    private mapRowToOrder(row: any[], rowNumber: number): Order {
-        // Assume format based on sheet headers:
-        // A(0): ID, B(1): Date, C(2): Qty, D(3): Price, E(4): Product Name,
-        // F(5): Full Name, G(6): Phone, H(7): Address 1, I(8): Province, J(9): City,
-        // K(10): empacado, L(11): Envio registrado, M(12): Costo de envio, N(13): Status, O(14): Notes
-        
-        let order: Order = {
-            _rowNumber: rowNumber,
-            id: row[0] || '',
-            date: row[1] || '',
-            productQuantity: parseInt(row[2]) || 1,
-            productPrice: parseFloat(row[3]) || 0,
-            productName: row[4] || '',
-            fullName: row[5] || '',
-            phone: row[6] || '',
-            address1: row[7] || '',
-            province: row[8] || '',
-            city: row[9] || '',
-            packaging: parseFloat(row[10]) || 0,
-            carrier: row[11] ? row[11].toLowerCase().trim() : 'envio local',
-            shippingCost: parseFloat(row[12]) || 0,
-            status: row[13] || '',
-            notes: row[14] || ''
-        };
-
-        // Fallback for older rows that might have date first
-        const firstCol = row[0] ? row[0].toString() : '';
-        const isDateFirst = firstCol.includes('-') || firstCol.includes('/') || (firstCol.length >= 8 && !isNaN(Date.parse(firstCol)));
-
-        if (isDateFirst) {
-            order = {
-                ...order,
-                date: row[0] || '',
-                productQuantity: parseInt(row[1]) || 1,
-                productPrice: parseFloat(row[2]) || 0,
-                productName: row[3] || '',
-                fullName: row[4] || '',
-                phone: row[5] || '',
-                address1: row[6] || '',
-                province: row[7] || '',
-                city: row[8] || '',
-                status: row[13] || row[9] || '',
-                notes: row[10] || '',
-                carrier: row[11] ? row[11].toLowerCase().trim() : 'envio local',
-                shippingCost: parseFloat(row[12]) || 0,
-                packaging: parseFloat(row[13]) || 0,
-                id: row[14] || `${rowNumber}`
-            };
-        }
-
-        // Final check for status based on known strings
-        if (!order.status) {
-            const knownStatuses = [
-                'confirmado', 'pendiente', 'no confirmado', 'cancelado', 'desaparecido',
-                'empacado', 'envio', 'entregado', 'recibido', 'ubicacion', 'ubicación', 'dinero'
-            ];
-            for (const val of row) {
-                if (val && typeof val === 'string') {
-                    const normalized = val.toLowerCase();
-                    if (knownStatuses.some(ks => normalized.includes(ks))) {
-                        order.status = val;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return order;
-    }
-
     private mapOrderToRow(order: Order): any[] {
-        // Mapping exactly to A - O (0 - 14)
-        return [
-            order.id || '',                 // A (0) - ID
-            order.date || '',               // B (1) - Date
-            order.productQuantity || 1,     // C (2) - Product Quantity
-            order.productPrice || 0,        // D (3) - Product Price
-            order.productName || '',        // E (4) - Product Name
-            order.fullName || '',           // F (5) - Full Name
-            order.phone || '',              // G (6) - Phone
-            order.address1 || '',           // H (7) - Address 1
-            order.province || '',           // I (8) - Province
-            order.city || '',               // J (9) - City
-            order.packaging || '',          // K (10) - empacado
-            order.carrier || 'envio local', // L (11) - Envio registrado en paqueteria
-            order.shippingCost || 0,        // M (12) - Costo de envio
-            order.status || '',             // N (13) - Status
-            order.notes || ''               // O (14) - Notes
-        ];
+        if (this.currentHeaders.length === 0) {
+            return [
+                order.id || '', order.date || '', order.productQuantity || 1,
+                order.productPrice || 0, order.productName || '', order.fullName || '',
+                order.phone || '', order.address1 || '', order.province || '',
+                order.city || '', order.packaging || '', order.carrier || 'envio local',
+                order.shippingCost || 0, order.status || '', order.notes || ''
+            ];
+        }
+
+        return this.currentHeaders.map(header => {
+            const normalized = this.normalizeHeader(header);
+            const property = this.HEADER_MAP[normalized] || normalized;
+            const value = (order as any)[property];
+            return value !== undefined && value !== null ? value : '';
+        });
     }
 }
