@@ -185,7 +185,7 @@ export class OrderService {
         order.id = `W${nextNumber.toString().padStart(5, '0')}`;
 
         const row = this.mapOrderToRow(order);
-        return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:O`, [row]).pipe(
+        return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:P`, [row]).pipe(
             tap(() => this.loadOrders())
         );
     }
@@ -201,7 +201,7 @@ export class OrderService {
         }
 
         const row = this.mapOrderToRow(order);
-        return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:O${rowNumber}`, [row]).pipe(
+        return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:P${rowNumber}`, [row]).pipe(
             tap(() => this.loadOrders(true))
         );
     }
