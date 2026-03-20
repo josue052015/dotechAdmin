@@ -577,7 +577,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
   statuses = [
     'cancelado', 'desaparecido', 'no confirmado',
-    'pendiente de ubicacion', 'confirmado completo',
+    'pendiente de ubicacion', 'confirmado completo', 'no cobertura',
     'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
   ];
 
@@ -945,7 +945,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     if (s === 'desaparecido') return 'bg-[#542b7c] text-white';
     if (s === 'no confirmado') return 'bg-[#f0f0f0] text-[#4a4a4a]';
     if (s === 'pendiente de ubicacion') return 'bg-[#fce0e3] text-[#cc2936]';
-    if (s === 'confirmado completo') return 'bg-[#fff2b2] text-[#b08d1a]';
+    if (s === 'confirmado completo' || s === 'no cobertura') return 'bg-[#fff2b2] text-[#b08d1a]';
     if (s === 'empacado') return 'bg-[#d2ecb9] text-[#285b28]';
     if (s === 'envio en proceso') return 'bg-[#c3e4fc] text-[#1e5d94]';
     if (s === 'entregado') return 'bg-[#c30010] text-white';

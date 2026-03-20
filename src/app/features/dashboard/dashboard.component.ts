@@ -384,7 +384,7 @@ export class DashboardComponent implements OnInit {
 
   statuses = [
     'cancelado', 'desaparecido', 'no confirmado',
-    'pendiente de ubicacion', 'confirmado completo',
+    'pendiente de ubicacion', 'confirmado completo', 'no cobertura',
     'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
   ];
 
@@ -463,6 +463,7 @@ export class DashboardComponent implements OnInit {
     '#94a3b8', // no confirmado
     '#cc2936', // pendiente de ubicacion
     '#b08d1a', // confirmado completo
+    '#eab308', // no cobertura (yellow-500)
     '#285b28', // empacado
     '#1e5d94', // envio en proceso
     '#c30010', // entregado
@@ -472,11 +473,11 @@ export class DashboardComponent implements OnInit {
   public donutChartData: ChartConfiguration<'doughnut'>['data'] = {
     labels: [
       'Cancelado', 'Desaparecido', 'No Confirmado', 
-      'Pendiente Ubicación', 'Confirmado', 
+      'Pendiente Ubicación', 'Confirmado', 'No Cobertura',
       'Empacado', 'Envío en Proceso', 'Entregado', 'Pagado'
     ],
     datasets: [{
-      data: Array(9).fill(0),
+      data: Array(10).fill(0),
       backgroundColor: this.donutChartColors,
       hoverBackgroundColor: this.donutChartColors,
       borderWidth: 0,
@@ -594,10 +595,11 @@ export class DashboardComponent implements OnInit {
       else if (s === 'no confirmado') counts[2]++;
       else if (s === 'pendiente de ubicacion') counts[3]++;
       else if (s === 'confirmado completo') counts[4]++;
-      else if (s === 'empacado') counts[5]++;
-      else if (s === 'envio en proceso') counts[6]++;
-      else if (s === 'entregado') counts[7]++;
-      else if (s === 'dinero recibido') counts[8]++;
+      else if (s === 'no cobertura') counts[5]++;
+      else if (s === 'empacado') counts[6]++;
+      else if (s === 'envio en proceso') counts[7]++;
+      else if (s === 'entregado') counts[8]++;
+      else if (s === 'dinero recibido') counts[9]++;
     });
 
     this.donutChartData = {
@@ -757,7 +759,7 @@ export class DashboardComponent implements OnInit {
     if (s === 'desaparecido') return 'bg-[#542b7c] text-white';
     if (s === 'no confirmado') return 'bg-[#f0f0f0] text-[#4a4a4a]';
     if (s === 'pendiente de ubicacion') return 'bg-[#fce0e3] text-[#cc2936]';
-    if (s === 'confirmado completo') return 'bg-[#fff2b2] text-[#b08d1a]';
+    if (s === 'confirmado completo' || s === 'no cobertura') return 'bg-[#fff2b2] text-[#b08d1a]';
     if (s === 'empacado') return 'bg-[#d2ecb9] text-[#285b28]';
     if (s === 'envio en proceso') return 'bg-[#c3e4fc] text-[#1e5d94]';
     if (s === 'entregado') return 'bg-[#c30010] text-white';

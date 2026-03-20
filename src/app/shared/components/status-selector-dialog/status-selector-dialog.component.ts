@@ -67,7 +67,7 @@ export class StatusSelectorDialogComponent {
     if (s.includes('entregado') || s.includes('dinero recibido') || s.includes('confirmado completo')) {
       return 'bg-green-500';
     }
-    if (s.includes('pendiente') || s.includes('proceso') || s.includes('empacado') || s.includes('no confirmado')) {
+    if (s.includes('pendiente') || s.includes('proceso') || s.includes('empacado') || s.includes('no confirmado') || s.includes('no cobertura')) {
       return 'bg-orange-500';
     }
     if (s.includes('cancelado') || s.includes('desaparecido')) {
