@@ -17,6 +17,14 @@ export class OrderService {
     public orders = signal<Order[]>([]);
     public activeOrders = signal<Order[]>([]); // We'll update this in loadOrders
     public isLoading = signal<boolean>(false);
+    private nextRowNumber: number = 2; // Default to first data row after header
+    
+    // Explicit Schema Definition to prevent shifting
+    private readonly ORDER_SCHEMA: (keyof Order | 'notes')[] = [
+        'id', 'date', 'productQuantity', 'productPrice', 'productName', 
+        'fullName', 'phone', 'address1', 'province', 'city', 
+        'packaging', 'carrier', 'shippingCost', 'status', 'notes', 'isDeleted'
+    ];
 
     private currentHeaders: string[] = [];
     private readonly HEADER_MAP: { [key: string]: keyof Order } = {
@@ -78,7 +86,10 @@ export class OrderService {
                     const orders = this.mapRowsToOrders(rows);
                     this.orders.set(orders.reverse());
                     this.activeOrders.set(orders.filter(o => o.isDeleted !== true));
+                    // The next record should be at the very end of the sheet
+                    this.nextRowNumber = rows.length + 1;
                 } else {
+                    this.nextRowNumber = 2;
                     this.orders.set([]);
                     this.activeOrders.set([]);
                 }
@@ -102,17 +113,16 @@ export class OrderService {
             const order: any = { _rowNumber: rowNumber };
             
             headerRow.forEach((header, colIndex) => {
-                let property = this.HEADER_MAP[header] || header;
+                let property = this.HEADER_MAP[header];
                 
-                // CRITICAL: If this is the first column and header is empty or unrecognized, force map to 'id'
-                if (colIndex === 0 && (!property || property === '')) {
+                // CRITICAL fallback for ID column if header is missing/unrecognized
+                if (colIndex === 0 && !property) {
                     property = 'id';
                 }
                 
-                const value = row[colIndex];
-                
-                if (property && typeof property === 'string') {
-                    order[property] = this.parseValue(property, value);
+                if (property) {
+                    const value = row[colIndex];
+                    order[property as string] = this.parseValue(property as string, value);
                 }
             });
             
@@ -156,7 +166,13 @@ export class OrderService {
     }
 
     public createOrder(order: Order): Observable<any> {
-        order.date = new Date().toISOString().split('T')[0];
+        // Set date in requested format: yyyy-dd-mm
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        order.date = `${yyyy}-${mm}-${dd}`;
+        
         order.isDeleted = false;
 
         // Generate sequential ID starting with 'W'
@@ -185,7 +201,11 @@ export class OrderService {
         order.id = `W${nextNumber.toString().padStart(5, '0')}`;
 
         const row = this.mapOrderToRow(order);
-        return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:P`, [row]).pipe(
+        const currentRow = this.nextRowNumber;
+        const endCol = String.fromCharCode(64 + row.length);
+        
+        // Use updateRow with an absolute range (A{row}) to FORCE Column A alignment
+        return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${currentRow}:${endCol}${currentRow}`, [row]).pipe(
             tap(() => this.loadOrders())
         );
     }
@@ -201,7 +221,8 @@ export class OrderService {
         }
 
         const row = this.mapOrderToRow(order);
-        return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:P${rowNumber}`, [row]).pipe(
+        const endCol = String.fromCharCode(64 + row.length);
+        return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:${endCol}${rowNumber}`, [row]).pipe(
             tap(() => this.loadOrders(true))
         );
     }
@@ -221,32 +242,37 @@ export class OrderService {
     }
 
     private mapOrderToRow(order: Order): any[] {
-        if (this.currentHeaders.length === 0) {
-            return [
-                order.id || '', order.date || '', order.productQuantity || 1,
-                order.productPrice || 0, order.productName || '', order.fullName || '',
-                order.phone || '', order.address1 || '', order.province || '',
-                order.city || '', order.packaging || '', order.carrier || 'envio local',
-                order.shippingCost || 0, order.status || '', order['notes'] || ''
-            ];
-        }
-
-        return this.currentHeaders.map((header, index) => {
-            const normalized = this.normalizeHeader(header);
-            let property = this.HEADER_MAP[normalized] || normalized;
+        console.group('Order Data Mapping (A-Column Alignment)');
+        console.log('Original Order:', order);
+        
+        const headerRow = this.currentHeaders.map(h => this.normalizeHeader(h));
+        // Use a fixed 16-column base array as per schema (A-P)
+        const row: any[] = new Array(this.ORDER_SCHEMA.length).fill('');
+        
+        this.ORDER_SCHEMA.forEach((prop, schemaIdx) => {
+            // Priority 1: Match header position in sheet (if found)
+            let targetIdx = headerRow.findIndex(h => this.HEADER_MAP[h] === prop);
             
-            // CRITICAL: Mirror mapRowsToOrders logic to force first column to 'id'
-            if (index === 0 && (!property || property === '')) {
-                property = 'id';
+            // Priority 2: Fallback to strict positional schema index (Column A=0, B=1, etc.)
+            if (targetIdx === -1) {
+                targetIdx = schemaIdx;
             }
             
-            let value = (order as any)[property];
+            let value = (order as any)[prop];
+            // Handle special cases
+            if (prop === 'isDeleted') value = value ? 'eliminado' : '';
             
-            if (property === 'isDeleted') {
-                value = order['isDeleted'] === true ? 'eliminado' : '';
+            // Ensure array is large enough for the target index
+            if (targetIdx >= row.length) {
+                while(row.length <= targetIdx) row.push('');
             }
             
-            return value !== undefined && value !== null ? value : '';
+            row[targetIdx] = (value !== undefined && value !== null) ? value : '';
+            console.log(`Property [${prop}] -> Column Index ${targetIdx} (${targetIdx === schemaIdx ? 'Strict Position' : 'Header Matched'})`);
         });
+
+        console.log('Final Payload (Starts at A):', row);
+        console.groupEnd();
+        return row;
     }
 }
