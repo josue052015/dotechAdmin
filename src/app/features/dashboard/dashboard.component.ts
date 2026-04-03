@@ -194,13 +194,14 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                   <span class="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
                </div>
             </div>
-            <div class="mt-8 md:mt-10 grid grid-cols-2 gap-3 md:gap-4">
-               <div *ngFor="let label of donutChartData.labels; let i = index">
-                  <div *ngIf="donutChartData.datasets[0].data[i] > 0" class="flex items-center space-x-2">
-                     <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full" [style.backgroundColor]="donutChartColors[i]"></span>
-                     <span class="text-[10px] md:text-[11px] font-semibold text-slate-600 truncate">{{ label }}</span>
-                     <span class="text-[10px] md:text-[11px] text-slate-400 ml-auto">{{ donutChartData.datasets[0].data[i] }}</span>
+            <div class="mt-8 md:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+               <div *ngFor="let item of activeLegendItems" 
+                    class="flex items-center justify-between group p-1.5 rounded-lg hover:bg-slate-50/80 transition-all duration-200 cursor-default">
+                  <div class="flex items-center space-x-2.5 overflow-hidden">
+                     <span class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm flex-shrink-0" [style.backgroundColor]="item.color"></span>
+                     <span class="text-[10px] md:text-[11px] font-bold text-slate-600 truncate transition-colors group-hover:text-slate-900">{{ item.label }}</span>
                   </div>
+                  <span class="text-[10px] md:text-[11px] font-black text-slate-400 group-hover:text-slate-600 transition-colors ml-2">{{ item.count }}</span>
                </div>
             </div>
          </div>
@@ -395,6 +396,7 @@ export class DashboardComponent implements OnInit {
   public moneyReceived = 0;
   public totalOrders = 0;
   public recentOrders: Order[] = [];
+  public activeLegendItems: { label: string; color: string; count: number }[] = [];
 
   // Line Chart
   public lineChartData: ChartConfiguration['data'] = {
@@ -473,8 +475,8 @@ export class DashboardComponent implements OnInit {
   public donutChartData: ChartConfiguration<'doughnut'>['data'] = {
     labels: [
       'Cancelado', 'Desaparecido', 'No Confirmado', 
-      'Pendiente Ubicación', 'Confirmado', 'No Cobertura',
-      'Empacado', 'Envío en Proceso', 'Entregado', 'Pagado'
+      'Pendiente De Ubicacion', 'Confirmado Completo', 'No Cobertura',
+      'Empacado', 'Envio En Proceso', 'Entregado', 'Dinero Recibido'
     ],
     datasets: [{
       data: Array(10).fill(0),
@@ -585,7 +587,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private updateDonutChart(orders: any[]) {
-    const counts = Array(9).fill(0);
+    const counts = Array(10).fill(0);
     
     orders.forEach(o => {
       const s = (o.status || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -601,6 +603,12 @@ export class DashboardComponent implements OnInit {
       else if (s === 'entregado') counts[8]++;
       else if (s === 'dinero recibido') counts[9]++;
     });
+
+    this.activeLegendItems = this.donutChartData.labels!.map((label, i) => ({
+      label: label as string,
+      color: this.donutChartColors[i],
+      count: counts[i]
+    })).filter(item => item.count > 0);
 
     this.donutChartData = {
       ...this.donutChartData,
