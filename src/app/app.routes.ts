@@ -48,6 +48,16 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/orders/order-form/order-form.component').then(m => m.OrderFormComponent)
             },
             {
+                path: 'abandoned-orders',
+                canActivate: [ownerGuard],
+                loadComponent: () => import('./features/abandoned-orders/abandoned-order-list/abandoned-order-list.component').then(m => m.AbandonedOrderListComponent)
+            },
+            {
+                path: 'abandoned-orders/:id',
+                canActivate: [ownerGuard],
+                loadComponent: () => import('./features/abandoned-orders/abandoned-order-detail/abandoned-order-detail.component').then(m => m.AbandonedOrderDetailComponent)
+            },
+            {
                 path: 'products',
                 canActivate: [ownerGuard],
                 loadComponent: () => import('./features/products/product-list/product-list.component').then(m => m.ProductListComponent)

@@ -66,6 +66,13 @@ declare var XLSX: any;
             <span class="text-[14px]">Orders</span>
           </a>
           
+          <a routerLink="/abandoned-orders" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
+             (click)="isSidebarOpen.set(false)"
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="alert-triangle" class="w-5 h-5 group-hover:text-amber-500 transition-colors"></lucide-icon>
+            <span class="text-[14px]">Pedidos Abandonados</span>
+          </a>
+          
           <a routerLink="/products" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
              (click)="isSidebarOpen.set(false)"
              class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
@@ -432,6 +439,8 @@ export class LayoutComponent {
      if (url.includes('/orders/') && url.includes('/edit')) return 'Edit Order';
      if (url.includes('/orders/')) return 'Order Detail';
      if (url === '/orders') return 'Orders';
+     if (url.includes('/abandoned-orders/')) return 'Abandoned Order Detail';
+     if (url === '/abandoned-orders') return 'Abandoned Orders';
      if (url === '/products') return 'Inventory';
      if (url === '/messages') return 'Templates';
      if (url === '/settings') return 'Settings';
