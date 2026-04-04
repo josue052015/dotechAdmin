@@ -34,7 +34,9 @@ import { Router } from '@angular/router';
             <div class="flex flex-col">
                <div class="flex items-center space-x-3">
                   <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Order {{ order?.id || '#' + order?.['_rowNumber'] }}</h1>
-                  <span [class]="getStatusClass(order?.status || '')" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider shadow-sm">
+                  <span (click)="openStatusSelector()" 
+                        [class]="getStatusClass(order?.status || '')" 
+                        class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all">
                      {{ (order?.status || 'SIN ESTADO') | uppercase }}
                   </span>
                   <span *ngIf="order?.isDeleted" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow-sm animate-pulse">
@@ -95,7 +97,7 @@ import { Router } from '@angular/router';
             <div *ngIf="!isEditing" class="hidden md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
                   <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</span>
-                  <span class="text-xs font-bold text-slate-900 truncate w-full">{{ order.status | titlecase }}</span>
+                  <span (click)="openStatusSelector()" class="text-xs font-bold text-slate-900 truncate w-full cursor-pointer hover:text-primary transition-all">{{ order.status | titlecase }}</span>
                </div>
                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
                   <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Quantity</span>
@@ -518,8 +520,17 @@ export class OrderDetailComponent implements OnInit {
 
    updateStatus(newStatus: string) {
       if (this.order && this.order['_rowNumber']) {
+         const oldStatus = this.order.status;
          this.order.status = newStatus;
-         this.orderService.updateOrder(this.order['_rowNumber'], this.order).subscribe();
+         this.orderService.updateOrder(this.order['_rowNumber'], this.order).subscribe({
+            next: () => {
+               this.snackBar.open(`Status updated to ${newStatus}`, 'Close', { duration: 3000 });
+            },
+            error: () => {
+               this.order!.status = oldStatus;
+               this.snackBar.open('Error updating status', 'Close', { duration: 3000 });
+            }
+         });
       }
    }
 

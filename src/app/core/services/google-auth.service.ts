@@ -1,8 +1,9 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, computed, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { catchError, map } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { catchError, map, filter, switchMap, take, tap } from 'rxjs/operators';
+import { Observable, of, fromEvent, merge, BehaviorSubject, firstValueFrom, throwError, timer } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 declare var google: any;
 
@@ -11,6 +12,17 @@ interface UserProfile {
     name: string;
     picture: string;
 }
+
+const STORAGE_KEYS = {
+    ACCESS_TOKEN: 'google_access_token',
+    TOKEN_EXPIRES_AT: 'google_token_expires_at',
+    USER_PROFILE: 'google_user_profile',
+    IS_AUTHORIZED: 'google_is_authorized',
+    LAST_ACTIVITY_AT: 'google_last_activity_at'
+};
+
+const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 24 hours
+const REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
 @Injectable({
     providedIn: 'root'
@@ -26,33 +38,103 @@ export class GoogleAuthService {
     public isScriptLoaded = signal<boolean>(false);
     public isInitializing = signal<boolean>(true);
     public isVerifying = signal<boolean>(false);
+    public lastActivityAt = signal<number>(Date.now());
+
+    private refreshInProgress: Promise<string | null> | null = null;
 
     constructor() {
         this.loadAuthState();
         this.loadGoogleScript();
+        this.setupInactivityTracker();
+        this.setupTabSync();
     }
 
     private loadAuthState() {
-        const token = localStorage.getItem('google_access_token');
-        const expiresAt = parseInt(localStorage.getItem('google_token_expires_at') || '0', 10);
-        const profileStr = localStorage.getItem('google_user_profile');
+        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
+        const profileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+        const lastActivity = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY_AT) || '0', 10);
+
+        // Check if session is expired by inactivity first
+        if (lastActivity > 0 && (Date.now() - lastActivity) > INACTIVITY_LIMIT_MS) {
+            console.warn('[Auth] Session expired due to 24h inactivity.');
+            this.clearSession();
+            this.isInitializing.set(false);
+            return;
+        }
 
         if (token && expiresAt > Date.now() && profileStr) {
             const profile: UserProfile = JSON.parse(profileStr);
             this.accessToken.set(token);
             this.userProfile.set(profile);
             this.isAuthenticated.set(true);
+            this.lastActivityAt.set(lastActivity || Date.now());
             
-            // Always verify ownership by email on restore
             const isOwner = this.isOwnerEmail(profile.email);
             this.isAuthorized.set(isOwner);
-            localStorage.setItem('google_is_authorized', isOwner.toString());
+            localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, isOwner.toString());
             
-            if (!isOwner) {
-                console.warn('[Auth] Restored session is NOT the owner. Access denied.');
-            }
+            this.isInitializing.set(false);
+        } else if (token && profileStr) {
+            // Token expired but session window still valid - will be handled by guards/interceptor via silent renew
+            this.lastActivityAt.set(lastActivity);
+            this.isAuthenticated.set(true);
+            this.isInitializing.set(false);
+        } else {
+            this.isInitializing.set(false);
         }
-        this.isInitializing.set(false);
+    }
+
+    private setupInactivityTracker() {
+        // Track activity: click, keydown, scroll, touchstart
+        const activityEvents = merge(
+            fromEvent(window, 'click'),
+            fromEvent(window, 'keydown'),
+            fromEvent(window, 'scroll'),
+            fromEvent(window, 'touchstart')
+        );
+
+        // Update activity with throttling (every 30 seconds max)
+        let lastUpdate = 0;
+        activityEvents.subscribe(() => {
+            const now = Date.now();
+            if (now - lastUpdate > 30000) {
+                this.updateActivity();
+                lastUpdate = now;
+            }
+        });
+
+        // Periodic check for inactivity (every minute)
+        timer(0, 60000).subscribe(() => {
+            this.checkInactivity();
+        });
+    }
+
+    private updateActivity() {
+        const now = Date.now();
+        this.lastActivityAt.set(now);
+        localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY_AT, now.toString());
+    }
+
+    private checkInactivity() {
+        const last = this.lastActivityAt();
+        if (last > 0 && (Date.now() - last) > INACTIVITY_LIMIT_MS) {
+            console.warn('[Auth] Session expired due to inactivity.');
+            this.clearSession();
+            window.location.href = '/login'; // Force redirect to be sure
+        }
+    }
+
+    private setupTabSync() {
+        fromEvent<StorageEvent>(window, 'storage').subscribe(event => {
+            if (event.key === STORAGE_KEYS.ACCESS_TOKEN) {
+                if (event.newValue) {
+                    this.loadAuthState();
+                } else {
+                    this.clearSession(false);
+                }
+            }
+        });
     }
 
     private loadGoogleScript() {
@@ -74,49 +156,49 @@ export class GoogleAuthService {
             callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     this.handleTokenResponse(tokenResponse);
+                } else if (tokenResponse.error) {
+                    console.error('[Auth] Token request error:', tokenResponse.error);
+                    this.handleRefreshFailure();
                 }
             },
         });
     }
 
     private handleTokenResponse(tokenResponse: any) {
-        this.accessToken.set(tokenResponse.access_token);
+        const token = tokenResponse.access_token;
+        this.accessToken.set(token);
         const expiresIn = tokenResponse.expires_in || 3599;
         const expiresAt = Date.now() + (expiresIn * 1000);
         
-        localStorage.setItem('google_access_token', tokenResponse.access_token);
-        localStorage.setItem('google_token_expires_at', expiresAt.toString());
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+        localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, expiresAt.toString());
+        this.updateActivity();
+
+        if (this.refreshInProgress) {
+            // This was a silent renew call
+            return; 
+        }
 
         this.isVerifying.set(true);
-
-        this.fetchUserProfile(tokenResponse.access_token).subscribe({
+        this.fetchUserProfile(token).subscribe({
             next: (profile) => {
-                console.log('[Auth] User authenticated:', profile.email);
                 this.userProfile.set(profile);
                 this.isAuthenticated.set(true);
-                localStorage.setItem('google_user_profile', JSON.stringify(profile));
+                localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
                 
-                // PRIMARY CHECK: Is this the owner's email?
                 const isOwner = this.isOwnerEmail(profile.email);
-                console.log('[Auth] Owner email check:', isOwner ? 'MATCH ✓' : 'NO MATCH ✗');
-                console.log('[Auth] Logged in as:', profile.email);
-                console.log('[Auth] Authorized owner:', (environment as any).authorizedOwnerEmail);
-
                 if (!isOwner) {
-                    console.warn('[Auth] ACCESS DENIED — Email does not match the authorized owner.');
                     this.isAuthorized.set(false);
                     this.isVerifying.set(false);
-                    localStorage.setItem('google_is_authorized', 'false');
+                    localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, 'false');
                     return;
                 }
 
-                // SECONDARY CHECK: Can this user actually access the spreadsheet?
-                this.verifySpreadsheetAccess(tokenResponse.access_token).subscribe({
+                this.verifySpreadsheetAccess(token).subscribe({
                     next: (hasAccess) => {
-                        console.log('[Auth] Spreadsheet access:', hasAccess ? 'CONFIRMED ✓' : 'DENIED ✗');
                         this.isAuthorized.set(hasAccess);
                         this.isVerifying.set(false);
-                        localStorage.setItem('google_is_authorized', hasAccess.toString());
+                        localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, hasAccess.toString());
                     },
                     error: () => {
                         this.isAuthorized.set(false);
@@ -130,20 +212,12 @@ export class GoogleAuthService {
         });
     }
 
-    /**
-     * Checks if the given email matches the configured authorized owner.
-     * This is the PRIMARY authorization gate — only the exact owner email is allowed.
-     */
     private isOwnerEmail(email: string): boolean {
         const authorizedEmail = ((environment as any).authorizedOwnerEmail || '').toLowerCase().trim();
         const userEmail = (email || '').toLowerCase().trim();
         return authorizedEmail !== '' && userEmail === authorizedEmail;
     }
 
-    /**
-     * SECONDARY check: verifies the user can actually read the spreadsheet.
-     * This confirms the owner still has valid access to the sheet.
-     */
     private verifySpreadsheetAccess(token: string): Observable<boolean> {
         const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
         const spreadsheetId = environment.spreadsheetId;
@@ -173,16 +247,20 @@ export class GoogleAuthService {
                 google.accounts.oauth2.revoke(token, () => {});
             } catch (e) {}
         }
-        
+        this.clearSession();
+    }
+
+    private clearSession(broadcast = true) {
         this.accessToken.set(null);
         this.isAuthenticated.set(false);
         this.isAuthorized.set(false);
         this.userProfile.set(null);
         
-        localStorage.removeItem('google_access_token');
-        localStorage.removeItem('google_token_expires_at');
-        localStorage.removeItem('google_user_profile');
-        localStorage.removeItem('google_is_authorized');
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
+        localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+        localStorage.removeItem(STORAGE_KEYS.IS_AUTHORIZED);
+        localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
     }
 
     private fetchUserProfile(token: string): Observable<UserProfile> {
@@ -196,9 +274,76 @@ export class GoogleAuthService {
         );
     }
 
-    public autoRenewToken() {
-        if (this.tokenClient) {
-            this.tokenClient.requestAccessToken({ prompt: '' });
+    /**
+     * Ensures an access token is valid, performing a silent renew if necessary.
+     * Uses single-flight pattern to avoid multiple simultaneous refresh requests.
+     */
+    public ensureValidAccessToken(): Observable<string | null> {
+        const token = this.accessToken();
+        const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
+        const lastActivity = this.lastActivityAt();
+
+        // Check inactivity window
+        if (lastActivity > 0 && (Date.now() - lastActivity) > INACTIVITY_LIMIT_MS) {
+            this.clearSession();
+            return of(null);
         }
+
+        // Check if token is still valid and not about to expire soon
+        if (token && expiresAt > (Date.now() + REFRESH_THRESHOLD_MS)) {
+            return of(token);
+        }
+
+        // Silent renew required
+        return this.silentRenew();
     }
+
+    public silentRenew(): Observable<string | null> {
+        if (this.refreshInProgress) {
+            return from(this.refreshInProgress);
+        }
+
+        this.refreshInProgress = new Promise((resolve) => {
+            if (!this.tokenClient) {
+                resolve(null);
+                return;
+            }
+
+            // Create a one-time listener for the callback
+            const originalCallback = this.tokenClient.callback;
+            this.tokenClient.callback = (tokenResponse: any) => {
+                this.tokenClient.callback = originalCallback;
+                if (tokenResponse && tokenResponse.access_token) {
+                    this.handleTokenResponse(tokenResponse);
+                    resolve(tokenResponse.access_token);
+                } else {
+                    this.handleRefreshFailure();
+                    resolve(null);
+                }
+                this.refreshInProgress = null;
+            };
+
+            this.tokenClient.requestAccessToken({ prompt: '' });
+        });
+
+        return from(this.refreshInProgress);
+    }
+
+    private handleRefreshFailure() {
+        console.error('[Auth] Silent renew failed. User must re-authenticate.');
+        this.clearSession();
+        // Don't force redirect here, let the interceptor/guard handle it
+    }
+}
+
+function from<T>(promise: Promise<T>): Observable<T> {
+    return new Observable<T>(subscriber => {
+        promise.then(
+            value => {
+                subscriber.next(value);
+                subscriber.complete();
+            },
+            err => subscriber.error(err)
+        );
+    });
 }
