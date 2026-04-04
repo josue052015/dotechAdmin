@@ -78,18 +78,27 @@ import { Order } from '../../../core/models/order.model';
               </div>
             </div>
 
-            <div class="md:col-span-3 space-y-1.5">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity <span class="text-red-500">*</span></label>
+            <div class="md:col-span-2 space-y-1.5">
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Qty <span class="text-red-500">*</span></label>
               <input type="number" formControlName="productQuantity" min="1" 
-                     class="input-stitch text-sm">
+                     class="input-stitch text-sm px-3">
             </div>
 
-            <div class="md:col-span-3 space-y-1.5">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Unit Price ($)</label>
+            <div class="md:col-span-2 space-y-1.5">
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Price</label>
               <div class="relative">
-                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">$</span>
                  <input type="number" [value]="orderForm.get('productPrice')?.value" readonly 
-                        class="input-stitch bg-slate-100 text-text-muted cursor-not-allowed pl-8 text-sm">
+                        class="input-stitch bg-slate-100 text-text-muted cursor-not-allowed pl-6 pr-2 text-sm">
+              </div>
+            </div>
+
+            <div class="md:col-span-2 space-y-1.5">
+              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Shipping</label>
+              <div class="relative">
+                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">$</span>
+                 <input type="number" formControlName="shippingCost" 
+                        class="input-stitch pl-6 pr-2 text-sm">
               </div>
             </div>
           </div>
@@ -138,22 +147,22 @@ import { Order } from '../../../core/models/order.model';
         <!-- Status & Notes -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div class="card-stitch p-5 md:p-8 bg-white space-y-4">
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Order Status <span class="text-red-500">*</span></label>
-              <div class="relative">
-                <select formControlName="status" class="select-stitch cursor-pointer text-sm">
-                  <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
-                </select>
-                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none"></lucide-icon>
-              </div>
-              
-              <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 block pt-2">Shipping Carrier</label>
-              <div class="relative">
-                <select formControlName="carrier" class="select-stitch cursor-pointer text-sm">
-                  <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
-                </select>
-                <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none"></lucide-icon>
-              </div>
-           </div>
+               <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Order Status <span class="text-red-500">*</span></label>
+               <div class="relative">
+                 <select formControlName="status" class="select-stitch cursor-pointer text-sm">
+                   <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
+                 </select>
+                 <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none"></lucide-icon>
+               </div>
+               
+               <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 block pt-2">Shipping Carrier</label>
+               <div class="relative">
+                 <select formControlName="carrier" class="select-stitch cursor-pointer text-sm">
+                   <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
+                 </select>
+                 <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none"></lucide-icon>
+               </div>
+            </div>
 
            <div class="card-stitch p-5 md:p-8 bg-white space-y-4">
               <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Additional Notes</label>
@@ -221,7 +230,6 @@ export class OrderFormComponent implements OnInit {
     'cancelado', 'desaparecido', 'empacado', 'envio en proceso',
     'entregado', 'dinero recibido'
   ];
-
   carriers = ['envio local', 'aurel pack', 'gintracom'];
 
   orderForm: FormGroup = this.fb.group({
@@ -234,7 +242,6 @@ export class OrderFormComponent implements OnInit {
     productQuantity: [1, [Validators.required, Validators.min(1)]],
     productPrice: [0, Validators.required],
     shippingCost: [0],
-    packaging: [0],
     carrier: ['envio local'],
     status: ['no confirmado', Validators.required],
     notes: ['']
@@ -301,7 +308,6 @@ export class OrderFormComponent implements OnInit {
               productQuantity: order.productQuantity,
               productPrice: order.productPrice,
               shippingCost: order.shippingCost,
-              packaging: order.packaging,
               carrier: order.carrier || 'envio local',
               status: order.status,
               notes: order.notes

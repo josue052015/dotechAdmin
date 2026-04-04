@@ -1,11 +1,13 @@
-import { Component, OnInit, inject, effect, Optional } from '@angular/core';
+import { Component, OnInit, inject, effect, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OrderService } from '../../../core/services/order.service';
 import { MessageService } from '../../../core/services/message.service';
+import { ProductService } from '../../../core/services/product.service';
+import { LocationService } from '../../../core/services/location.service';
 import { Order } from '../../../core/models/order.model';
 
 import { MatButtonModule } from '@angular/material/button';
@@ -20,292 +22,392 @@ import { Router } from '@angular/router';
    standalone: true,
    imports: [
       CommonModule, RouterModule, LucideAngularModule, MatProgressSpinnerModule,
-      FormsModule, MatButtonModule, MatSnackBarModule, MatDialogModule
+      FormsModule, ReactiveFormsModule, MatButtonModule, MatSnackBarModule, MatDialogModule
    ],
    template: `
-    <div [class.max-w-[1200px]]="!isDialog" [class.mx-auto]="!isDialog" 
-         class="p-8 md:p-12 space-y-10 animate-in fade-in duration-500 pb-20 relative">
+    <div [class.max-w-[1000px]]="!isDialog" [class.mx-auto]="!isDialog" 
+         class="animate-in fade-in duration-500 relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
       
-      <!-- Close Button (Always visible but styled for context) -->
-      <button (click)="closeDialog()" 
-              class="absolute right-6 top-6 md:right-8 md:top-8 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all z-50">
-        <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
-      </button>
-
-      <!-- Top Bar: Breadcrumbs & Actions -->
-      <div *ngIf="!isDialog" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-         <div class="flex items-center space-x-2 text-[10px] md:text-sm text-slate-400 font-medium">
-            <a routerLink="/orders" class="hover:text-blue-600 transition-colors uppercase tracking-widest font-bold">Orders</a>
-            <lucide-icon name="chevron-right" class="w-3 h-3 flex items-center justify-center"></lucide-icon>
-            <span class="text-slate-600 font-bold font-mono">{{ order?.id || order?.['_rowNumber'] }}</span>
-         </div>
-         <div class="hidden sm:flex items-center space-x-4">
-            <div class="relative w-48 lg:w-64 group">
-               <lucide-icon name="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4"></lucide-icon>
-               <input type="text" placeholder="Search orders..." class="w-full bg-slate-100/50 border-none rounded-ui py-2 pl-10 pr-4 text-xs focus:ring-2 focus:ring-primary/20 transition-all outline-none">
-            </div>
-            <button class="p-2 text-text-muted hover:text-text transition-colors">
-               <lucide-icon name="bell" class="w-5 h-5"></lucide-icon>
-            </button>
-            <div class="w-8 h-8 rounded-ui bg-primary flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-sm">
-               AC
-            </div>
-         </div>
-      </div>
-
-      <!-- Header: Title & Status -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-         <div class="flex flex-wrap items-center gap-3">
-            <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Order {{ order?.id || '#' + order?.['_rowNumber'] }}</h1>
-            <span [class]="getStatusClass(order?.status || '')" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider">
-               {{ (order?.status || 'SIN ESTADO') | uppercase }}
-            </span>
-            <span *ngIf="order?.isDeleted" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow-sm animate-pulse">
-               ELIMINADO
-            </span>
-         </div>
-         <div class="flex items-center space-x-2 w-full sm:w-auto" *ngIf="!order?.isDeleted">
-             <button (click)="openStatusSelector()" class="flex-1 sm:flex-none flex items-center justify-between space-x-3 px-4 py-2.5 bg-white border border-border rounded-xl text-xs font-bold text-text hover:bg-slate-50 transition-all">
-                <span>Change Status</span>
-                <lucide-icon name="chevron-down" class="w-4 h-4"></lucide-icon>
-             </button>
-            <button *ngIf="order" (click)="copyAllInfo()" class="p-2.5 bg-secondary hover:bg-slate-200 text-slate-700 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-slate-200">
-               <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
-               <span class="hidden md:inline">Copy for Delivery</span>
-            </button>
-             <button *ngIf="order" (click)="onEditOrder()" class="p-2.5 bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
-                <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-                <span class="hidden md:inline">Edit Order</span>
-             </button>
-             <button *ngIf="order" (click)="confirmDelete()" class="p-2.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 border border-transparent">
-                <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                <span class="hidden md:inline">Delete Order</span>
-             </button>
-         </div>
-      </div>
-
-      <!-- WhatsApp Main Action -->
-      <button (click)="openWhatsAppSelector()" 
-              [disabled]="order?.isDeleted"
-              [class.opacity-50]="order?.isDeleted"
-              [class.cursor-not-allowed]="order?.isDeleted"
-              class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 md:py-5 rounded-xl flex items-center justify-center space-x-3 shadow-lg shadow-emerald-100 transition-all active:scale-[0.98]">
-         <lucide-icon name="message-square" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
-         <span class="text-sm md:text-base font-black uppercase tracking-widest">Send WhatsApp Message</span>
-      </button>
-
-      <div *ngIf="isLoading" class="flex justify-center py-24">
-         <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
-      </div>
-
-      <div *ngIf="!isLoading && order" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-         
-         <!-- Left Column -->
-         <div class="lg:col-span-8 space-y-6">
-            
-            <!-- Customer Information -->
-            <div class="card-stitch p-5 md:p-8 space-y-6 md:space-y-8">
+      <!-- Modal Header -->
+      <div class="px-6 pt-6 pb-3 md:px-10 md:pt-8 md:pb-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between bg-slate-50/50 sticky top-0 z-50 backdrop-blur-md gap-2 md:gap-4">
+         <div class="flex items-start justify-between w-full md:w-auto">
+            <div class="flex flex-col">
                <div class="flex items-center space-x-3">
-                  <lucide-icon name="user" class="text-primary w-4 h-4 md:w-5 md:h-5"></lucide-icon>
-                  <h2 class="text-sm md:text-base font-black text-slate-900 tracking-tight uppercase tracking-wider">Customer</h2>
+                  <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Order {{ order?.id || '#' + order?.['_rowNumber'] }}</h1>
+                  <span [class]="getStatusClass(order?.status || '')" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider shadow-sm">
+                     {{ (order?.status || 'SIN ESTADO') | uppercase }}
+                  </span>
+                  <span *ngIf="order?.isDeleted" class="px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow-sm animate-pulse">
+                     ELIMINADO
+                  </span>
                </div>
-
-               <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                       {{ order?.fullName?.charAt(0) }}{{ order?.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
-                    </div>
-                  <div class="min-w-0">
-                     <h3 class="text-lg md:text-xl font-bold text-slate-900 leading-tight truncate">{{ order.fullName || 'Cliente sin identificar' }}</h3>
-                     <p class="text-[11px] md:text-sm text-slate-500 font-medium truncate">Since {{ order.date | date:'MMMM yyyy' }}</p>
-                  </div>
-               </div>
-
-               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 pt-2">
-                  <div class="space-y-1">
-                     <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</p>
-                     <div class="flex items-center space-x-2">
-                        <lucide-icon name="phone" class="w-3 h-3 text-slate-400"></lucide-icon>
-                        <p class="text-sm font-bold text-slate-800">{{ order.phone }}</p>
-                     </div>
-                  </div>
-                  <div class="sm:col-span-2 space-y-1">
-                     <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Address</p>
-                     <div class="flex items-start space-x-2">
-                        <lucide-icon name="map-pin" class="w-3 h-3 text-slate-400 mt-0.5"></lucide-icon>
-                        <p class="text-sm font-bold text-slate-800 leading-snug">
-                           {{ order.address1 || 'Dirección pendiente' }}
-                           <ng-container *ngIf="order.city || order.province">, {{ order.city }}, {{ order.province }}</ng-container>
-                        </p>
-                     </div>
-                  </div>
-               </div>
+               <p *ngIf="order" class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  {{ order.fullName || 'Cliente sin identificar' }} • {{ order.date | date:'mediumDate' }}
+               </p>
             </div>
-            <!-- Order Items -->
-            <div class="card-stitch overflow-hidden">
-               <div class="px-5 md:px-8 py-4 md:py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-                  <div class="flex items-center space-x-3">
-                     <lucide-icon name="shopping-bag" class="text-primary w-4 h-4 md:w-5 md:h-5"></lucide-icon>
-                     <h2 class="text-sm md:text-base font-black text-slate-900 tracking-tight uppercase tracking-wider">Order Items</h2>
-                  </div>
-                  <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{{ order.productQuantity }} Units</span>
-               </div>
-               
-               <div class="p-4">
-                  <div class="flex flex-col gap-4">
-                     <div class="p-5 md:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 hover:bg-slate-50/50 transition-colors relative bg-white border border-slate-100 rounded-2xl shadow-sm sm:border-none sm:shadow-none sm:bg-transparent">
-                        <div class="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center p-2 border border-slate-100 flex-shrink-0">
-                           <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + order.productName" class="w-full h-full object-contain">
-                        </div>
-                        <div class="flex-1 min-w-0 overflow-hidden w-full">
-                           <h4 class="text-sm md:text-base font-bold text-slate-900 overflow-hidden text-ellipsis whitespace-nowrap" style="max-width: calc(100vw - 6rem);">{{ order.productName }}</h4>
-                           <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-1 uppercase tracking-widest">SKU: {{ 'SKU-' + order['_rowNumber'] }}</p>
-                           <div class="sm:hidden mt-2 flex items-center justify-between">
-                              <span class="text-xs font-bold text-slate-900">{{ order.productQuantity }} units</span>
-                              <span class="text-sm font-black text-slate-900">RD$ {{ order.productPrice | number }}</span>
-                           </div>
-                        </div>
-                        <div class="hidden sm:block text-center w-12 flex-shrink-0">
-                           <p class="text-sm font-bold text-slate-900">{{ order.productQuantity }}</p>
-                        </div>
-                        <div class="hidden sm:block text-right w-32 flex-shrink-0">
-                           <p class="text-[15px] md:text-lg font-black text-slate-900">RD$ {{ order.productPrice | number }}</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  <!-- Price Summary -->
-                  <div class="bg-slate-50/50 p-5 md:p-8 flex flex-col items-end space-y-4">
-                     <div class="w-full md:w-72 space-y-3">
-                        <div class="flex justify-between text-xs md:text-sm font-medium text-slate-500">
-                           <span>Subtotal</span>
-                           <span class="text-slate-900 font-bold italic">RD$ {{ order.productPrice * order.productQuantity | number }}</span>
-                        </div>
-                        <div *ngIf="order.shippingCost" class="flex justify-between text-xs md:text-sm font-medium text-slate-500">
-                           <span>Shipping</span>
-                           <span class="text-slate-900 font-bold italic">RD$ {{ order.shippingCost | number }}</span>
-                        </div>
-                        <div *ngIf="order.packaging" class="flex justify-between text-xs md:text-sm font-medium text-slate-500">
-                           <span>Packaging</span>
-                           <span class="text-slate-900 font-bold italic">RD$ {{ order.packaging | number }}</span>
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-200 flex justify-between items-center mt-4">
-                           <span class="text-base md:text-lg font-black text-slate-900 uppercase tracking-tighter">Total Amount</span>
-                           <div class="flex flex-col items-end">
-                              <span class="text-xl md:text-2xl font-black text-primary tracking-tighter italic">RD$ {{ totalAmount | number:'1.2-2' }}</span>
-                              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">VAT Included</span>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-
-         <!-- Right Column -->
-         <div class="lg:col-span-4 space-y-6">
             
-            <!-- Delivery Info -->
-            <div class="card-stitch p-5 md:p-8 space-y-6">
-               <div class="flex items-center space-x-3 mb-2">
-                  <lucide-icon name="truck" class="text-primary w-4 h-4 md:w-5 md:h-5"></lucide-icon>
-                  <h2 class="text-sm md:text-base font-black text-slate-900 tracking-tight uppercase tracking-wider">Delivery Info</h2>
+            <button (click)="closeDialog()" class="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+               <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
+            </button>
+         </div>
+
+         <div class="flex items-center space-x-2 w-full md:w-auto justify-start md:justify-end -mx-6 px-6 py-3 mt-3 bg-white/50 border-t border-slate-100/50 md:mx-0 md:px-0 md:py-0 md:mt-0 md:bg-transparent md:border-none">
+            <ng-container *ngIf="!isEditing; else editingActions">
+                <button *ngIf="order && !order.isDeleted" (click)="toggleEdit()" class="flex items-center space-x-2 px-2.5 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all active:scale-95 mr-2">
+                   <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                   <span class="text-[9px] font-black uppercase tracking-widest">Edit</span>
+                </button>
+                <button *ngIf="order && !order.isDeleted" (click)="copyAllInfo()" class="flex items-center space-x-2 px-2.5 py-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-95" title="Copy for Delivery">
+                   <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
+                   <span class="text-[9px] font-black uppercase tracking-widest">Copy</span>
+                </button>
+                <button *ngIf="order && !order.isDeleted" (click)="confirmDelete()" class="flex items-center space-x-2 px-2.5 py-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95" title="Delete Order">
+                   <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                   <span class="text-[9px] font-black uppercase tracking-widest">Delete</span>
+                </button>
+             </ng-container>
+            <ng-template #editingActions>
+               <button [disabled]="isSaving" (click)="cancelEdit()" class="p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs active:scale-95">
+                  Cancel
+               </button>
+               <button [disabled]="orderForm.invalid || isSaving" (click)="saveOrder()" class="p-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-all font-bold text-xs flex items-center space-x-2 shadow-lg shadow-emerald-100 active:scale-95 ml-2">
+                  <mat-spinner diameter="16" *ngIf="isSaving" class="mr-2"></mat-spinner>
+                  <lucide-icon *ngIf="!isSaving" name="check" class="w-4 h-4"></lucide-icon>
+                  <span>Save Changes</span>
+               </button>
+            </ng-template>
+            <button (click)="closeDialog()" class="hidden md:flex p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all ml-2">
+               <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
+            </button>
+         </div>
+      </div>
+
+      <div class="px-6 pt-2 pb-20 md:px-10 md:pt-4 md:pb-10 max-h-[80vh] overflow-y-auto custom-scrollbar overflow-x-hidden">
+         
+         <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-24 space-y-4">
+            <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Loading order details...</p>
+         </div>
+
+         <div *ngIf="!isLoading && order" [class.opacity-60]="isSaving" class="animate-in slide-in-from-bottom-4 duration-500">
+            
+            <!-- Summary Area (Visual Only) -->
+            <div *ngIf="!isEditing" class="hidden md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</span>
+                  <span class="text-xs font-bold text-slate-900 truncate w-full">{{ order.status | titlecase }}</span>
                </div>
-
-               <div class="space-y-6">
-                  <div>
-                     <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Carrier</p>
-                     <div class="flex items-center space-x-3">
-                        <div [class]="getCarrierClass(order?.carrier || '')" class="w-8 h-8 rounded-lg flex items-center justify-center p-1 shadow-sm">
-                           <lucide-icon name="truck" class="w-4 h-4 text-white"></lucide-icon>
-                        </div>
-                        <span class="text-sm font-bold text-slate-900 capitalize">{{ order.carrier || 'Envio Local' }}</span>
-                     </div>
-                  </div>
-
-                  <div>
-                     <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tracking Number</p>
-                     <div class="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-                        <span class="text-[10px] md:text-xs font-bold text-slate-700 font-mono tracking-tighter">{{ order.id || order['_rowNumber'] }}</span>
-                        <button (click)="copyTracking()" class="text-slate-300 hover:text-blue-600 transition-colors">
-                           <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
-                        </button>
-                     </div>
-                  </div>
+               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Quantity</span>
+                  <span class="text-xs font-bold text-slate-900">{{ order.productQuantity }} units</span>
+               </div>
+               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Unit Price</span>
+                  <span class="text-xs font-bold text-slate-900">RD$ {{ order.productPrice | number }}</span>
+               </div>
+               <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/50 flex flex-col items-center text-center">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</span>
+                  <span class="text-xs font-black text-blue-600">RD$ {{ totalAmount | number }}</span>
+               </div>
+               <div class="col-span-2 hidden lg:flex bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50 items-center justify-center space-x-3">
+                  <button (click)="openWhatsAppSelector()" class="flex items-center space-x-2 text-emerald-700 font-black text-xs uppercase tracking-wider hover:underline">
+                     <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                     <span>Send WhatsApp Message</span>
+                  </button>
                </div>
             </div>
 
-            <!-- Order Notes -->
-            <div class="card-stitch p-5 md:p-8 space-y-6">
-               <div class="flex items-center space-x-3 mb-2">
-                  <lucide-icon name="file-text" class="text-primary w-4 h-4 md:w-5 md:h-5"></lucide-icon>
-                  <h2 class="text-sm md:text-base font-black text-slate-900 tracking-tight uppercase tracking-wider">Order Notes</h2>
+            <!-- Detail Grid -->
+            <div [formGroup]="orderForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               
+               <!-- Primary Info Section -->
+               <div class="lg:col-span-8 space-y-8">
+                  
+                  <!-- Customer Card -->
+                  <div class="card-stitch p-6 md:p-8 space-y-6">
+                     <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                           <lucide-icon name="user" class="text-primary w-5 h-5"></lucide-icon>
+                           <h2 class="text-sm font-black text-slate-900 tracking-tight uppercase tracking-widest">Customer Information</h2>
+                        </div>
+                     </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">{{ order.fullName || 'No name provided' }}</p>
+                           </ng-container>
+                           <input *ngIf="isEditing" type="text" formControlName="fullName" class="input-stitch text-sm" placeholder="Customer Name">
+                        </div>
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">{{ order.phone }}</p>
+                           </ng-container>
+                           <input *ngIf="isEditing" type="text" formControlName="phone" class="input-stitch text-sm" placeholder="Phone Number">
+                        </div>
+                        <div class="md:col-span-2 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</p>
+                           <ng-container *ngIf="!isEditing">
+                              <div class="flex items-start space-x-2 bg-slate-50 px-3 py-2.5 rounded-xl">
+                                 <lucide-icon name="map-pin" class="w-3.5 h-3.5 text-slate-400 mt-0.5"></lucide-icon>
+                                 <p class="text-sm font-bold text-slate-800 leading-snug">{{ order.address1 || 'No address provided' }}</p>
+                              </div>
+                           </ng-container>
+                           <textarea *ngIf="isEditing" formControlName="address1" rows="2" class="input-stitch text-sm py-3" placeholder="Street address, sector..."></textarea>
+                        </div>
+                        
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Province</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">{{ order.province || 'N/A' }}</p>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <select formControlName="province" class="select-stitch text-sm">
+                                 <option value="">Select province</option>
+                                 <option *ngFor="let p of (provinces$ | async)" [value]="p">{{ p }}</option>
+                              </select>
+                              <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
+                           </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">{{ order.city || 'N/A' }}</p>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <select formControlName="city" class="select-stitch text-sm disabled:bg-slate-50">
+                                 <option value="">Select city</option>
+                                 <option *ngFor="let c of cities" [value]="c">{{ c }}</option>
+                              </select>
+                              <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <!-- Purchase Details Card -->
+                  <div class="card-stitch p-6 md:p-8 space-y-6">
+                     <div class="flex items-center space-x-3">
+                        <lucide-icon name="shopping-bag" class="text-primary w-5 h-5"></lucide-icon>
+                        <h2 class="text-sm font-black text-slate-900 tracking-tight uppercase tracking-widest">Product & Purchase</h2>
+                     </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+                        <div class="md:col-span-8 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Product</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl truncate">{{ order.productName }}</p>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <select formControlName="productName" class="select-stitch text-sm">
+                                 <option value="">Select product</option>
+                                 <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
+                              </select>
+                              <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
+                           </div>
+                        </div>
+                        <div class="md:col-span-4 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">{{ order.productQuantity }}</p>
+                           </ng-container>
+                           <input *ngIf="isEditing" type="number" formControlName="productQuantity" class="input-stitch text-sm">
+                        </div>
+
+                        <div class="md:col-span-4 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unit Price</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">RD$ {{ order.productPrice | number }}</p>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                              <input type="number" formControlName="productPrice" class="input-stitch pl-8 text-sm bg-slate-50" readonly>
+                           </div>
+                        </div>
+                        <div class="md:col-span-8 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Shipping</p>
+                           <ng-container *ngIf="!isEditing">
+                              <p class="text-sm font-bold text-slate-800 bg-slate-50 px-3 py-2.5 rounded-xl">RD$ {{ order.shippingCost || 0 | number }}</p>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                              <input type="number" formControlName="shippingCost" class="input-stitch pl-8 text-sm">
+                           </div>
+                        </div>
+                     </div>
+
+                     <!-- Pricing Totals Summary -->
+                     <div class="mt-8 pt-8 border-t border-slate-100 flex flex-col items-end space-y-1">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Transaction Amount</span>
+                        <div class="flex items-center space-x-2">
+                           <span class="text-2xl md:text-3xl font-black text-blue-600 tracking-tighter">RD$ {{ (isEditing ? formTotalAmount : totalAmount) | number:'1.2-2' }}</span>
+                        </div>
+                     </div>
+                  </div>
                </div>
 
-               <div class="space-y-4">
-                  <div class="bg-primary/5 p-4 rounded-xl border border-primary/20 relative overflow-hidden">
-                     <div class="absolute top-0 right-0 p-2 opacity-5">
-                        <lucide-icon name="message-square" class="w-8 h-8"></lucide-icon>
+               <!-- Right Column: Operations -->
+               <div class="lg:col-span-4 space-y-8">
+                  
+                  <!-- Metadata Card -->
+                  <div class="card-stitch p-6 md:p-8 space-y-6 bg-slate-50/50">
+                     <div class="flex items-center space-x-3">
+                        <lucide-icon name="activity" class="text-primary w-5 h-5"></lucide-icon>
+                        <h2 class="text-sm font-black text-slate-900 tracking-tight uppercase tracking-widest">Operations</h2>
                      </div>
-                     <p class="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-widest mb-2">Customer Note:</p>
-                     <p class="text-xs text-slate-600 font-medium leading-relaxed italic">
-                        "{{ order['notes'] || 'No customer notes provided for this order.' }}"
-                     </p>
+
+                     <div class="space-y-6 pt-2">
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Order Status</p>
+                           <ng-container *ngIf="!isEditing">
+                              <div (click)="openStatusSelector()" class="p-3 bg-white border border-slate-100 rounded-xl flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                                 <span class="text-xs font-bold text-slate-700 capitalize">{{ order.status }}</span>
+                                 <lucide-icon name="chevron-down" class="w-4 h-4 text-slate-300"></lucide-icon>
+                              </div>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <select formControlName="status" class="select-stitch text-sm">
+                                 <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
+                              </select>
+                              <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
+                           </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Delivery Carrier</p>
+                           <ng-container *ngIf="!isEditing">
+                              <div class="p-3 bg-white border border-slate-100 rounded-xl flex items-center space-x-3 shadow-sm">
+                                 <div [class]="getCarrierClass(order.carrier || '')" class="w-6 h-6 rounded flex items-center justify-center">
+                                    <lucide-icon name="truck" class="w-3.5 h-3.5 text-white"></lucide-icon>
+                                 </div>
+                                 <span class="text-xs font-bold text-slate-700 capitalize">{{ order.carrier || 'Envio Local' }}</span>
+                              </div>
+                           </ng-container>
+                           <div *ngIf="isEditing" class="relative">
+                              <select formControlName="carrier" class="select-stitch text-sm">
+                                 <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
+                              </select>
+                              <lucide-icon name="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
+                           </div>
+                        </div>
+
+                        <div class="md:col-span-2 space-y-1.5">
+                           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administrative Notes</p>
+                            <ng-container *ngIf="!isEditing">
+                               <div [class]="order.notes ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/50 border-slate-100/50 border-dashed'"
+                                    class="p-4 rounded-2xl border min-h-[100px] transition-all duration-300">
+                                  <p [class]="order.notes ? 'text-slate-700' : 'text-slate-400 italic'" class="text-xs font-medium leading-relaxed">
+                                     {{ order.notes || 'No administrative notes.' }}
+                                  </p>
+                               </div>
+                            </ng-container>
+                           <textarea *ngIf="isEditing" formControlName="notes" rows="4" class="input-stitch text-sm py-3" placeholder="Add order observations..."></textarea>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>
          </div>
+      </div>
+
+      <!-- Action Footer (Hidden on Desktop Header Actions, but useful for clarity or mobile) -->
+      <div *ngIf="isEditing" class="px-6 py-4 md:px-10 md:py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end items-center space-x-4 md:hidden">
+          <button (click)="cancelEdit()" class="px-6 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-widest">Cancel</button>
+          <button [disabled]="orderForm.invalid || isSaving" (click)="saveOrder()" class="px-8 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-100">
+             {{ isSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
       </div>
     </div>
   `,
    styles: [`
-    :host { display: block; }
+    :host { display: block; overflow: hidden; }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    ::ng-deep .custom-dialog-container .mat-mdc-dialog-container { padding: 0 !important; border-radius: 24px !important; }
   `]
 })
 export class OrderDetailComponent implements OnInit {
+   private fb = inject(FormBuilder);
    private route = inject(ActivatedRoute);
    private location = inject(Location);
    private snackBar = inject(MatSnackBar);
    private dialog = inject(MatDialog);
    public orderService = inject(OrderService);
    public messageService = inject(MessageService);
+   public productService = inject(ProductService);
+   public locationService = inject(LocationService);
    private router = inject(Router);
    private dialogRef = inject(MatDialogRef<OrderDetailComponent>, { optional: true });
    private dialogData = inject(MAT_DIALOG_DATA, { optional: true });
 
    isDialog = false;
+   isEditing = false;
+   isSaving = false;
 
    orderRowNumber: number | null = null;
    order: Order | null = null;
    isLoading = true;
 
+   provinces$ = this.locationService.getProvinces();
+   cities: string[] = [];
+   products = this.productService.products;
+
+   orderForm: FormGroup = this.fb.group({
+      fullName: [''],
+      phone: ['', Validators.required],
+      address1: [''],
+      province: [''],
+      city: [''],
+      productName: ['', Validators.required],
+      productQuantity: [1, [Validators.required, Validators.min(1)]],
+      productPrice: [0, Validators.required],
+      shippingCost: [0],
+      carrier: ['envio local'],
+      status: ['no confirmado', Validators.required],
+      notes: ['']
+   });
+
    statuses = [
       'cancelado', 'desaparecido', 'no confirmado', 'pendiente de ubicacion',
       'confirmado completo', 'no cobertura', 'empacado', 'envio en proceso', 'entregado', 'dinero recibido'
    ];
+ 
+   carriers = ['envio local', 'aurel pack', 'gintracom'];
 
    get totalAmount() {
       if (!this.order) return 0;
       const subtotal = (this.order.productPrice * this.order.productQuantity);
-      return subtotal + (this.order.shippingCost || 0) + (this.order.packaging || 0);
+      return subtotal + (this.order.shippingCost || 0);
+   }
+
+   get formTotalAmount() {
+      const vals = this.orderForm.getRawValue();
+      const subtotal = (vals.productPrice || 0) * (vals.productQuantity || 0);
+      return subtotal + (vals.shippingCost || 0);
    }
 
    constructor() {
       effect(() => {
          const orders = this.orderService.orders();
-         if (orders.length > 0 && this.orderRowNumber) {
+         if (orders.length > 0 && this.orderRowNumber && !this.isEditing) {
             const found = orders.find(o => o['_rowNumber'] === this.orderRowNumber);
-            this.order = found ? { ...found } : null;
-            this.isLoading = false;
+            if (found) {
+               this.order = { ...found };
+               this.isLoading = false;
+            }
          }
       });
    }
 
    ngOnInit() {
       this.messageService.loadTemplates();
+      this.productService.loadProducts();
       
+      this.setupFormLogic();
+
       if (this.dialogData?.order) {
          this.isDialog = true;
          this.order = { ...this.dialogData.order };
@@ -322,26 +424,99 @@ export class OrderDetailComponent implements OnInit {
       }
    }
 
-   openStatusSelector() {
-    if (!this.order) return;
-    const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
-      data: { 
-        statuses: this.statuses,
-        currentStatus: this.order.status
-      },
-      width: '400px',
-      maxWidth: '95vw',
-      panelClass: 'custom-dialog-container'
-    });
+   setupFormLogic() {
+      this.orderForm.get('province')?.valueChanges.subscribe(province => {
+         if (province) {
+            this.locationService.getCities(province).subscribe(cities => this.cities = cities);
+         } else {
+            this.cities = [];
+            this.orderForm.get('city')?.setValue('');
+         }
+      });
 
-    dialogRef.afterClosed().subscribe(status => {
-      if (status) {
-        this.updateStatus(status);
+      this.orderForm.get('productName')?.valueChanges.subscribe(name => {
+         if (name) {
+            const prod = this.products().find(p => p.name === name);
+            if (prod) {
+               this.orderForm.get('productPrice')?.setValue(prod.price);
+            }
+         }
+      });
+   }
+
+   toggleEdit() {
+      if (!this.order) return;
+      this.isEditing = true;
+      this.orderForm.patchValue({
+         fullName: this.order.fullName,
+         phone: this.order.phone,
+         address1: this.order.address1,
+         province: this.order.province,
+         productName: this.order.productName,
+         productQuantity: this.order.productQuantity,
+         productPrice: this.order.productPrice,
+         shippingCost: this.order.shippingCost,
+         carrier: this.order.carrier || 'envio local',
+         status: this.order.status,
+         notes: this.order.notes
+      });
+
+      if (this.order.province) {
+         this.locationService.getCities(this.order.province).subscribe(cities => {
+            this.cities = cities;
+            this.orderForm.get('city')?.setValue(this.order?.city);
+         });
       }
-    });
-  }
+   }
 
-  updateStatus(newStatus: string) {
+   cancelEdit() {
+      this.isEditing = false;
+      this.orderForm.reset();
+   }
+
+   saveOrder() {
+      if (this.orderForm.invalid || !this.order || !this.order['_rowNumber']) return;
+
+      this.isSaving = true;
+      const updatedData = {
+         ...this.order,
+         ...this.orderForm.getRawValue()
+      };
+
+      this.orderService.updateOrder(this.order['_rowNumber'], updatedData).subscribe({
+         next: () => {
+            this.order = { ...updatedData };
+            this.isSaving = false;
+            this.isEditing = false;
+            this.snackBar.open('Order updated successfully', 'Close', { duration: 3000 });
+         },
+         error: () => {
+            this.isSaving = false;
+            this.snackBar.open('Error updating order', 'Close', { duration: 3000 });
+         }
+      });
+   }
+
+   openStatusSelector() {
+     if (!this.order || this.isEditing) return;
+     const dialogRef = this.dialog.open(StatusSelectorDialogComponent, {
+       data: { 
+         statuses: this.statuses,
+         currentStatus: this.order.status
+       },
+       width: '400px',
+       maxWidth: '95vw',
+       panelClass: 'custom-dialog-container'
+     });
+
+     dialogRef.afterClosed().subscribe(status => {
+       if (status) {
+         this.updateStatus(status);
+       }
+     });
+   }
+
+   updateStatus(newStatus: string) {
       if (this.order && this.order['_rowNumber']) {
          this.order.status = newStatus;
          this.orderService.updateOrder(this.order['_rowNumber'], this.order).subscribe();
@@ -349,23 +524,23 @@ export class OrderDetailComponent implements OnInit {
    }
 
    openWhatsAppSelector() {
-    if (!this.order) return;
-    const templates = this.messageService.templates();
-    const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
-      data: { templates },
-      width: '400px',
-      maxWidth: '95vw',
-      panelClass: 'custom-dialog-container'
-    });
+     if (!this.order) return;
+     const templates = this.messageService.templates();
+     const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
+       data: { templates },
+       width: '400px',
+       maxWidth: '95vw',
+       panelClass: 'custom-dialog-container'
+     });
 
-    dialogRef.afterClosed().subscribe(template => {
-      if (template) {
-        this.sendWhatsApp(template.text);
-      }
-    });
-  }
+     dialogRef.afterClosed().subscribe(template => {
+       if (template) {
+         this.sendWhatsApp(template.text);
+       }
+     });
+   }
 
-  sendWhatsApp(templateText: string) {
+   sendWhatsApp(templateText: string) {
       if (this.order && templateText) {
          const url = this.messageService.generateWhatsAppUrl(this.order, templateText);
          window.open(url, '_blank');
@@ -375,7 +550,7 @@ export class OrderDetailComponent implements OnInit {
    copyTracking() {
       const tracking = this.order?.id || this.order?.['_rowNumber']?.toString() || '';
       navigator.clipboard.writeText(tracking).then(() => {
-         // Visual feedback can be added later
+         this.snackBar.open('Tracking ID copied', 'Close', { duration: 2000 });
       });
    }
 
@@ -392,7 +567,7 @@ TOTAL: RD$ ${this.totalAmount.toLocaleString()}
       `.trim();
 
       navigator.clipboard.writeText(text).then(() => {
-         // Visual feedback could be added here
+         this.snackBar.open('Delivery info copied', 'Close', { duration: 2000 });
       });
    }
 
@@ -415,21 +590,12 @@ TOTAL: RD$ ${this.totalAmount.toLocaleString()}
 
       return 'bg-slate-100 text-slate-500';
    }
-
+ 
    getCarrierClass(carrier: string): string {
       const c = this.normalize(carrier || 'envio local');
       if (c === 'aurel pack') return 'bg-orange-500';
       if (c === 'gintracom') return 'bg-red-500';
       return 'bg-blue-600'; // default/local
-   }
-
-   onEditOrder() {
-       if (!this.order) return;
-       const row = this.order?.['_rowNumber'];
-       if (this.isDialog) {
-           this.dialogRef?.close();
-       }
-       this.router.navigate(['/orders', row, 'edit']);
    }
 
    closeDialog() {
