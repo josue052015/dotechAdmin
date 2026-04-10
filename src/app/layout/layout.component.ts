@@ -542,7 +542,6 @@ export class LayoutComponent {
   }
 
   logout() {
-    this.auth.logout();
-    this.router.navigate(['/login']);
+    this.auth.logoutManual();
   }
 }

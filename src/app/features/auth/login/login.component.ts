@@ -49,14 +49,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
             </div>
 
             <button
-              (click)="auth.login()"
+              (click)="auth.loginInteractive()"
               [disabled]="!auth.isScriptLoaded() || auth.isVerifying()"
               class="w-full h-14 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center space-x-4 group"
             >
               <ng-container *ngIf="!auth.isVerifying(); else verifying">
                 <ng-container *ngIf="auth.isScriptLoaded(); else loading">
                   <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6" alt="Google">
-                  <span class="text-slate-700 font-bold text-sm tracking-tight">Continue with Google</span>
+                  <span class="text-slate-700 font-bold text-sm tracking-tight">
+                    {{ auth.isAuthenticated() ? 'Authorize Google Sheets' : 'Continue with Google' }}
+                  </span>
                 </ng-container>
               </ng-container>
               
@@ -101,7 +103,7 @@ export class LoginComponent {
     // Only handle the success case here.
     // Access denial is handled by the OwnerGuard on protected routes.
     effect(() => {
-      if (this.auth.isAuthorized()) {
+      if (this.auth.isAuthorized() && this.auth.accessToken()) {
         this.router.navigate(['/dashboard']);
       }
     });

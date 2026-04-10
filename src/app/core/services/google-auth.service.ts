@@ -1,13 +1,12 @@
-import { Injectable, signal, inject, computed, effect } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { catchError, map, filter, switchMap, take, tap } from 'rxjs/operators';
-import { Observable, of, fromEvent, merge, BehaviorSubject, firstValueFrom, throwError, timer } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { catchError, map, filter } from 'rxjs/operators';
+import { Observable, of, fromEvent, merge, timer, from } from 'rxjs';
 
 declare var google: any;
 
-interface UserProfile {
+export interface UserProfile {
     email: string;
     name: string;
     picture: string;
@@ -22,7 +21,7 @@ const STORAGE_KEYS = {
 };
 
 const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 24 hours
-const REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+const REFRESH_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 @Injectable({
     providedIn: 'root'
@@ -31,110 +30,131 @@ export class GoogleAuthService {
     private http = inject(HttpClient);
     private tokenClient: any;
     
+    // Centralized Reactive State
     public accessToken = signal<string | null>(null);
+    public tokenExpiresAt = signal<number>(0);
     public isAuthenticated = signal<boolean>(false);
     public isAuthorized = signal<boolean>(false);
     public userProfile = signal<UserProfile | null>(null);
+    
     public isScriptLoaded = signal<boolean>(false);
     public isInitializing = signal<boolean>(true);
     public isVerifying = signal<boolean>(false);
-    public lastActivityAt = signal<number>(Date.now());
+    public lastActivityAt = signal<number>(0);
+    public sessionExpiredByInactivity = signal<boolean>(false);
 
     private refreshInProgress: Promise<string | null> | null = null;
+    private refreshResolver: ((token: string | null) => void) | null = null;
 
     constructor() {
-        this.loadAuthState();
+        this.initializeAuthState();
         this.loadGoogleScript();
         this.setupInactivityTracker();
         this.setupTabSync();
     }
 
-    private loadAuthState() {
+    private initializeAuthState() {
         const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
         const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
         const profileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
         const lastActivity = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY_AT) || '0', 10);
+        const isAuthorizedLocal = localStorage.getItem(STORAGE_KEYS.IS_AUTHORIZED) === 'true';
 
-        // Check if session is expired by inactivity first
-        if (lastActivity > 0 && (Date.now() - lastActivity) > INACTIVITY_LIMIT_MS) {
-            console.warn('[Auth] Session expired due to 24h inactivity.');
-            this.clearSession();
+        this.lastActivityAt.set(lastActivity);
+        this.tokenExpiresAt.set(expiresAt);
+
+        // 1. Check absolute inactivity
+        if (this.checkInactivity(lastActivity)) {
+            console.warn('[Auth] Session expired by inactivity.');
+            this.clearLocalSession();
+            this.sessionExpiredByInactivity.set(true);
             this.isInitializing.set(false);
             return;
         }
 
-        if (token && expiresAt > Date.now() && profileStr) {
-            const profile: UserProfile = JSON.parse(profileStr);
-            this.accessToken.set(token);
-            this.userProfile.set(profile);
+        // 2. Initial state from local storage (Optimistic)
+        if (profileStr) {
+            this.userProfile.set(JSON.parse(profileStr));
             this.isAuthenticated.set(true);
-            this.lastActivityAt.set(lastActivity || Date.now());
-            
-            const isOwner = this.isOwnerEmail(profile.email);
-            this.isAuthorized.set(isOwner);
-            localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, isOwner.toString());
-            
-            this.isInitializing.set(false);
-        } else if (token && profileStr) {
-            // Token expired but session window still valid - will be handled by guards/interceptor via silent renew
-            this.lastActivityAt.set(lastActivity);
-            this.isAuthenticated.set(true);
-            this.isInitializing.set(false);
-        } else {
-            this.isInitializing.set(false);
+            this.isAuthorized.set(isAuthorizedLocal);
         }
+
+        // 3. Restore token if fresh
+        if (token && expiresAt > Date.now()) {
+            this.accessToken.set(token);
+        }
+
+        // isInitializing stays true until script load completes
+    }
+
+    private checkInactivity(lastActivity: number): boolean {
+        if (lastActivity <= 0) return false;
+        return (Date.now() - lastActivity) > INACTIVITY_LIMIT_MS;
     }
 
     private setupInactivityTracker() {
-        // Track activity: click, keydown, scroll, touchstart
         const activityEvents = merge(
             fromEvent(window, 'click'),
             fromEvent(window, 'keydown'),
             fromEvent(window, 'scroll'),
-            fromEvent(window, 'touchstart')
+            fromEvent(window, 'touchstart'),
+            fromEvent(document, 'visibilitychange').pipe(
+                filter(() => document.visibilityState === 'visible')
+            )
         );
 
-        // Update activity with throttling (every 30 seconds max)
         let lastUpdate = 0;
         activityEvents.subscribe(() => {
             const now = Date.now();
             if (now - lastUpdate > 30000) {
-                this.updateActivity();
+                this.markUserActivity();
                 lastUpdate = now;
             }
         });
 
-        // Periodic check for inactivity (every minute)
-        timer(0, 60000).subscribe(() => {
-            this.checkInactivity();
+        timer(60000, 60000).subscribe(() => {
+            if (this.isAuthenticated() && this.checkInactivity(this.lastActivityAt())) {
+                this.logoutManual();
+            }
         });
     }
 
-    private updateActivity() {
+    public markUserActivity() {
         const now = Date.now();
         this.lastActivityAt.set(now);
         localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY_AT, now.toString());
     }
 
-    private checkInactivity() {
-        const last = this.lastActivityAt();
-        if (last > 0 && (Date.now() - last) > INACTIVITY_LIMIT_MS) {
-            console.warn('[Auth] Session expired due to inactivity.');
-            this.clearSession();
-            window.location.href = '/login'; // Force redirect to be sure
-        }
-    }
-
     private setupTabSync() {
         fromEvent<StorageEvent>(window, 'storage').subscribe(event => {
             if (event.key === STORAGE_KEYS.ACCESS_TOKEN) {
-                if (event.newValue) {
-                    this.loadAuthState();
+                if (!event.newValue) {
+                    this.syncSessionFromStorage(); // Actualiza señales locales
                 } else {
-                    this.clearSession(false);
+                    this.syncSessionFromStorage();
                 }
             }
         });
+    }
+
+    private syncSessionFromStorage() {
+        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
+        const profileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+        const isAuth = localStorage.getItem(STORAGE_KEYS.IS_AUTHORIZED) === 'true';
+        
+        if (profileStr) {
+            this.userProfile.set(JSON.parse(profileStr));
+            this.isAuthenticated.set(true);
+            this.isAuthorized.set(isAuth);
+            this.accessToken.set(token);
+            this.tokenExpiresAt.set(expiresAt);
+        } else {
+            this.accessToken.set(null);
+            this.isAuthenticated.set(false);
+            this.isAuthorized.set(false);
+            this.userProfile.set(null);
+        }
     }
 
     private loadGoogleScript() {
@@ -143,10 +163,32 @@ export class GoogleAuthService {
         script.async = true;
         script.defer = true;
         script.onload = () => {
+            this.initGsiIdentity();
             this.initTokenClient();
             this.isScriptLoaded.set(true);
+            
+            // AUTOMATIC SILENT BOOTSTRAP IS NOW GESTURE-AWARE
+            // Instead of prompt: 'none' (which often fails/blocks), 
+            // we wait for the first valid user interaction to potentially refresh.
+            // But we mark initialization as finished so the app can render.
+            this.isInitializing.set(false);
+        };
+        script.onerror = () => {
+            this.isInitializing.set(false);
         };
         document.head.appendChild(script);
+    }
+
+    private initGsiIdentity() {
+        google.accounts.id.initialize({
+            client_id: environment.googleOAuthClientId,
+            auto_select: false, // Changed to false to avoid automatic popups/aborts
+            callback: (response: any) => {
+                if (response.credential) {
+                    // Identity confirmed
+                }
+            }
+        });
     }
 
     private initTokenClient() {
@@ -156,29 +198,43 @@ export class GoogleAuthService {
             callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     this.handleTokenResponse(tokenResponse);
+                    this.resolveRefresh(tokenResponse.access_token);
                 } else if (tokenResponse.error) {
-                    console.error('[Auth] Token request error:', tokenResponse.error);
-                    this.handleRefreshFailure();
+                    console.error('[Auth] GSI callback error:', tokenResponse.error);
+                    this.resolveRefresh(null);
+                    // If interaction was required, we don't force a loop.
+                    // The user will have to click something eventually.
                 }
             },
         });
     }
 
+    private resolveRefresh(token: string | null) {
+        if (this.refreshInProgress) {
+            if (this.refreshResolver) this.refreshResolver(token);
+            this.refreshResolver = null;
+            this.refreshInProgress = null;
+        }
+    }
+
     private handleTokenResponse(tokenResponse: any) {
         const token = tokenResponse.access_token;
-        this.accessToken.set(token);
         const expiresIn = tokenResponse.expires_in || 3599;
         const expiresAt = Date.now() + (expiresIn * 1000);
         
+        this.accessToken.set(token);
+        this.tokenExpiresAt.set(expiresAt);
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
         localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, expiresAt.toString());
-        this.updateActivity();
+        this.markUserActivity();
 
-        if (this.refreshInProgress) {
-            // This was a silent renew call
-            return; 
+        // Check if we need to fetch/verify profile
+        if (!this.userProfile() || !this.isAuthorized()) {
+            this.verifyFullSession(token);
         }
+    }
 
+    private verifyFullSession(token: string) {
         this.isVerifying.set(true);
         this.fetchUserProfile(token).subscribe({
             next: (profile) => {
@@ -189,16 +245,16 @@ export class GoogleAuthService {
                 const isOwner = this.isOwnerEmail(profile.email);
                 if (!isOwner) {
                     this.isAuthorized.set(false);
-                    this.isVerifying.set(false);
                     localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, 'false');
+                    this.isVerifying.set(false);
                     return;
                 }
 
                 this.verifySpreadsheetAccess(token).subscribe({
                     next: (hasAccess) => {
                         this.isAuthorized.set(hasAccess);
-                        this.isVerifying.set(false);
                         localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, hasAccess.toString());
+                        this.isVerifying.set(false);
                     },
                     error: () => {
                         this.isAuthorized.set(false);
@@ -213,45 +269,41 @@ export class GoogleAuthService {
     }
 
     private isOwnerEmail(email: string): boolean {
-        const authorizedEmail = ((environment as any).authorizedOwnerEmail || '').toLowerCase().trim();
+        const authorizedEmail = (environment.authorizedOwnerEmail || '').toLowerCase().trim();
         const userEmail = (email || '').toLowerCase().trim();
         return authorizedEmail !== '' && userEmail === authorizedEmail;
     }
 
     private verifySpreadsheetAccess(token: string): Observable<boolean> {
         const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-        const spreadsheetId = environment.spreadsheetId;
-        
         return this.http.get<any>(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1`,
+            `https://sheets.googleapis.com/v4/spreadsheets/${environment.spreadsheetId}/values/A1`,
             { headers }
         ).pipe(
             map(() => true),
-            catchError(err => {
-                console.error('[Auth] Spreadsheet access verification failed:', err.status);
-                return of(false);
-            })
+            catchError(() => of(false))
         );
     }
 
-    public login() {
+    public loginInteractive() {
         if (this.tokenClient) {
+            // Explicitly prompt to allow user gesture to work 100%
             this.tokenClient.requestAccessToken({ prompt: 'select_account' });
         }
     }
 
-    public logout() {
+    public logoutManual() {
         const token = this.accessToken();
         if (token) {
-            try {
-                google.accounts.oauth2.revoke(token, () => {});
-            } catch (e) {}
+            try { google.accounts.oauth2.revoke(token, () => {}); } catch (e) {}
         }
-        this.clearSession();
+        this.clearLocalSession();
+        window.location.href = '/login';
     }
 
-    private clearSession(broadcast = true) {
+    public clearLocalSession() {
         this.accessToken.set(null);
+        this.tokenExpiresAt.set(0);
         this.isAuthenticated.set(false);
         this.isAuthorized.set(false);
         this.userProfile.set(null);
@@ -274,27 +326,19 @@ export class GoogleAuthService {
         );
     }
 
-    /**
-     * Ensures an access token is valid, performing a silent renew if necessary.
-     * Uses single-flight pattern to avoid multiple simultaneous refresh requests.
-     */
     public ensureValidAccessToken(): Observable<string | null> {
         const token = this.accessToken();
-        const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
-        const lastActivity = this.lastActivityAt();
+        const expiresAt = this.tokenExpiresAt();
 
-        // Check inactivity window
-        if (lastActivity > 0 && (Date.now() - lastActivity) > INACTIVITY_LIMIT_MS) {
-            this.clearSession();
-            return of(null);
-        }
-
-        // Check if token is still valid and not about to expire soon
+        // Valid and non-expiring soon
         if (token && expiresAt > (Date.now() + REFRESH_THRESHOLD_MS)) {
             return of(token);
         }
 
-        // Silent renew required
+        // Here is the CORE CHANGE:
+        // Instead of automatically calling silentRenew (which might fail with a blocked popup),
+        // we check if we are in a User Gesture context.
+        // If we are, we can try to renew.
         return this.silentRenew();
     }
 
@@ -303,47 +347,41 @@ export class GoogleAuthService {
             return from(this.refreshInProgress);
         }
 
+        if (!this.isAuthenticated()) {
+            return of(null);
+        }
+
         this.refreshInProgress = new Promise((resolve) => {
             if (!this.tokenClient) {
                 resolve(null);
                 return;
             }
 
-            // Create a one-time listener for the callback
-            const originalCallback = this.tokenClient.callback;
-            this.tokenClient.callback = (tokenResponse: any) => {
-                this.tokenClient.callback = originalCallback;
-                if (tokenResponse && tokenResponse.access_token) {
-                    this.handleTokenResponse(tokenResponse);
-                    resolve(tokenResponse.access_token);
-                } else {
-                    this.handleRefreshFailure();
-                    resolve(null);
-                }
-                this.refreshInProgress = null;
-            };
+            this.refreshResolver = resolve;
+            
+            // CRITICAL: We use prompt: 'none' but we MUST catch the GSI failure
+            // to open a popup when a gesture was expected.
+            try {
+                this.tokenClient.requestAccessToken({ 
+                    prompt: 'none',
+                    login_hint: this.userProfile()?.email || '',
+                    include_granted_scopes: false,
+                    enable_granular_consent: false
+                });
+                
+                // Set a timeout to resolve if GIS hangs or fails silently
+                setTimeout(() => {
+                    if (this.refreshInProgress) {
+                        // console.log('[Auth] Silent renew timed out (likely blocked or needs interaction).');
+                        this.resolveRefresh(null);
+                    }
+                }, 5000);
 
-            this.tokenClient.requestAccessToken({ prompt: '' });
+            } catch (err) {
+                this.resolveRefresh(null);
+            }
         });
 
         return from(this.refreshInProgress);
     }
-
-    private handleRefreshFailure() {
-        console.error('[Auth] Silent renew failed. User must re-authenticate.');
-        this.clearSession();
-        // Don't force redirect here, let the interceptor/guard handle it
-    }
-}
-
-function from<T>(promise: Promise<T>): Observable<T> {
-    return new Observable<T>(subscriber => {
-        promise.then(
-            value => {
-                subscriber.next(value);
-                subscriber.complete();
-            },
-            err => subscriber.error(err)
-        );
-    });
 }

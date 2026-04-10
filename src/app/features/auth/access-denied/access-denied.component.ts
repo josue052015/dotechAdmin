@@ -47,7 +47,7 @@ import { RouterModule } from '@angular/router';
 
           <div class="flex flex-col space-y-3">
             <button
-              (click)="auth.logout()"
+              (click)="auth.logoutManual()"
               class="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center space-x-2"
             >
               <lucide-icon name="log-out" size="18"></lucide-icon>

@@ -12,7 +12,7 @@ import {
   XCircle, Clock, AlertCircle, Trash2, Menu, Calendar,
   BarChart2, ArrowUpRight, AlertTriangle, MapPin, Phone,
   ChevronRight, Camera, RefreshCw, Mail, TrendingUp, TrendingDown, Info,
-  ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
+  LayoutDashboard, ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
   History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
   Shield, ShieldCheck, ShieldAlert,
   Download, X, FileSpreadsheet, Activity
@@ -37,7 +37,7 @@ export const appConfig: ApplicationConfig = {
       ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
       History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
       Shield, ShieldCheck, ShieldAlert,
-      Download, X, FileSpreadsheet, Activity
+      Download, X, FileSpreadsheet, Activity, LayoutDashboard
     }))
   ]
 };

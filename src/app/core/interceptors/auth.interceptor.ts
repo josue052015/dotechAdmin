@@ -1,47 +1,68 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { GoogleAuthService } from '../services/google-auth.service';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, throwError, of, filter, take, mergeMap } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(GoogleAuthService);
+  const auth = inject(GoogleAuthService);
+  const router = inject(Router);
 
-  // Only intercept requests to Google APIs
+  // 1. Only intercept requests to Google APIs
   if (!req.url.includes('googleapis.com')) {
     return next(req);
   }
 
-  return authService.ensureValidAccessToken().pipe(
-    switchMap(token => {
-      if (!token) {
-        return next(req);
-      }
-
-      const authReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      return next(authReq).pipe(
-        catchError((error: HttpErrorResponse) => {
-          if (error.status === 401) {
-            console.warn('[Interceptor] 401 detected, attempting silent renew and retry...');
-            return authService.silentRenew().pipe(
-              switchMap(newToken => {
-                if (newToken) {
-                  const retryReq = req.clone({
-                    setHeaders: {
-                      Authorization: `Bearer ${newToken}`
-                    }
-                  });
-                  return next(retryReq);
-                }
-                return throwError(() => error);
-              })
-            );
+  // 2. Wait for auth initialization before making any Google request
+  // This prevents race conditions where components request data while 
+  // we are still trying to restore the session.
+  return toObservable(auth.isInitializing).pipe(
+    filter(initializing => !initializing),
+    take(1),
+    switchMap(() => {
+      // 3. Check for valid token
+      return auth.ensureValidAccessToken().pipe(
+        switchMap(token => {
+          if (!token) {
+            // No token available. If we are authenticated (identidad confirmada), 
+            // but have no access token (permiso denegado/expirado), we let the guard handle it.
+            return next(req); 
           }
-          return throwError(() => error);
+
+          const authReq = req.clone({
+            setHeaders: { Authorization: `Bearer ${token}` }
+          });
+
+          return next(authReq).pipe(
+            catchError((error: HttpErrorResponse) => {
+              // 4. Handle 401 manually
+              if (error.status === 401) {
+                // If we get here, it means the token we thought was valid is actually rejected.
+                // We try ONE silent renewal.
+                return auth.silentRenew().pipe(
+                  switchMap(newToken => {
+                    if (newToken) {
+                      const retryReq = req.clone({
+                        setHeaders: { Authorization: `Bearer ${newToken}` }
+                      });
+                      return next(retryReq);
+                    }
+                    
+                    // Renewal failed (likely blocked or needs interaction).
+                    // We DO NOT force a redirect here if we are not authenticated at all.
+                    // But if we WERE authenticated, we should probably inform the user.
+                    if (router.url !== '/login' && auth.isAuthenticated()) {
+                        // Just fail the request. The UI should show an error or the guard will catch it.
+                    }
+                    return throwError(() => error);
+                  }),
+                  catchError(() => throwError(() => error))
+                );
+              }
+              return throwError(() => error);
+            })
+          );
         })
       );
     })
