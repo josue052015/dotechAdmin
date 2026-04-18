@@ -13,7 +13,7 @@ export class ProductService {
     private auth = inject(GoogleAuthService);
     private readonly SHEET_NAME = 'Products';
 
-    public products = signal<Product[]>([]);
+    public products = signal<Product[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
     public isLoading = signal<boolean>(false);
     private nextRowNumber: number = 2;
 
@@ -50,10 +50,10 @@ export class ProductService {
         });
     }
 
-    public loadProducts(): void {
+    public loadProducts(quiet: boolean = false): void {
         if (!this.auth.isAuthorized()) return;
 
-        this.isLoading.set(true);
+        if (!quiet) this.isLoading.set(true);
         // Read A1:Z to get headers and sufficient data columns
         this.sheetsService.readRange(`${this.SHEET_NAME}!A1:Z`).subscribe({
             next: (response) => {

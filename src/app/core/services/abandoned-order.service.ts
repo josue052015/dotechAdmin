@@ -14,8 +14,8 @@ export class AbandonedOrderService {
     private readonly SHEET_NAME = 'PEDIDOS ABANDONADOS';
 
     // State
-    public abandonedOrders = signal<AbandonedOrder[]>([]);
-    public activeAbandonedOrders = signal<AbandonedOrder[]>([]);
+    public abandonedOrders = signal<AbandonedOrder[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
+    public activeAbandonedOrders = signal<AbandonedOrder[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
     public isLoading = signal<boolean>(false);
     
     // Using a similar robust mapping schema to avoid shift issues logic

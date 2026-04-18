@@ -16,7 +16,7 @@ export class MessageService {
     private readonly SHEET_NAME = 'Templates';
     private readonly BUSINESS_PHONE = '+18297024201';
 
-    public templates = signal<MessageTemplate[]>([]);
+    public templates = signal<MessageTemplate[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
     public isLoading = signal<boolean>(false);
 
     constructor() {
@@ -29,9 +29,9 @@ export class MessageService {
         });
     }
 
-    public loadTemplates(): void {
+    public loadTemplates(quiet: boolean = false): void {
         if (!this.auth.isAuthorized()) return;
-        this.isLoading.set(true);
+        if (!quiet) this.isLoading.set(true);
         this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).subscribe({
             next: (response) => {
                 const rows = response.values || [];

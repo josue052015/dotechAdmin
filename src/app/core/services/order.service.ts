@@ -14,8 +14,8 @@ export class OrderService {
     private readonly SHEET_NAME = 'ORDENES';
 
     // State
-    public orders = signal<Order[]>([]);
-    public activeOrders = signal<Order[]>([]); // We'll update this in loadOrders
+    public orders = signal<Order[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
+    public activeOrders = signal<Order[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) }); // We'll update this in loadOrders
     public isLoading = signal<boolean>(false);
     private nextRowNumber: number = 2; // Default to first data row after header
     

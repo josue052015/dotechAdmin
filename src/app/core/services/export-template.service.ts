@@ -12,7 +12,7 @@ export class ExportTemplateService {
   private auth = inject(GoogleAuthService);
   private readonly SHEET_NAME = 'export_templates';
 
-  public templates = signal<ExportTemplate[]>([]);
+  public templates = signal<ExportTemplate[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
   public isLoading = signal<boolean>(false);
 
   constructor() {
@@ -25,9 +25,9 @@ export class ExportTemplateService {
     });
   }
 
-  public loadTemplates(): void {
+  public loadTemplates(quiet: boolean = false): void {
     if (!this.auth.isAuthorized()) return;
-    this.isLoading.set(true);
+    if (!quiet) this.isLoading.set(true);
 
     this.sheetsService.readRange(`${this.SHEET_NAME}!A2:K`).subscribe({
       next: (response) => {
