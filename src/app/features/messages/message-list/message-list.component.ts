@@ -8,6 +8,7 @@ import { MessageTemplate } from '../../../core/models/message.model';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { Router } from '@angular/router';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
    selector: 'app-message-list',
@@ -227,6 +228,7 @@ export class MessageListComponent implements OnInit {
    private fb = inject(FormBuilder);
    private dialog = inject(MatDialog);
    private router = inject(Router);
+   private confirmService = inject(ConfirmService);
 
    templates: MessageTemplate[] = [];
    filteredTemplates: MessageTemplate[] = [];
@@ -317,9 +319,16 @@ export class MessageListComponent implements OnInit {
 
    deleteTemplate(template: MessageTemplate) {
       if (!template._rowNumber) return;
-      if (confirm(`¿Estás seguro de que quieres eliminar la plantilla "${template.name}"?`)) {
-         this.messageService.deleteTemplate(template._rowNumber).subscribe();
-      }
+      this.confirmService.ask({
+         title: 'Delete Message Template',
+         message: `Are you sure you want to delete the template "${template.name}"? This action cannot be undone.`,
+         confirmText: 'Delete Template',
+         isDanger: true
+      }).subscribe(confirmed => {
+         if (confirmed) {
+            this.messageService.deleteTemplate(template._rowNumber!).subscribe();
+         }
+      });
    }
 
    openExportDialog() {

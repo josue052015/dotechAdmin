@@ -22,6 +22,7 @@ import { Order } from '../../../core/models/order.model';
 import { Observable } from 'rxjs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MessageService } from '../../../core/services/message.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 interface ColumnFilter {
   operator: 'eq' | 'neq';
@@ -572,6 +573,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private confirmService = inject(ConfirmService);
   public Math = Math;
 
   displayedColumns: string[] = ['date', 'customer', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
@@ -980,11 +982,18 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   }
 
   confirmDelete(order: Order) {
-    if (confirm('¿Seguro que deseas eliminar este pedido?')) {
-      this.orderService.deleteOrder(order['_rowNumber']!).subscribe({
-        next: () => this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 }),
-        error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
-      });
-    }
+    this.confirmService.ask({
+      title: 'Eliminar Pedido',
+      message: `¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.orderService.deleteOrder(order['_rowNumber']!).subscribe({
+          next: () => this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 }),
+          error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
+        });
+      }
+    });
   }
 }

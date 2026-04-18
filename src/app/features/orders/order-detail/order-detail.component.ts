@@ -13,6 +13,7 @@ import { Order } from '../../../core/models/order.model';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
 import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
 import { Router } from '@angular/router';
@@ -344,6 +345,7 @@ export class OrderDetailComponent implements OnInit {
    private router = inject(Router);
    private dialogRef = inject(MatDialogRef<OrderDetailComponent>, { optional: true });
    private dialogData = inject(MAT_DIALOG_DATA, { optional: true });
+   private confirmService = inject(ConfirmService);
 
    isDialog = false;
    isEditing = false;
@@ -623,14 +625,21 @@ TOTAL: RD$ ${this.totalAmount.toLocaleString()}
 
    confirmDelete() {
        if (!this.order) return;
-       if (confirm('¿Seguro que deseas eliminar este pedido?')) {
-           this.orderService.deleteOrder(this.order['_rowNumber']!).subscribe({
-               next: () => {
-                   this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 });
-                   this.goBack();
-               },
-               error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
-           });
-       }
+       this.confirmService.ask({
+           title: 'Eliminar Pedido',
+           message: `¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.`,
+           confirmText: 'Eliminar',
+           isDanger: true
+       }).subscribe(confirmed => {
+           if (confirmed) {
+               this.orderService.deleteOrder(this.order!['_rowNumber']!).subscribe({
+                   next: () => {
+                       this.snackBar.open('Pedido eliminado correctamente', 'Cerrar', { duration: 3000 });
+                       this.goBack();
+                   },
+                   error: () => this.snackBar.open('Error al eliminar el pedido', 'Cerrar', { duration: 3000 })
+               });
+           }
+       });
    }
 }

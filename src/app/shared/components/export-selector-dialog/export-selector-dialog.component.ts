@@ -34,7 +34,7 @@ import { exportToExcel } from '../../../core/utils/xlsx-export.util';
                 class="w-full text-left p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all flex items-center justify-between group active:scale-[0.98]">
           <div class="flex items-center space-x-4">
             <div class="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-emerald-500 group-hover:border-emerald-100 transition-colors shadow-sm">
-              <lucide-icon name="layout" class="w-4 h-4"></lucide-icon>
+              <lucide-icon name="layout-list" class="w-4 h-4"></lucide-icon>
             </div>
             <div class="flex flex-col">
               <span class="text-sm font-bold text-slate-700 underline-offset-4 decoration-2"> {{ template.name }} </span>

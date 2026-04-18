@@ -7,6 +7,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ExportTemplateService } from '../../../core/services/export-template.service';
 import { ExportTemplate } from '../../../core/models/export-template.model';
 import { EXPORT_SOURCES } from '../../../core/config/export-source.config';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-export-template-list',
@@ -145,6 +146,7 @@ import { EXPORT_SOURCES } from '../../../core/config/export-source.config';
 export class ExportTemplateListComponent implements OnInit {
   public templateService = inject(ExportTemplateService);
   private snackBar = inject(MatSnackBar);
+  private confirmService = inject(ConfirmService);
 
   displayedColumns: string[] = ['name', 'source', 'columns', 'status', 'updatedAt', 'actions'];
   dataSource = new MatTableDataSource<ExportTemplate>();
@@ -168,11 +170,18 @@ export class ExportTemplateListComponent implements OnInit {
   }
 
   confirmDelete(template: ExportTemplate) {
-    if (confirm(`Are you sure you want to delete the template "${template.name}"?`)) {
-      this.templateService.deleteTemplate(template.id).subscribe({
-        next: () => this.snackBar.open('Template deleted successfully', 'Close', { duration: 3000 }),
-        error: () => this.snackBar.open('Error deleting template', 'Close', { duration: 3000 })
-      });
-    }
+    this.confirmService.ask({
+      title: 'Delete Template',
+      message: `Are you sure you want to delete the template "${template.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Template',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.templateService.deleteTemplate(template.id).subscribe({
+          next: () => this.snackBar.open('Template deleted successfully', 'Close', { duration: 3000 }),
+          error: () => this.snackBar.open('Error deleting template', 'Close', { duration: 3000 })
+        });
+      }
+    });
   }
 }

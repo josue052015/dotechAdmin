@@ -16,7 +16,7 @@ import {
   History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
   Shield, ShieldCheck, ShieldAlert,
   Download, X, FileSpreadsheet, Activity,
-  Edit3, LayoutList, Save, MousePointer2, ArrowRight
+  Edit3, LayoutList, Save, MousePointer2, ArrowRight, HelpCircle
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
       History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
       Shield, ShieldCheck, ShieldAlert,
       Download, X, FileSpreadsheet, Activity, LayoutDashboard,
-      Edit3, LayoutList, Save, MousePointer2, ArrowRight
+      Edit3, LayoutList, Save, MousePointer2, ArrowRight, HelpCircle
     }))
   ]
 };

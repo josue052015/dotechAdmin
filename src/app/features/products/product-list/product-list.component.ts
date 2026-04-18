@@ -11,6 +11,7 @@ import { Product } from '../../../core/models/product.model';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { Router } from '@angular/router';
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-product-list',
@@ -354,6 +355,7 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private confirmService = inject(ConfirmService);
   public Math = Math;
 
   displayedColumns: string[] = ['product', 'category', 'price', 'stock', 'status', 'actions'];
@@ -461,9 +463,16 @@ export class ProductListComponent implements OnInit, AfterViewInit {
 
   deleteProduct(product: Product) {
     if (!product._rowNumber) return;
-    if (confirm(`Are you sure you want to delete ${product.name}?`)) {
-      this.productService.deleteProduct(product._rowNumber).subscribe();
-    }
+    this.confirmService.ask({
+      title: 'Delete Product',
+      message: `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Product',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.productService.deleteProduct(product._rowNumber!).subscribe();
+      }
+    });
   }
 
   openExportDialog() {
