@@ -25,9 +25,9 @@ import { Router } from '@angular/router';
       
       <!-- Header Area -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div class="space-y-1">
-          <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Product Inventory</h1>
-          <p class="text-sm text-slate-500 font-medium">Manage your catalog, pricing, and stock levels.</p>
+        <div class="flex flex-col">
+          <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Product Inventory</h1>
+          <p class="text-slate-400 text-[10px] md:text-xs font-semibold uppercase tracking-widest mt-0.5">Manage your catalog, pricing, and stock levels</p>
         </div>
         
         <div class="flex items-center space-x-3 w-full sm:w-auto">
