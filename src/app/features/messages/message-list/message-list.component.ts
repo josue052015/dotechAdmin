@@ -5,12 +5,15 @@ import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MessageService } from '../../../core/services/message.service';
 import { MessageTemplate } from '../../../core/models/message.model';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
    selector: 'app-message-list',
    standalone: true,
    imports: [
-      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule
+      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule, MatDialogModule
    ],
    template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -30,7 +33,13 @@ import { MessageTemplate } from '../../../core/models/message.model';
                      class="input-stitch pl-12 md:pl-14 h-11 md:h-12 text-xs md:text-sm">
            </div>
            
-           <button (click)="openForm()" class="bg-primary hover:bg-blue-700 text-white px-4 md:px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-xs md:text-sm font-bold">
+           <button (click)="openExportDialog()" 
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 md:p-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 transition-all active:scale-95 flex items-center justify-center h-11 md:h-12"
+                   title="Export to Excel">
+              <lucide-icon name="file-spreadsheet" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+           </button>
+           
+           <button (click)="openForm()" class="h-11 md:h-12 bg-primary hover:bg-blue-700 text-white px-4 md:px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-2 text-xs md:text-sm font-bold">
               <lucide-icon name="plus" class="w-4 h-4 md:w-5 h-5"></lucide-icon>
               <span class="hidden xs:inline">Create Template</span>
               <span class="xs:hidden">New</span>
@@ -216,6 +225,8 @@ import { MessageTemplate } from '../../../core/models/message.model';
 export class MessageListComponent implements OnInit {
    public messageService = inject(MessageService);
    private fb = inject(FormBuilder);
+   private dialog = inject(MatDialog);
+   private router = inject(Router);
 
    templates: MessageTemplate[] = [];
    filteredTemplates: MessageTemplate[] = [];
@@ -309,6 +320,22 @@ export class MessageListComponent implements OnInit {
       if (confirm(`¿Estás seguro de que quieres eliminar la plantilla "${template.name}"?`)) {
          this.messageService.deleteTemplate(template._rowNumber).subscribe();
       }
+   }
+
+   openExportDialog() {
+      this.dialog.open(ExportSelectorDialogComponent, {
+         data: {
+            sourceKey: 'messages',
+            dataset: this.filteredTemplates
+         },
+         width: '450px',
+         maxWidth: '95vw',
+         panelClass: 'custom-dialog-container'
+      }).afterClosed().subscribe(result => {
+         if (result === 'GOTO') {
+            this.router.navigate(['/export-templates']);
+         }
+      });
    }
 
    insertVar(v: string) {

@@ -71,6 +71,11 @@ export const routes: Routes = [
                 path: 'settings',
                 canActivate: [ownerGuard],
                 loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
+            },
+            {
+                path: 'export-templates',
+                canActivate: [ownerGuard],
+                loadChildren: () => import('./features/export-templates/export-templates.routes').then(m => m.EXPORT_TEMPLATES_ROUTES)
             }
         ]
     },

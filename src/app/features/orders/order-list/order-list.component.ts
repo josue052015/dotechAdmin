@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ViewChild, effect, signal, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -14,6 +14,7 @@ import { WhatsappSelectorDialogComponent } from '../../../shared/components/what
 import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
 import { OrderDetailComponent } from '../order-detail/order-detail.component';
 import { DateFilterService } from '../../../core/services/date-filter.service';
+import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
 import { LocationService } from '../../../core/services/location.service';
@@ -52,6 +53,12 @@ interface ColumnFilter {
                      placeholder="Search..." 
                      class="input-stitch pl-12 md:pl-14 h-10 md:h-12 text-sm">
             </div>
+
+           <button (click)="openExportDialog()" 
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 md:p-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 transition-all active:scale-95 flex items-center justify-center"
+                   title="Export to Excel">
+              <lucide-icon name="file-spreadsheet" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+           </button>
            
            <button routerLink="/orders/new" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 md:p-3 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-95 flex items-center justify-center">
               <lucide-icon name="plus" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
@@ -564,6 +571,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private router = inject(Router);
   public Math = Math;
 
   displayedColumns: string[] = ['date', 'customer', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
@@ -736,6 +744,24 @@ export class OrderListComponent implements OnInit, AfterViewInit {
       if (template) {
         const url = this.messageService.generateWhatsAppUrl(row, template.text);
         window.open(url, '_blank');
+      }
+    });
+  }
+
+  openExportDialog() {
+    const dialogRef = this.dialog.open(ExportSelectorDialogComponent, {
+      data: {
+        sourceKey: 'orders',
+        dataset: this.dataSource.filteredData
+      },
+      width: '450px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'GOTO') {
+        this.router.navigate(['/export-templates']);
       }
     });
   }

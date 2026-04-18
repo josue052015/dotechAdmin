@@ -15,7 +15,8 @@ import {
   LayoutDashboard, ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
   History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
   Shield, ShieldCheck, ShieldAlert,
-  Download, X, FileSpreadsheet, Activity
+  Download, X, FileSpreadsheet, Activity,
+  Edit3, LayoutList, Save, MousePointer2, ArrowRight
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -37,7 +38,8 @@ export const appConfig: ApplicationConfig = {
       ArrowLeft, CheckCheck, Smile, Paperclip, Mic, Banknote,
       History, FilterX, Check, CalendarDays, CalendarRange, Clock3,
       Shield, ShieldCheck, ShieldAlert,
-      Download, X, FileSpreadsheet, Activity, LayoutDashboard
+      Download, X, FileSpreadsheet, Activity, LayoutDashboard,
+      Edit3, LayoutList, Save, MousePointer2, ArrowRight
     }))
   ]
 };

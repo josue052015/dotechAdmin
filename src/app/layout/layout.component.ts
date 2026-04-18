@@ -102,6 +102,13 @@ declare var XLSX: any;
             <lucide-icon name="bar-chart-2" class="w-5 h-5"></lucide-icon>
             <span class="text-[14px]">Reports</span>
           </a>
+
+          <a routerLink="/export-templates" routerLinkActive="bg-sidebar-active !text-sidebar-activeText font-semibold shadow-sm ring-1 ring-primary/10" 
+             (click)="isSidebarOpen.set(false)"
+             class="flex items-center space-x-3 px-4 py-3 rounded-xl text-text-muted hover:bg-slate-50 hover:text-text transition-all duration-200 group">
+            <lucide-icon name="file-spreadsheet" class="w-5 h-5 group-hover:text-emerald-500 transition-colors"></lucide-icon>
+            <span class="text-[14px]">Plantillas Exportación</span>
+          </a>
         </nav>
 
         <!-- Sidebar Bottom Footer -->
@@ -443,6 +450,7 @@ export class LayoutComponent {
      if (url === '/abandoned-orders') return 'Abandoned Orders';
      if (url === '/products') return 'Inventory';
      if (url === '/messages') return 'Templates';
+     if (url.includes('/export-templates')) return 'Export Config';
      if (url === '/settings') return 'Settings';
      return 'OrderFlow';
   }

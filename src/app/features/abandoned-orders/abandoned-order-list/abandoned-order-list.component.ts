@@ -12,6 +12,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { WhatsappSelectorDialogComponent } from '../../../shared/components/whatsapp-selector-dialog/whatsapp-selector-dialog.component';
 import { DateFilterService } from '../../../core/services/date-filter.service';
+import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { AbandonedOrderService } from '../../../core/services/abandoned-order.service';
 import { ProductService } from '../../../core/services/product.service';
 import { LocationService } from '../../../core/services/location.service';
@@ -50,6 +51,12 @@ interface ColumnFilter {
                      placeholder="Search abandoned orders..." 
                      class="input-stitch pl-12 md:pl-14 h-10 md:h-12 text-sm">
             </div>
+
+           <button (click)="openExportDialog()" 
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 md:p-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 transition-all active:scale-95 flex items-center justify-center"
+                   title="Export to Excel">
+              <lucide-icon name="file-spreadsheet" class="w-5 h-5 md:w-6 md:h-6"></lucide-icon>
+           </button>
         </div>
       </div>
 
@@ -638,6 +645,22 @@ export class AbandonedOrderListComponent implements OnInit, AfterViewInit {
         // AbandonedOrder has the same structure as Order for the variable mapping
         const url = this.messageService.generateWhatsAppUrl(row as any, (template as any).text);
         window.open(url, '_blank');
+      }
+    });
+  }
+
+  openExportDialog() {
+    this.dialog.open(ExportSelectorDialogComponent, {
+      data: {
+        sourceKey: 'abandoned_orders',
+        dataset: this.dataSource.filteredData
+      },
+      width: '450px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-container'
+    }).afterClosed().subscribe(result => {
+      if (result === 'GOTO') {
+        this.router.navigate(['/export-templates']);
       }
     });
   }
