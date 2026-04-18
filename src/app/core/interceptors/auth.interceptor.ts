@@ -50,14 +50,21 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     }
                     
                     // Renewal failed (likely blocked or needs interaction).
-                    // We DO NOT force a redirect here if we are not authenticated at all.
-                    // But if we WERE authenticated, we should probably inform the user.
+                    // If we are authenticated and not on the login page, we force a redirect
+                    // to avoid the "blank screen" caused by failed data requests.
                     if (router.url !== '/login' && auth.isAuthenticated()) {
-                        // Just fail the request. The UI should show an error or the guard will catch it.
+                        console.warn('[Auth] Token expired and silent renewal failed. Redirecting to login.');
+                        auth.logoutManual();
                     }
                     return throwError(() => error);
                   }),
-                  catchError(() => throwError(() => error))
+                  catchError((renewalErr) => {
+                    // Even if silentRenew errors out, we should consider logout if on a protected route
+                    if (router.url !== '/login' && auth.isAuthenticated()) {
+                        auth.logoutManual();
+                    }
+                    return throwError(() => error);
+                  })
                 );
               }
               return throwError(() => error);

@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { catchError, map, filter } from 'rxjs/operators';
+import { catchError, map, filter, tap } from 'rxjs/operators';
 import { Observable, of, fromEvent, merge, timer, from } from 'rxjs';
 
 declare var google: any;
@@ -21,7 +21,7 @@ const STORAGE_KEYS = {
 };
 
 const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 24 hours
-const REFRESH_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+const REFRESH_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes buffer to renew before expiry
 
 @Injectable({
     providedIn: 'root'
@@ -353,6 +353,7 @@ export class GoogleAuthService {
 
         this.refreshInProgress = new Promise((resolve) => {
             if (!this.tokenClient) {
+                console.warn('[Auth] No token client available for renewal.');
                 resolve(null);
                 return;
             }
@@ -365,23 +366,31 @@ export class GoogleAuthService {
                 this.tokenClient.requestAccessToken({ 
                     prompt: 'none',
                     login_hint: this.userProfile()?.email || '',
-                    include_granted_scopes: false,
+                    include_granted_scopes: true, // Ensured we keep requested scopes
                     enable_granular_consent: false
                 });
                 
                 // Set a timeout to resolve if GIS hangs or fails silently
                 setTimeout(() => {
                     if (this.refreshInProgress) {
-                        // console.log('[Auth] Silent renew timed out (likely blocked or needs interaction).');
+                        console.log('[Auth] Silent renew timed out (likely blocked or needs interaction).');
                         this.resolveRefresh(null);
                     }
-                }, 5000);
+                }, 8000); // 8 seconds for slow networks
 
             } catch (err) {
+                console.error('[Auth] Error during silent renewal request:', err);
                 this.resolveRefresh(null);
             }
         });
 
-        return from(this.refreshInProgress);
+        return from(this.refreshInProgress).pipe(
+            tap((token: string | null) => {
+                if (!token && this.isAuthenticated()) {
+                    // If we can't renew silently and the token is already expired, 
+                    // we might want to flag this, but the interceptor handles the 401.
+                }
+            })
+        );
     }
 }
