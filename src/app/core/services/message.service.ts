@@ -1,8 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { MessageTemplate } from '../models/message.model';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { Order } from '../models/order.model';
 import { GoogleAuthService } from './google-auth.service';
 import { effect, untracked } from '@angular/core';
@@ -29,11 +29,11 @@ export class MessageService {
         });
     }
 
-    public loadTemplates(quiet: boolean = false): void {
-        if (!this.auth.isAuthorized()) return;
+    public loadTemplates(quiet: boolean = false): Observable<any> {
+        if (!this.auth.isAuthorized()) return of(null);
         if (!quiet) this.isLoading.set(true);
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).subscribe({
-            next: (response) => {
+        return this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).pipe(
+            tap((response) => {
                 const rows = response.values || [];
                 const parsed: MessageTemplate[] = rows
                     .map((row: any[], index: number) => {
@@ -47,7 +47,6 @@ export class MessageService {
                     })
                     .filter((msg: MessageTemplate) => msg.id || msg.name);
 
-                // Fallback if no templates found
                 if (parsed.length === 0) {
                     parsed.push({
                         id: 'default',
@@ -58,18 +57,18 @@ export class MessageService {
 
                 this.templates.set(parsed);
                 this.isLoading.set(false);
-            },
-            error: (err) => {
+            }),
+            catchError((err: any) => {
                 console.error('Error loading templates', err);
-                // Even on error, provide at least one template
                 this.templates.set([{
                     id: 'default',
                     name: 'Mensaje Estándar',
                     text: 'Hola {{FullName}}, te escribimos de Dotech. Tu pedido de {{ProductName}} por RD$ {{Price}} está {{Status}}.'
                 }]);
                 this.isLoading.set(false);
-            }
-        });
+                return of(null);
+            })
+        );
     }
 
     public createTemplate(template: MessageTemplate): Observable<any> {

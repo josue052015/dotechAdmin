@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { ExportTemplate, ExportTemplateFlat, ExportColumn } from '../models/export-template.model';
-import { Observable, map, tap, of, forkJoin, switchMap } from 'rxjs';
+import { Observable, map, tap, of, forkJoin, switchMap, catchError } from 'rxjs';
 import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
@@ -25,12 +25,12 @@ export class ExportTemplateService {
     });
   }
 
-  public loadTemplates(quiet: boolean = false): void {
-    if (!this.auth.isAuthorized()) return;
+  public loadTemplates(quiet: boolean = false): Observable<any> {
+    if (!this.auth.isAuthorized()) return of(null);
     if (!quiet) this.isLoading.set(true);
 
-    this.sheetsService.readRange(`${this.SHEET_NAME}!A2:K`).subscribe({
-      next: (response) => {
+    return this.sheetsService.readRange(`${this.SHEET_NAME}!A2:K`).pipe(
+      tap((response) => {
         const rows = response.values || [];
         const flats: ExportTemplateFlat[] = rows.map((row: any[]) => ({
           template_id: row[0],
@@ -48,12 +48,13 @@ export class ExportTemplateService {
 
         this.templates.set(this.groupTemplates(flats));
         this.isLoading.set(false);
-      },
-      error: (err) => {
+      }),
+      catchError((err: any) => {
         console.error('Error loading export templates', err);
         this.isLoading.set(false);
-      }
-    });
+        return of(null);
+      })
+    );
   }
 
   private groupTemplates(flats: ExportTemplateFlat[]): ExportTemplate[] {

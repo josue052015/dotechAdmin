@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { interval, fromEvent, merge, of } from 'rxjs';
-import { switchMap, filter, map, startWith, distinctUntilChanged } from 'rxjs/operators';
+import { Injectable, inject, signal, effect, untracked } from '@angular/core';
+import { interval, fromEvent, merge, of, forkJoin, Observable } from 'rxjs';
+import { switchMap, filter, map, startWith, distinctUntilChanged, take, tap } from 'rxjs/operators';
 import { OrderService } from './order.service';
 import { ProductService } from './product.service';
 import { AbandonedOrderService } from './abandoned-order.service';
@@ -20,9 +20,27 @@ export class SyncService {
   private auth = inject(GoogleAuthService);
 
   private readonly REFRESH_INTERVAL = 10000; // 10 seconds
+  
+  // Track if the first data load reached a "completed" state across all services
+  public isInitialSyncDone = signal<boolean>(false);
 
   constructor() {
     this.initSyncLoop();
+    this.setupInitialSyncTrigger();
+  }
+
+  private setupInitialSyncTrigger() {
+    // Automatically trigger initial sync when authorized
+    effect(() => {
+      if (this.auth.isAuthorized() && !this.isInitialSyncDone()) {
+        untracked(() => {
+          this.performSync().pipe(take(1)).subscribe(() => {
+            console.log('[Sync] Initial data load complete.');
+            this.isInitialSyncDone.set(true);
+          });
+        });
+      }
+    });
   }
 
   private initSyncLoop() {
@@ -44,20 +62,22 @@ export class SyncService {
       // Trigger all service reloads quietly
       map(() => {
         console.log('Syncing data from Google Sheets...');
-        this.performSync();
+        this.performSync().pipe(take(1)).subscribe();
         return true;
       })
     ).subscribe();
   }
 
-  public performSync() {
-    if (!this.auth.isAuthorized()) return;
+  public performSync(): Observable<any> {
+    if (!this.auth.isAuthorized()) return of(null);
 
-    // Quietly reload all core data services
-    this.orderService.loadOrders(true);
-    this.productService.loadProducts(true);
-    this.abandonedOrderService.loadAbandonedOrders(true);
-    this.messageService.loadTemplates(true);
-    this.exportTemplateService.loadTemplates(true);
+    // Parallelly reload all core data services and wait for all to complete
+    return forkJoin({
+        orders: this.orderService.loadOrders(true),
+        products: this.productService.loadProducts(true),
+        abandoned: this.abandonedOrderService.loadAbandonedOrders(true),
+        messages: this.messageService.loadTemplates(true),
+        exports: this.exportTemplateService.loadTemplates(true)
+    });
   }
 }

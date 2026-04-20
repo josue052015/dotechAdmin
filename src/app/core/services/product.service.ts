@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { Product } from '../models/product.model';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
@@ -50,13 +50,12 @@ export class ProductService {
         });
     }
 
-    public loadProducts(quiet: boolean = false): void {
-        if (!this.auth.isAuthorized()) return;
+    public loadProducts(quiet: boolean = false): Observable<any> {
+        if (!this.auth.isAuthorized()) return of(null);
 
         if (!quiet) this.isLoading.set(true);
-        // Read A1:Z to get headers and sufficient data columns
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:Z`).subscribe({
-            next: (response) => {
+        return this.sheetsService.readRange(`${this.SHEET_NAME}!A1:Z`).pipe(
+            tap((response) => {
                 const rows = response.values || [];
                 if (rows.length > 0) {
                     this.currentHeaders = rows[0];
@@ -83,19 +82,19 @@ export class ProductService {
                         .filter((p: Product) => p.id || p.name);
 
                     this.products.set(parsed);
-                    // Tracking next available row
                     this.nextRowNumber = rows.length + 1;
                 } else {
                     this.nextRowNumber = 2;
                     this.products.set([]);
                 }
                 this.isLoading.set(false);
-            },
-            error: (err) => {
+            }),
+            catchError((err: any) => {
                 console.error('Error loading products', err);
                 this.isLoading.set(false);
-            }
-        });
+                return of(null);
+            })
+        );
     }
 
     private normalizeHeader(header: any): string {

@@ -1,8 +1,8 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { catchError, map, filter, tap } from 'rxjs/operators';
-import { Observable, of, fromEvent, merge, timer, from } from 'rxjs';
+import { catchError, map, filter, tap, switchMap } from 'rxjs/operators';
+import { Observable, of, fromEvent, merge, timer, from, firstValueFrom } from 'rxjs';
 
 declare var google: any;
 
@@ -51,6 +51,14 @@ export class GoogleAuthService {
         this.loadGoogleScript();
         this.setupInactivityTracker();
         this.setupTabSync();
+
+        // Safety timeout to prevent stuck splash screen
+        setTimeout(() => {
+            if (this.isInitializing()) {
+                console.warn('[Auth] Initialization safety timeout reached.');
+                this.isInitializing.set(false);
+            }
+        }, 10000); // 10 seconds
     }
 
     private initializeAuthState() {
@@ -162,15 +170,25 @@ export class GoogleAuthService {
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
-        script.onload = () => {
+        script.onload = async () => {
             this.initGsiIdentity();
             this.initTokenClient();
             this.isScriptLoaded.set(true);
             
-            // AUTOMATIC SILENT BOOTSTRAP IS NOW GESTURE-AWARE
-            // Instead of prompt: 'none' (which often fails/blocks), 
-            // we wait for the first valid user interaction to potentially refresh.
-            // But we mark initialization as finished so the app can render.
+            // PROACTIVE SESSION REFRESH
+            // If we have a local session but no valid token, 
+            // we try to refresh BEFORE removing the splash screen.
+            if (this.isAuthenticated() && (!this.accessToken() || this.tokenExpiresAt() < (Date.now() + REFRESH_THRESHOLD_MS))) {
+                console.log('[Auth] Authenticated session found. Attempting background refresh...');
+                try {
+                    // We wait for the refresh attempt. 
+                    // This keeps the Splash Screen visible while working.
+                    await firstValueFrom(this.ensureValidAccessToken());
+                } catch (err) {
+                    console.warn('[Auth] Background refresh during bootstrap failed:', err);
+                }
+            }
+
             this.isInitializing.set(false);
         };
         script.onerror = () => {
@@ -198,26 +216,15 @@ export class GoogleAuthService {
             callback: (tokenResponse: any) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     this.handleTokenResponse(tokenResponse);
-                    this.resolveRefresh(tokenResponse.access_token);
                 } else if (tokenResponse.error) {
                     console.error('[Auth] GSI callback error:', tokenResponse.error);
                     this.resolveRefresh(null);
-                    // If interaction was required, we don't force a loop.
-                    // The user will have to click something eventually.
                 }
             },
         });
     }
 
-    private resolveRefresh(token: string | null) {
-        if (this.refreshInProgress) {
-            if (this.refreshResolver) this.refreshResolver(token);
-            this.refreshResolver = null;
-            this.refreshInProgress = null;
-        }
-    }
-
-    private handleTokenResponse(tokenResponse: any) {
+    private async handleTokenResponse(tokenResponse: any) {
         const token = tokenResponse.access_token;
         const expiresIn = tokenResponse.expires_in || 3599;
         const expiresAt = Date.now() + (expiresIn * 1000);
@@ -230,14 +237,29 @@ export class GoogleAuthService {
 
         // Check if we need to fetch/verify profile
         if (!this.userProfile() || !this.isAuthorized()) {
-            this.verifyFullSession(token);
+            try {
+                await firstValueFrom(this.verifyFullSession(token));
+            } catch (err) {
+                console.error('[Auth] Error during full session verification:', err);
+            }
+        }
+        
+        // Resolve refresh ONLY AFTER verification is attempt (if needed)
+        this.resolveRefresh(token);
+    }
+
+    private resolveRefresh(token: string | null) {
+        if (this.refreshInProgress) {
+            if (this.refreshResolver) this.refreshResolver(token);
+            this.refreshResolver = null;
+            this.refreshInProgress = null;
         }
     }
 
-    private verifyFullSession(token: string) {
+    private verifyFullSession(token: string): Observable<boolean> {
         this.isVerifying.set(true);
-        this.fetchUserProfile(token).subscribe({
-            next: (profile) => {
+        return this.fetchUserProfile(token).pipe(
+            switchMap((profile: UserProfile): Observable<boolean> => {
                 this.userProfile.set(profile);
                 this.isAuthenticated.set(true);
                 localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
@@ -246,26 +268,26 @@ export class GoogleAuthService {
                 if (!isOwner) {
                     this.isAuthorized.set(false);
                     localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, 'false');
-                    this.isVerifying.set(false);
-                    return;
+                    return of(false);
                 }
 
-                this.verifySpreadsheetAccess(token).subscribe({
-                    next: (hasAccess) => {
+                return this.verifySpreadsheetAccess(token).pipe(
+                    tap((hasAccess) => {
                         this.isAuthorized.set(hasAccess);
                         localStorage.setItem(STORAGE_KEYS.IS_AUTHORIZED, hasAccess.toString());
-                        this.isVerifying.set(false);
-                    },
-                    error: () => {
-                        this.isAuthorized.set(false);
-                        this.isVerifying.set(false);
-                    }
-                });
-            },
-            error: () => {
+                    })
+                );
+            }),
+            tap({
+                next: () => this.isVerifying.set(false),
+                error: () => this.isVerifying.set(false),
+                complete: () => this.isVerifying.set(false)
+            }),
+            catchError((err: any) => {
                 this.isVerifying.set(false);
-            }
-        });
+                return of(false);
+            })
+        );
     }
 
     private isOwnerEmail(email: string): boolean {

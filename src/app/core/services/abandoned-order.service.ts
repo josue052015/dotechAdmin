@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { AbandonedOrder } from '../models/abandoned-order.model';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
@@ -65,13 +65,12 @@ export class AbandonedOrderService {
         });
     }
 
-    public loadAbandonedOrders(quiet: boolean = false): void {
-        if (!this.auth.isAuthenticated()) return;
+    public loadAbandonedOrders(quiet: boolean = false): Observable<any> {
+        if (!this.auth.isAuthenticated()) return of(null);
         
         if (!quiet) this.isLoading.set(true);
-        // Range A1:P is usually enough based on the order mapping
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:P`).subscribe({
-            next: (response) => {
+        return this.sheetsService.readRange(`${this.SHEET_NAME}!A1:P`).pipe(
+            tap((response) => {
                 const rows = response.values || [];
                 if (rows.length > 0) {
                     this.currentHeaders = rows[0];
@@ -83,12 +82,13 @@ export class AbandonedOrderService {
                     this.activeAbandonedOrders.set([]);
                 }
                 this.isLoading.set(false);
-            },
-            error: (err) => {
+            }),
+            catchError((err: any) => {
                 console.error('Error loading abandoned orders', err);
                 this.isLoading.set(false);
-            }
-        });
+                return of(null);
+            })
+        );
     }
 
     private mapRowsToAbandonedOrders(rows: any[][]): AbandonedOrder[] {

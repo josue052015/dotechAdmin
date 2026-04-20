@@ -73,20 +73,18 @@ export class OrderService {
         });
     }
 
-    public loadOrders(quiet: boolean = false): void {
-        if (!this.auth.isAuthenticated()) return;
+    public loadOrders(quiet: boolean = false): Observable<any> {
+        if (!this.auth.isAuthenticated()) return of(null);
         
         if (!quiet) this.isLoading.set(true);
-        // Start from A1 to get headers. Increased range to P for soft delete column.
-        this.sheetsService.readRange(`${this.SHEET_NAME}!A1:P`).subscribe({
-            next: (response) => {
+        return this.sheetsService.readRange(`${this.SHEET_NAME}!A1:P`).pipe(
+            tap((response) => {
                 const rows = response.values || [];
                 if (rows.length > 0) {
                     this.currentHeaders = rows[0];
                     const orders = this.mapRowsToOrders(rows);
                     this.orders.set(orders.reverse());
                     this.activeOrders.set(orders.filter(o => o.isDeleted !== true));
-                    // The next record should be at the very end of the sheet
                     this.nextRowNumber = rows.length + 1;
                 } else {
                     this.nextRowNumber = 2;
@@ -94,12 +92,13 @@ export class OrderService {
                     this.activeOrders.set([]);
                 }
                 this.isLoading.set(false);
-            },
-            error: (err) => {
+            }),
+            catchError((err: any) => {
                 console.error('Error loading orders', err);
                 this.isLoading.set(false);
-            }
-        });
+                return of(null);
+            })
+        );
     }
 
     private mapRowsToOrders(rows: any[][]): Order[] {
