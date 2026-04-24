@@ -21,6 +21,18 @@ export class AppComponent {
   public syncService = inject(SyncService);
   public auth = inject(GoogleAuthService);
 
+  constructor() {
+    // Safety timeout: If splash screen persists for more than 5 seconds,
+    // force redirect to login to avoid getting stuck in a blank or infinite loading state.
+    setTimeout(() => {
+      if (this.showSplash()) {
+        console.warn('[App] Splash screen safety timeout reached. Redirecting to login...');
+        this.auth.clearLocalSession(); 
+        window.location.href = '/login';
+      }
+    }, 5000);
+  }
+
   showSplash = computed(() => {
     // Keep splash while:
     // 1. Auth is booting (script loading, initial check)
