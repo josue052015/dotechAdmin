@@ -15,15 +15,8 @@ export class ExportTemplateService {
   public templates = signal<ExportTemplate[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
   public isLoading = signal<boolean>(false);
 
-  constructor() {
-    effect(() => {
-      if (this.auth.isAuthorized()) {
-        untracked(() => this.loadTemplates());
-      } else {
-        untracked(() => this.templates.set([]));
-      }
-    });
-  }
+  constructor() {}
+
 
   public loadTemplates(quiet: boolean = false): Observable<any> {
     if (!this.auth.isAuthorized()) return of(null);
@@ -90,7 +83,11 @@ export class ExportTemplateService {
       template.columns.sort((a, b) => a.order - b.order);
     });
 
-    return Array.from(grouped.values());
+    return Array.from(grouped.values()).sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+    });
   }
 
   public saveTemplate(template: ExportTemplate): Observable<any> {

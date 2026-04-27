@@ -259,7 +259,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                        <!-- Order Info -->
                        <div class="flex-1 min-w-0 flex items-center space-x-4 cursor-pointer hover:opacity-80">
                           <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                              {{ order.id || '#' + order['_rowNumber'] }}
+                              {{ order.id }}
                           </div>
                           <div class="flex flex-col min-w-0">
                              <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!order.fullName || order.fullName.toLowerCase() === 'cliente sin identificar'">{{order.fullName || 'Cliente sin identificar'}}</p>
@@ -319,7 +319,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                      <div class="flex flex-col min-w-0">
                         <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!order.fullName || order.fullName.toLowerCase() === 'cliente sin identificar'">{{order.fullName || 'Cliente sin identificar'}}</p>
                         <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
-                           <span>ID: {{order.id || '#' + order['_rowNumber']}}</span>
+                           <span>ID: {{order.id}}</span>
                            <span>•</span>
                            <span class="text-primary/70">{{order.date | date:'dd/MM/yy'}}</span>
                         </div>
@@ -354,7 +354,7 @@ import { WhatsappSelectorDialogComponent } from '../../shared/components/whatsap
                    </div>
                    <div class="flex items-center space-x-3">
                       <div class="flex flex-col items-end">
-                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Total Amount</span>
+                         <span class="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">ID: {{order.id}}</span>
                          <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{ (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0) | number:'1.2-2' }}</span>
                       </div>
                       <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm" (click)="openOrderDetail(order)">
@@ -561,7 +561,8 @@ export class DashboardComponent implements OnInit {
       });
 
       this.totalOrders = orders.length;
-      this.recentOrders = [...orders].slice(0, 5);
+      // Sort by row number DESC to get the truly most recent ones first
+      this.recentOrders = [...orders].sort((a: any, b: any) => (b._rowNumber || 0) - (a._rowNumber || 0)).slice(0, 5);
 
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -584,6 +585,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.orderService.loadOrders();
+    this.messageService.loadTemplates(true);
   }
 
   private updateDonutChart(orders: any[]) {

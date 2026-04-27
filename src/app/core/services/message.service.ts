@@ -19,15 +19,8 @@ export class MessageService {
     public templates = signal<MessageTemplate[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
     public isLoading = signal<boolean>(false);
 
-    constructor() {
-        effect(() => {
-            if (this.auth.isAuthorized()) {
-                untracked(() => this.loadTemplates());
-            } else {
-                untracked(() => this.templates.set([]));
-            }
-        });
-    }
+    constructor() {}
+
 
     public loadTemplates(quiet: boolean = false): Observable<any> {
         if (!this.auth.isAuthorized()) return of(null);
@@ -55,7 +48,10 @@ export class MessageService {
                     });
                 }
 
-                this.templates.set(parsed);
+                // Sort templates by _rowNumber DESC to show newest first
+                const sorted = parsed.sort((a, b) => (b._rowNumber || 0) - (a._rowNumber || 0));
+
+                this.templates.set(sorted);
                 this.isLoading.set(false);
             }),
             catchError((err: any) => {
@@ -85,7 +81,7 @@ export class MessageService {
         );
     }
 
-    public generateWhatsAppUrl(order: Order, templateText: string): string {
+    public generateWhatsAppUrl(order: any, templateText: string): string {
         let replacedText = templateText;
 
         // Map of friendly aliases and all direct order fields

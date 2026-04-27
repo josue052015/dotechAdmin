@@ -50,6 +50,8 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
       <!-- Template Grid (Visible only when not editing) -->
       <div *ngIf="!showForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+
          <div *ngFor="let template of filteredTemplates" class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
             <div class="flex justify-between items-start mb-4">
                <div class="flex items-center space-x-3">
@@ -72,7 +74,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
             </p>
 
             <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Modified 2 days ago</span>
+               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID: {{ template.id }}</span>
                <div class="flex items-center space-x-1">
                   <button (click)="editTemplate(template)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90">
                      <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
@@ -87,11 +89,17 @@ import { ConfirmService } from '../../../core/services/confirm.service';
             </div>
          </div>
 
-         <!-- Empty State for Search -->
-         <div *ngIf="filteredTemplates.length === 0" class="col-span-full py-20 flex flex-col items-center border-2 border-dashed border-slate-200 rounded-3xl">
+         <!-- Empty State for Search or No Data -->
+         <div *ngIf="filteredTemplates.length === 0 && !messageService.isLoading()" class="col-span-full py-20 flex flex-col items-center border-2 border-dashed border-slate-200 rounded-3xl">
             <lucide-icon name="search" class="w-12 h-12 text-slate-100 mb-4" [strokeWidth]="1.5"></lucide-icon>
-            <h3 class="text-lg font-bold text-slate-900">No matching templates</h3>
-            <p class="text-sm text-slate-400 mt-1">Try different keywords or create a new template.</p>
+            <h3 class="text-lg font-bold text-slate-900">No se encontraron plantillas</h3>
+            <p class="text-sm text-slate-400 mt-1">Intenta con otras palabras o crea una nueva plantilla.</p>
+         </div>
+
+         <!-- Loading State -->
+         <div *ngIf="messageService.isLoading() && templates.length === 0" class="col-span-full py-20 flex flex-col items-center">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="text-sm text-slate-400 mt-4 animate-pulse uppercase tracking-widest font-black">Cargando plantillas...</p>
          </div>
       </div>
 
@@ -258,7 +266,7 @@ export class MessageListComponent implements OnInit {
    }
 
    ngOnInit() {
-      this.messageService.loadTemplates();
+      this.messageService.loadTemplates().subscribe();
    }
 
    applyFilter(event: Event) {
@@ -340,7 +348,7 @@ export class MessageListComponent implements OnInit {
          width: '450px',
          maxWidth: '95vw',
          panelClass: 'custom-dialog-container'
-      }).afterClosed().subscribe(result => {
+      }).afterClosed().subscribe((result: any) => {
          if (result === 'GOTO') {
             this.router.navigate(['/export-templates']);
          }

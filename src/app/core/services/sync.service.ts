@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, effect, untracked } from '@angular/core';
 import { interval, fromEvent, merge, of, forkJoin, Observable } from 'rxjs';
 import { switchMap, filter, map, startWith, distinctUntilChanged, take, tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { OrderService } from './order.service';
 import { ProductService } from './product.service';
 import { AbandonedOrderService } from './abandoned-order.service';
@@ -18,8 +19,10 @@ export class SyncService {
   private messageService = inject(MessageService);
   private exportTemplateService = inject(ExportTemplateService);
   private auth = inject(GoogleAuthService);
+  private router = inject(Router);
 
-  private readonly REFRESH_INTERVAL = 10000; // 10 seconds
+  private readonly REFRESH_INTERVAL = 30000; // 30 seconds
+  private isSyncing = false;
   
   // Track if the first data load reached a "completed" state across all services
   public isInitialSyncDone = signal<boolean>(false);
@@ -33,12 +36,16 @@ export class SyncService {
     // Automatically trigger initial sync when authorized
     effect(() => {
       if (this.auth.isAuthorized() && !this.isInitialSyncDone()) {
-        untracked(() => {
-          this.performSync().pipe(take(1)).subscribe(() => {
-            console.log('[Sync] Initial data load complete.');
-            this.isInitialSyncDone.set(true);
+        // Debounce initial sync to ensure services are fully initialized
+        setTimeout(() => {
+          untracked(() => {
+            if (this.isSyncing) return;
+            this.performSync().pipe(take(1)).subscribe(() => {
+              console.log('[Sync] Initial data load complete.');
+              this.isInitialSyncDone.set(true);
+            });
           });
-        });
+        }, 3000);
       }
     });
   }
@@ -58,10 +65,9 @@ export class SyncService {
     interval(this.REFRESH_INTERVAL).pipe(
       // Only proceed if tab is visible AND user is authorized
       switchMap(() => visibility$),
-      filter(isVisible => isVisible && this.auth.isAuthorized()),
+      filter(isVisible => isVisible && this.auth.isAuthorized() && !this.isSyncing),
       // Trigger all service reloads quietly
       map(() => {
-        console.log('Syncing data from Google Sheets...');
         this.performSync().pipe(take(1)).subscribe();
         return true;
       })
@@ -69,15 +75,38 @@ export class SyncService {
   }
 
   public performSync(): Observable<any> {
-    if (!this.auth.isAuthorized()) return of(null);
+    if (!this.auth.isAuthorized() || this.isSyncing) return of(null);
+    this.isSyncing = true;
 
-    // Parallelly reload all core data services and wait for all to complete
-    return forkJoin({
-        orders: this.orderService.loadOrders(true),
-        products: this.productService.loadProducts(true),
-        abandoned: this.abandonedOrderService.loadAbandonedOrders(true),
-        messages: this.messageService.loadTemplates(true),
-        exports: this.exportTemplateService.loadTemplates(true)
-    });
+    const url = this.router.url;
+    const loads: { [key: string]: Observable<any> } = {};
+
+    // Route-based priority loading
+    if (url.includes('/dashboard') || url === '/') {
+        loads['orders'] = this.orderService.refreshVisibleChunk();
+    } else if (url.includes('/orders')) {
+        loads['orders'] = this.orderService.refreshVisibleChunk();
+    } else if (url.includes('/abandoned-orders')) {
+        loads['abandoned'] = this.abandonedOrderService.refreshVisibleChunk();
+    } else if (url.includes('/products')) {
+        loads['products'] = this.productService.refreshVisibleChunk();
+    } else {
+        loads['orders'] = this.orderService.refreshVisibleChunk();
+    }
+
+    if (Object.keys(loads).length === 0) {
+        this.isSyncing = false;
+        return of(null);
+    }
+
+    console.log(`[Sync] Syncing active sheets for route: ${url}`);
+    return forkJoin(loads).pipe(
+        finalize(() => {
+            this.isSyncing = false;
+            console.log(`[Sync] Completed sync for ${Object.keys(loads).join(', ')}`);
+        })
+    );
   }
 }
+import { finalize } from 'rxjs/operators';
+

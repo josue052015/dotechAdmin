@@ -39,11 +39,13 @@ import { ConfirmService } from '../../../core/services/confirm.service';
       <div class="card-stitch flex flex-col bg-white overflow-hidden min-h-[400px]">
         <div class="relative flex-1 overflow-auto custom-scrollbar">
           
-          <div *ngIf="templateService.isLoading()" class="p-8 space-y-4">
+          <div *ngIf="templateService.isLoading() && dataSource.data.length === 0" class="p-8 space-y-4">
             <div *ngFor="let i of [1,2,3,4]" class="h-12 rounded-xl skeleton"></div>
           </div>
 
-          <div *ngIf="!templateService.isLoading()" class="animate-in fade-in duration-500">
+          <div *ngIf="dataSource.data.length > 0 || !templateService.isLoading()" class="animate-in fade-in duration-500 flex-1 flex flex-col">
+            
+
             <table mat-table [dataSource]="dataSource" class="table-stitch">
               
               <!-- Name Column -->
@@ -69,8 +71,8 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
               <!-- Columns Count Column -->
               <ng-container matColumnDef="columns">
-                <th mat-header-cell *matHeaderCellDef class="text-center">COLS</th>
-                <td mat-cell *matCellDef="let row" class="text-center">
+                <th mat-header-cell *matHeaderCellDef class="text-left">COLS</th>
+                <td mat-cell *matCellDef="let row" class="text-left">
                   <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
                     {{row.columns.length}}
                   </span>
@@ -79,8 +81,8 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="text-center">STATUS</th>
-                <td mat-cell *matCellDef="let row" class="text-center">
+                <th mat-header-cell *matHeaderCellDef class="text-left">STATUS</th>
+                <td mat-cell *matCellDef="let row" class="text-left">
                   <span [class]="row.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'" 
                         class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
                     {{row.isActive ? 'Active' : 'Inactive'}}
@@ -152,11 +154,7 @@ export class ExportTemplateListComponent implements OnInit {
   dataSource = new MatTableDataSource<ExportTemplate>();
 
   ngOnInit() {
-    this.templateService.loadTemplates();
-    // Use effect to update dataSource when templates signal changes
-    // In a more complex app, we'd use a signal-to-observable or just computed
-    // But for this case, effect in constructor (already in service) handles loading.
-    // We can just watch the service signal.
+    this.templateService.loadTemplates().subscribe();
   }
 
   constructor() {
