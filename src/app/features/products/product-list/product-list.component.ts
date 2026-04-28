@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, computed, signal } from '@angular/core';
+import { Component, OnInit, inject, effect, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -30,7 +30,7 @@ interface ColumnFilter {
     MatDialogModule, MatMenuModule, MatCheckboxModule
   ],
   template: `
-    <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+    <div class="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
       <!-- Header Area -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -241,7 +241,7 @@ interface ColumnFilter {
               </div>
               <h3 class="text-xl font-bold text-slate-800 mb-2">No hay productos disponibles</h3>
               <p class="text-slate-500 max-w-sm text-sm">
-                No se encontraron productos en el catálogo o no coinciden con la búsqueda.
+                No se encontraron productos en el catÃ¡logo o no coinciden con la bÃºsqueda.
               </p>
             </div>
 
@@ -255,18 +255,19 @@ interface ColumnFilter {
                <div class="col-span-1 text-left"></div>
             </div>
 
-            <cdk-virtual-scroll-viewport itemSize="72" class="flex-1 custom-scrollbar h-[600px]">
+            <div class="flex-1 w-full">
               <!-- Desktop Rows -->
               <!-- Row Container -->
-              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber">
+              <div *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
                 <!-- Desktop Layout -->
+                @defer (on viewport) {
                 <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all items-center group">
                   <div class="col-span-4 flex items-center space-x-5 text-left">
                      <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
                         <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
                      </div>
                      <div class="flex flex-col min-w-0">
-                        <span class="text-sm font-bold text-slate-900 leading-tight truncate">{{row.name}}</span>
+                        <span class="text-sm font-bold text-slate-900 leading-tight truncate uppercase">{{row.name}}</span>
                         <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</span>
                      </div>
                   </div>
@@ -301,9 +302,26 @@ interface ColumnFilter {
                     </button>
                   </div>
                 </div>
+                } @placeholder {
+                  <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
+                    <div class="col-span-4 flex items-center space-x-5">
+                      <div class="w-12 h-12 rounded-xl bg-slate-100"></div>
+                      <div class="space-y-2">
+                        <div class="h-4 bg-slate-100 rounded w-32"></div>
+                        <div class="h-2 bg-slate-100 rounded w-16"></div>
+                      </div>
+                    </div>
+                    <div class="col-span-2 h-6 bg-slate-100 rounded-lg w-20"></div>
+                    <div class="col-span-2 h-4 bg-slate-100 rounded w-24"></div>
+                    <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
+                    <div class="col-span-2 h-8 bg-slate-100 rounded-full w-24"></div>
+                    <div class="col-span-1 h-8 bg-slate-100 rounded-xl w-8"></div>
+                  </div>
+                }
 
                 <!-- Mobile Layout -->
-                <div class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-50">
+                @defer (on viewport) {
+                <div class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
                       <div class="flex items-center space-x-4">
                          <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
@@ -337,24 +355,36 @@ interface ColumnFilter {
                       </div>
                    </div>
                 </div>
+                } @placeholder {
+                  <div class="md:hidden p-4 border-b border-slate-50">
+                    <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 animate-pulse">
+                      <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-xl bg-slate-100"></div>
+                        <div class="flex-1 space-y-2">
+                          <div class="h-4 bg-slate-100 rounded w-32"></div>
+                          <div class="h-2 bg-slate-100 rounded w-16"></div>
+                        </div>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <div class="h-6 bg-slate-100 rounded-full w-20"></div>
+                        <div class="h-6 bg-slate-100 rounded w-24"></div>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
 
-              <!-- Loading more spinner -->
-              <div *ngIf="productService.listState().isLoadingMore" class="p-8 flex justify-center items-center">
-                <mat-spinner diameter="24"></mat-spinner>
-                <span class="ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cargando más productos...</span>
               </div>
-            </cdk-virtual-scroll-viewport>
+            </div>
           </div>
-        </div>
-        </div>
+          </div>
 
         <div *ngIf="!productService.isLoading()" class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
               Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> productos
            </div>
            <div class="flex items-center space-x-4">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scroll para cargar más</span>
+               <button *ngIf="productService.listState().hasMore" (click)="productService.loadMoreChunk()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">Cargar más productos</button><div *ngIf="!productService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300"><span class="text-[10px] font-bold uppercase tracking-widest">Fin de la lista</span><lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon></div>
            </div>
          </div>
       </div>
@@ -416,10 +446,8 @@ interface ColumnFilter {
   `,
   styles: [`
     :host { display: block; }
-    cdk-virtual-scroll-viewport { display: block; }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-  `]
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductListComponent implements OnInit {
   public productService = inject(ProductService);

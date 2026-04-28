@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, signal, computed, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, effect, signal, computed, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -21,6 +21,8 @@ import { AbandonedOrder } from '../../../core/models/abandoned-order.model';
 import { MessageService } from '../../../core/services/message.service';
 import { ExportTemplateService } from '../../../core/services/export-template.service';
 import { StatusSelectorDialogComponent } from '../../../shared/components/status-selector-dialog/status-selector-dialog.component';
+import { AbandonedOrderDetailComponent } from '../abandoned-order-detail/abandoned-order-detail.component';
+
 
 interface ColumnFilter {
   operator: 'eq' | 'neq';
@@ -33,10 +35,11 @@ interface ColumnFilter {
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
     LucideAngularModule, MatProgressSpinnerModule, ScrollingModule,
-    MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule
+    MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule,
+    AbandonedOrderDetailComponent
   ],
   template: `
-    <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       <!-- Top Actions Row -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -139,8 +142,8 @@ interface ColumnFilter {
       -->
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col">
-        <div class="relative flex-1 flex flex-col min-h-0">
+      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col w-full max-w-full">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full">
           
           <!-- Loading Skeletons (Only when truly empty) -->
           <div *ngIf="abandonedOrderService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto">
@@ -203,7 +206,7 @@ interface ColumnFilter {
               </div>
               <h3 class="text-xl font-bold text-slate-800 mb-2">No hay pedidos abandonados</h3>
               <p class="text-slate-500 max-w-sm">
-                No hay registros que coincidan con los filtros seleccionados o la base de datos está vacía.
+                No hay registros que coincidan con los filtros seleccionados o la base de datos estÃ¡ vacÃ­a.
               </p>
               <button (click)="abandonedOrderService.initLargeList()" 
                       class="mt-8 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
@@ -222,111 +225,138 @@ interface ColumnFilter {
                <div class="col-span-1"></div>
             </div>
 
-            <cdk-virtual-scroll-viewport itemSize="72" class="flex-1 custom-scrollbar h-[600px]">
+            <div class="flex-1 w-full">
               <!-- Desktop Rows -->
-              <ng-container *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber">
-                 <div (click)="openOrderDetail(row)"
-                      class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
-                 
-                 <div class="col-span-1 text-[11px] font-bold text-slate-500 italic">{{ row.date | date:'dd/MM/yy' }}</div>
-                 
-                 <div class="col-span-3 flex items-center space-x-4">
-                   <div class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shadow-sm">
-                     {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')[1]?.charAt(0) || '' }}
-                   </div>
-                   <div class="flex flex-col min-w-0">
-                     <span class="text-sm font-bold leading-tight truncate uppercase" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</span>
-                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: #{{row.id}}</span>
-                   </div>
-                 </div>
-
-                 <div class="col-span-2 flex items-center space-x-2" *ngIf="row.phone">
-                   <lucide-icon name="phone" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
-                   <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
-                 </div>
-                 <div class="col-span-2" *ngIf="!row.phone"></div>
-
-                 <div class="col-span-3 text-xs font-bold leading-relaxed truncate text-slate-700">{{row.productName}}</div>
-                 
-                 <div class="col-span-1 text-left">
-                   <span class="text-xs font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-md">{{row.productQuantity}}</span>
-                 </div>
-
-                 <div class="col-span-1 text-left text-sm font-black text-slate-900 whitespace-nowrap italic">
-                   RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}
-                 </div>
-
-                 <div class="col-span-1 flex items-center justify-end space-x-2">
-                    <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-1.5 text-emerald-500 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 rounded-lg transition-all active:scale-90">
-                       <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
-                    </button>
-                    <div class="p-1.5 text-slate-400">
-                       <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+              <ng-container *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
+                  @defer (on viewport) {
+                  <div (click)="openOrderDetail(row)"
+                       class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
+                  
+                  <div class="col-span-1 text-[11px] font-bold text-slate-500 italic">{{ row.date | date:'dd/MM/yy' }}</div>
+                  
+                  <div class="col-span-2 flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shadow-sm">
+                      {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                     </div>
-                 </div>
-                 </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="text-sm font-bold leading-tight truncate uppercase" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</span>
+                      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: #{{row.id}}</span>
+                    </div>
+                  </div>
 
-                 <!-- Mobile Layout -->
-                 <div (click)="openOrderDetail(row)"
-                      class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-50">
-                  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
-                     <div class="flex justify-between items-start">
-                        <div class="flex items-center space-x-3">
-                           <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                              {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
-                           </div>
-                           <div class="flex flex-col min-w-0">
-                              <p class="text-sm font-bold leading-tight truncate max-w-[140px]" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</p>
-                              <div class="flex items-center space-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
-                                  <span>ID: {{row.id}}</span>
-                                 <span>•</span>
-                                 <span class="text-primary/70">{{row.date | date:'dd/MM/yy'}}</span>
-                              </div>
-                           </div>
-                        </div>
+                  <div class="col-span-2 flex items-center space-x-2" *ngIf="row.phone">
+                    <lucide-icon name="phone" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
+                    <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
+                  </div>
+                  <div class="col-span-2" *ngIf="!row.phone"></div>
+
+                  <div class="col-span-3 text-xs font-bold leading-relaxed truncate text-slate-700">{{row.productName}}</div>
+                  
+                  <div class="col-span-1 text-left">
+                    <span class="text-xs font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-md">{{row.productQuantity}}</span>
+                  </div>
+
+                  <div class="col-span-1 text-left text-sm font-black text-slate-900 whitespace-nowrap italic">
+                    RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}
+                  </div>
+
+                  <div class="col-span-1 flex items-center justify-end space-x-2">
+                     <button (click)="openWhatsApp(row); $event.stopPropagation()" class="p-1.5 text-emerald-500 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 rounded-lg transition-all active:scale-90">
+                        <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                     </button>
+                     <div class="p-1.5 text-slate-400">
+                        <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
                      </div>
+                  </div>
+                  </div>
+                  } @placeholder {
+                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
+                      <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
+                      <div class="col-span-2 flex items-center space-x-4">
+                        <div class="w-10 h-10 rounded-full bg-slate-100"></div>
+                        <div class="space-y-2 flex-1">
+                          <div class="h-4 bg-slate-100 rounded w-24"></div>
+                          <div class="h-2 bg-slate-100 rounded w-12"></div>
+                        </div>
+                      </div>
+                      <div class="col-span-2 h-3 bg-slate-100 rounded w-20"></div>
+                      <div class="col-span-3 h-3 bg-slate-100 rounded w-32"></div>
+                      <div class="col-span-1 h-3 bg-slate-100 rounded w-8"></div>
+                      <div class="col-span-1 h-4 bg-slate-100 rounded w-16"></div>
+                      <div class="col-span-1 h-4 bg-slate-100 rounded w-8"></div>
+                    </div>
+                  }
 
-                     <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                           <span class="text-slate-400 font-semibold">Product</span>
-                           <span class="text-slate-900 font-bold truncate ml-4">{{row.productName}}</span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs">
-                           <span class="text-slate-400 font-semibold">Quantity</span>
-                           <span class="text-slate-900 font-bold">{{row.productQuantity}} units</span>
-                        </div>
-                     </div>
-
-                     <div class="flex justify-between items-center pt-1 px-1">
-                        <div class="flex items-center space-x-3">
-                            <button (click)="openWhatsApp(row); $event.stopPropagation()" class="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                                <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
-                                <span>WhatsApp</span>
-                            </button>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                           <div class="flex flex-col items-end">
-                              <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-right">Total Amount</span>
-                              <span class="text-base font-black text-slate-900 tracking-tight">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number:'1.2-2'}}</span>
-                           </div>
-                           <button class="bg-slate-900 text-white p-2 rounded-lg shadow-sm">
-                              <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
-                           </button>
+                  <!-- Mobile Layout -->
+                  @defer (on viewport) {
+                  <div (click)="openOrderDetail(row)"
+                        class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
+                   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
+                      <div class="flex justify-between items-start gap-2">
+                         <div class="flex items-center space-x-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                               {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                               <p class="text-sm font-bold leading-tight truncate" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</p>
+                               <div class="flex flex-wrap items-center gap-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
+                                   <span>#{{row.id}}</span>
+                                  <span class="hidden xs:inline">•</span>
+                                  <span class="text-primary/70">{{row.date | date:'dd/MM/yy'}}</span>
+                               </div>
+                            </div>
                          </div>
                       </div>
+
+                      <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
+                         <div class="flex items-start justify-between gap-4">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Product</span>
+                            <span class="text-[11px] font-bold text-slate-900 text-right min-w-0 truncate leading-relaxed block">{{row.productName}}</span>
+                         </div>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
+                            <span class="text-[11px] font-bold text-slate-900">{{row.productQuantity}} units</span>
+                         </div>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2" *ngIf="row.phone">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</span>
+                            <span class="text-[11px] font-bold text-slate-600">{{row.phone}}</span>
+                         </div>
+                      </div>
+
+                      <div class="flex items-center justify-between pt-1">
+                         <button (click)="openWhatsApp(row); $event.stopPropagation()" class="flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all border border-emerald-100">
+                            <lucide-icon name="message-square" class="w-3.5 h-3.5"></lucide-icon>
+                            <span>WhatsApp</span>
+                         </button>
+                         <div class="flex flex-col items-end">
+                            <span class="text-[14px] font-black text-slate-900 italic">RD$ {{(row.productPrice * row.productQuantity) + (row.shippingCost || 0) + (row.packaging || 0) | number}}</span>
+                         </div>
+                      </div>
+                   </div>
                   </div>
-                </div>
+                  } @placeholder {
+                    <div class="md:hidden p-4 border-b border-slate-50">
+                      <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 animate-pulse">
+                        <div class="flex items-center space-x-3">
+                          <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
+                          <div class="space-y-2 flex-1">
+                            <div class="h-4 bg-slate-100 rounded w-32"></div>
+                            <div class="h-2 bg-slate-100 rounded w-16"></div>
+                          </div>
+                        </div>
+                        <div class="h-20 bg-slate-50 rounded-xl"></div>
+                        <div class="flex justify-between items-center">
+                          <div class="h-8 bg-slate-100 rounded-xl w-24"></div>
+                          <div class="h-8 bg-slate-100 rounded-xl w-20"></div>
+                        </div>
+                      </div>
+                    </div>
+                  }
               </ng-container>
 
-              <!-- Loading more spinner -->
-              <div *ngIf="abandonedOrderService.listState().isLoadingMore" class="p-8 flex justify-center items-center">
-                <mat-spinner diameter="24"></mat-spinner>
-                <span class="ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cargando más pedidos...</span>
-              </div>
-            </cdk-virtual-scroll-viewport>
+            </div>
           </div>
         </div>
-      </div>
 
          <!-- Styled Paginator -->
          <div *ngIf="!abandonedOrderService.isLoading()" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -334,11 +364,18 @@ interface ColumnFilter {
                Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> registros
             </div>
             <div class="flex items-center space-x-4">
-               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scroll para cargar más</span>
+               <button *ngIf="abandonedOrderService.listState().hasMore" 
+                       (click)="abandonedOrderService.loadMoreChunk()"
+                       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+                  Cargar mÃ¡s pedidos
+               </button>
+               <div *ngIf="!abandonedOrderService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
+                  <span class="text-[10px] font-bold uppercase tracking-widest">Fin de la lista</span>
+                  <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
+               </div>
             </div>
          </div>
       </div>
-
     <!-- Filter Template (Reusable for all columns) -->
     <ng-template #filterTemplate let-column="column">
        <div class="bg-white p-4 w-[280px] flex flex-col space-y-4 shadow-2xl">
@@ -387,11 +424,12 @@ interface ColumnFilter {
   `,
   styles: [`
     :host { display: block; }
-    cdk-virtual-scroll-viewport { display: block; }
     .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
-  `]
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AbandonedOrderListComponent implements OnInit {
+  public isMobile = window.innerWidth < 768;
   public abandonedOrderService = inject(AbandonedOrderService);
   public productService = inject(ProductService);
   public locationService = inject(LocationService);
@@ -494,8 +532,13 @@ export class AbandonedOrderListComponent implements OnInit {
   }
 
   openOrderDetail(order: AbandonedOrder) {
-     // No detail view for abandoned orders yet, or use OrderDetail if shared
-     this.snackBar.open('Detalle de orden abandonada en desarrollo', 'Cerrar', { duration: 2000 });
+     this.dialog.open(AbandonedOrderDetailComponent, {
+       data: { order },
+       width: '1200px',
+       maxWidth: '95vw',
+       maxHeight: '90vh',
+       panelClass: 'custom-dialog-container'
+     });
   }
 
   private snackBar = inject(MatSnackBar);

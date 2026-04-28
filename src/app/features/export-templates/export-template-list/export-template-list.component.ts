@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
+import { Component, OnInit, inject, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -19,6 +19,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
     MatTableModule,
     MatSnackBarModule
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
@@ -37,7 +38,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
       <!-- Main Table Container -->
       <div class="card-stitch flex flex-col bg-white overflow-hidden min-h-[400px]">
-        <div class="relative flex-1 overflow-auto custom-scrollbar">
+        <div class="relative flex-1">
           
           <div *ngIf="templateService.isLoading() && dataSource.data.length === 0" class="p-8 space-y-4">
             <div *ngFor="let i of [1,2,3,4]" class="h-12 rounded-xl skeleton"></div>
@@ -45,95 +46,164 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
           <div *ngIf="dataSource.data.length > 0 || !templateService.isLoading()" class="animate-in fade-in duration-500 flex-1 flex flex-col">
             
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto custom-scrollbar">
+              <table mat-table [dataSource]="dataSource" class="table-stitch">
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>NAME</th>
+                  <td mat-cell *matCellDef="let row">
+                    <div class="flex flex-col">
+                      <span class="text-sm font-bold text-slate-900">{{row.name}}</span>
+                      <span class="text-[10px] text-slate-400 font-medium truncate max-w-[200px]">{{row.description || 'No description'}}</span>
+                    </div>
+                  </td>
+                </ng-container>
 
-            <table mat-table [dataSource]="dataSource" class="table-stitch">
-              
-              <!-- Name Column -->
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef>NAME</th>
-                <td mat-cell *matCellDef="let row">
-                  <div class="flex flex-col">
-                    <span class="text-sm font-bold text-slate-900">{{row.name}}</span>
-                    <span class="text-[10px] text-slate-400 font-medium truncate max-w-[200px]">{{row.description || 'No description'}}</span>
+                <!-- Source Column -->
+                <ng-container matColumnDef="source">
+                  <th mat-header-cell *matHeaderCellDef>SOURCE LIST</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                      {{ getSourceLabel(row.sourceList) }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Columns Count Column -->
+                <ng-container matColumnDef="columns">
+                  <th mat-header-cell *matHeaderCellDef class="text-left">COLS</th>
+                  <td mat-cell *matCellDef="let row" class="text-left">
+                    <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                      {{row.columns.length}}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef class="text-left">STATUS</th>
+                  <td mat-cell *matCellDef="let row" class="text-left">
+                    <span [class]="row.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'" 
+                          class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                      {{row.isActive ? 'Active' : 'Inactive'}}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Date Column -->
+                <ng-container matColumnDef="updatedAt">
+                  <th mat-header-cell *matHeaderCellDef>UPDATED AT</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="text-xs font-medium text-slate-500">{{ row.updatedAt | date:'dd/MM/yy HH:mm' }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
+                  <td mat-cell *matCellDef="let row" class="text-right">
+                    <div class="flex items-center justify-end space-x-1">
+                      <button [routerLink]="[row.id, 'edit']" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90" title="Edit">
+                        <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                      </button>
+                      <button (click)="confirmDelete(row)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90" title="Delete">
+                        <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50/80 transition-all border-transparent"></tr>
+              </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden flex flex-col gap-4 p-4">
+              <div *ngFor="let row of dataSource.data">
+                @defer (on viewport) {
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4 active:bg-slate-50 transition-all">
+                  
+                  <!-- Card Header -->
+                  <div class="flex justify-between items-start">
+                    <div class="flex flex-col min-w-0">
+                      <h3 class="text-sm font-black text-slate-900 truncate uppercase tracking-tight">{{row.name}}</h3>
+                      <p class="text-[10px] font-bold text-slate-400 mt-0.5 line-clamp-1 italic">{{row.description || 'No description'}}</p>
+                    </div>
+                    <span [class]="row.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'" 
+                          class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border flex-shrink-0">
+                      {{row.isActive ? 'Active' : 'Inactive'}}
+                    </span>
                   </div>
-                </td>
-              </ng-container>
 
-              <!-- Source Column -->
-              <ng-container matColumnDef="source">
-                <th mat-header-cell *matHeaderCellDef>SOURCE LIST</th>
-                <td mat-cell *matCellDef="let row">
-                  <span class="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                    {{ getSourceLabel(row.sourceList) }}
-                  </span>
-                </td>
-              </ng-container>
-
-              <!-- Columns Count Column -->
-              <ng-container matColumnDef="columns">
-                <th mat-header-cell *matHeaderCellDef class="text-left">COLS</th>
-                <td mat-cell *matCellDef="let row" class="text-left">
-                  <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
-                    {{row.columns.length}}
-                  </span>
-                </td>
-              </ng-container>
-
-              <!-- Status Column -->
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="text-left">STATUS</th>
-                <td mat-cell *matCellDef="let row" class="text-left">
-                  <span [class]="row.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'" 
-                        class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-                    {{row.isActive ? 'Active' : 'Inactive'}}
-                  </span>
-                </td>
-              </ng-container>
-
-              <!-- Date Column -->
-              <ng-container matColumnDef="updatedAt">
-                <th mat-header-cell *matHeaderCellDef>UPDATED AT</th>
-                <td mat-cell *matCellDef="let row">
-                  <span class="text-xs font-medium text-slate-500">{{ row.updatedAt | date:'dd/MM/yy HH:mm' }}</span>
-                </td>
-              </ng-container>
-
-              <!-- Actions Column -->
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="text-right"> </th>
-                <td mat-cell *matCellDef="let row" class="text-right">
-                  <div class="flex items-center justify-end space-x-1">
-                    <button [routerLink]="[row.id, 'edit']" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90" title="Edit">
-                      <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-                    </button>
-                    <button (click)="confirmDelete(row)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90" title="Delete">
-                      <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                    </button>
-                    <button [routerLink]="[row.id, 'edit']" class="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90 group">
-                      <lucide-icon name="chevron-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
-                    </button>
+                  <!-- Card Details -->
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50">
+                      <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Source</span>
+                      <span class="text-[10px] font-black text-slate-700 uppercase tracking-tight">{{ getSourceLabel(row.sourceList) }}</span>
+                    </div>
+                    <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50">
+                      <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Columns</span>
+                      <span class="text-[10px] font-black text-blue-600 uppercase tracking-tight">{{row.columns.length}} CONFIGURADAS</span>
+                    </div>
                   </div>
-                </td>
-              </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50/80 transition-all border-transparent"></tr>
-
-              <tr class="mat-row bg-white" *matNoDataRow>
-                <td class="px-6 py-24 text-center" colspan="6">
-                  <div class="flex flex-col items-center">
-                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
-                        <lucide-icon name="file-spreadsheet" class="w-10 h-10 text-slate-200" [strokeWidth]="1.5"></lucide-icon>
-                     </div>
-                     <h3 class="text-lg font-bold">No templates found</h3>
-                     <p class="text-sm text-text-muted font-medium max-w-xs mx-auto mt-2">Create your first export template to start exporting data to Excel.</p>
-                     <button routerLink="new" class="mt-8 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-all shadow-md">
-                         Create Template
-                     </button>
+                  <!-- Card Footer -->
+                  <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                    <div class="flex items-center space-x-2">
+                       <lucide-icon name="clock" class="w-3 h-3 text-slate-300"></lucide-icon>
+                       <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{{ row.updatedAt | date:'dd MMM, yyyy' }}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <button [routerLink]="[row.id, 'edit']" 
+                              class="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:scale-90 transition-all border border-blue-100/50">
+                        <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                      </button>
+                      <button (click)="confirmDelete(row)" 
+                              class="p-2.5 bg-red-50 text-red-500 rounded-xl active:scale-90 transition-all border border-red-100/50">
+                        <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                      </button>
+                    </div>
                   </div>
-                </td>
-              </tr>
-            </table>
+                </div>
+                } @placeholder {
+                  <div class="bg-white rounded-2xl border border-slate-100 p-5 space-y-4 animate-pulse h-[160px]">
+                    <div class="flex justify-between">
+                      <div class="h-4 bg-slate-100 rounded w-32"></div>
+                      <div class="h-4 bg-slate-100 rounded-full w-12"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="h-12 bg-slate-50 rounded-xl"></div>
+                      <div class="h-12 bg-slate-50 rounded-xl"></div>
+                    </div>
+                    <div class="flex justify-between pt-2 border-t border-slate-50">
+                       <div class="h-3 bg-slate-50 rounded w-20"></div>
+                       <div class="flex gap-2">
+                          <div class="w-8 h-8 bg-slate-50 rounded-lg"></div>
+                          <div class="w-8 h-8 bg-slate-50 rounded-lg"></div>
+                       </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="bg-white" *ngIf="dataSource.data.length === 0 && !templateService.isLoading()">
+              <div class="px-6 py-24 text-center">
+                <div class="flex flex-col items-center">
+                   <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
+                      <lucide-icon name="file-spreadsheet" class="w-10 h-10 text-slate-200" [strokeWidth]="1.5"></lucide-icon>
+                   </div>
+                   <h3 class="text-lg font-bold">No templates found</h3>
+                   <p class="text-sm text-text-muted font-medium max-w-xs mx-auto mt-2">Create your first export template to start exporting data to Excel.</p>
+                   <button routerLink="new" class="mt-8 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-all shadow-md">
+                       Create Template
+                   </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
