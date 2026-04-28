@@ -47,12 +47,18 @@ export class OrderService extends LargeSheetListService<Order> {
 
     constructor() {
         super();
-        // Initialize once authenticated
-        effect(() => {
-            if (this.auth.isAuthenticated() && !this.isInitialized) {
-                untracked(() => super.initLargeList());
-            }
-        });
+        
+        // Eager initialization if already authenticated
+        if (this.auth.isAuthenticated()) {
+            super.initLargeList();
+        } else {
+            // Wait for authentication
+            effect(() => {
+                if (this.auth.isAuthenticated() && !this.isInitialized) {
+                    untracked(() => super.initLargeList());
+                }
+            });
+        }
     }
 
     public override initLargeList(): void {

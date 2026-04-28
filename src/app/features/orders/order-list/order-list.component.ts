@@ -216,14 +216,16 @@ interface ColumnFilter {
       <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col w-full max-w-full">
         <div class="relative flex-1 flex flex-col min-h-0 w-full">
           
-          <!-- Loading Skeletons (Only when truly empty) -->
-          <div *ngIf="orderService.isLoading() && orderService.listState().visibleRows.length === 0" class="flex-1 overflow-auto">
+          <!-- Loading Skeletons (Initial Paint Optimized) -->
+          <div *ngIf="orderService.listState().isInitialLoading && orderService.listState().visibleRows.length === 0" 
+               class="flex-1 overflow-auto bg-white" 
+               style="contain: paint layout;">
             <!-- Desktop Table Skeleton -->
             <div class="hidden md:block">
               <div class="hidden md:grid grid-cols-8 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100">
                 <div *ngFor="let col of [1,2,3,4,5,6,7,8]" class="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
               </div>
-              <div *ngFor="let row of [1,2,3,4,5,6,7,8]" class="grid grid-cols-8 gap-4 px-6 py-6 border-b border-slate-50 items-center">
+              <div class="grid grid-cols-8 gap-4 px-6 py-6 border-b border-slate-50 items-center">
                 <div class="h-4 w-20 bg-slate-100 rounded animate-pulse"></div>
                 <div class="col-span-2 flex items-center space-x-4">
                   <div class="w-10 h-10 rounded-full bg-slate-100 animate-pulse"></div>
@@ -242,7 +244,7 @@ interface ColumnFilter {
 
             <!-- Mobile Card Skeleton -->
             <div class="md:hidden flex flex-col gap-4 p-4">
-               <div *ngFor="let i of [1,2,3,4]" class="bg-white rounded-2xl border border-slate-100 p-5 space-y-5 shadow-sm">
+               <div class="bg-white rounded-2xl border border-slate-100 p-5 space-y-5 shadow-sm">
                   <div class="flex justify-between items-start">
                      <div class="flex items-center space-x-3">
                         <div class="w-12 h-12 rounded-xl bg-slate-100 animate-pulse"></div>

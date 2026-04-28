@@ -37,11 +37,15 @@ export class AbandonedOrderService extends LargeSheetListService<AbandonedOrder>
 
     constructor() {
         super();
-        effect(() => {
-            if (this.auth.isAuthenticated() && !this.isInitialized) {
-                untracked(() => this.initLargeList());
-            }
-        });
+        if (this.auth.isAuthenticated()) {
+            this.initLargeList();
+        } else {
+            effect(() => {
+                if (this.auth.isAuthenticated() && !this.isInitialized) {
+                    untracked(() => this.initLargeList());
+                }
+            });
+        }
     }
 
     public override initLargeList(): void {

@@ -13,7 +13,7 @@ export abstract class LargeSheetListService<T> {
   public listState = signal<LargeListState<T>>({
     visibleRows: [],
     totalLoaded: 0,
-    isInitialLoading: false,
+    isInitialLoading: true,
     isLoadingMore: false,
     isFiltering: false,
     hasMore: true,
@@ -23,7 +23,6 @@ export abstract class LargeSheetListService<T> {
   // Global signal for all records (useful for dashboard/global stats)
   public allRecords = signal<T[]>([]);
 
-  protected readonly CHUNK_SIZE = 1000;
   protected abstract SHEET_NAME: string;
   protected abstract COLUMNS_RANGE: string;
   
@@ -45,19 +44,17 @@ export abstract class LargeSheetListService<T> {
     if (this.isInitialized) return;
     this.isInitialized = true;
     
+    // Start loading headers and data in parallel
     this.sheetsService.readHeader(this.SHEET_NAME, this.COLUMNS_RANGE).subscribe({
       next: (headers) => {
         this.currentHeaders = headers;
-        this.loadInitialChunk().subscribe();
-        this.startBackgroundFullSync();
-      },
-      error: (err) => {
-        console.error(`[ListService] Failed to read header for ${this.SHEET_NAME}:`, err);
-        // Even without headers, try to load initial chunk (it will use fallback mapping)
-        this.loadInitialChunk().subscribe();
-        this.startBackgroundFullSync();
+        // If data was already loaded before headers, we might need a re-map, 
+        // but for initial render, fallback schema is usually correct.
       }
     });
+
+    this.loadInitialChunk().subscribe();
+    this.startBackgroundFullSync();
   }
 
   public refreshVisibleChunk(): Observable<any> {
@@ -93,21 +90,44 @@ export abstract class LargeSheetListService<T> {
     );
   }
 
+  protected readonly INSTANT_CHUNK_SIZE = 25; // Render these first for sub-1s load
+  protected readonly CHUNK_SIZE = 1000;
+
   public loadInitialChunk(): Observable<any> {
-    this.listState.update(s => ({ ...s, isInitialLoading: true }));
+    // Already set to true in initial state, but ensuring it here
+    this.listState.update(s => ({ ...s, isInitialLoading: s.visibleRows.length === 0 }));
     
     return from(this.cacheService.getChunk(this.SHEET_NAME, `2:${this.CHUNK_SIZE + 1}`)).pipe(
       switchMap(cachedData => {
         if (cachedData && cachedData.length > 0) {
           const mapped = this.mapRowsToEntities(cachedData, 2);
-          this.updateStateWithNewRows(mapped, true);
-          // Fresh fetch in background
+          
+          // CRITICAL: Update state and turn off loading flag in ONE cycle
+          this.listState.update(s => ({
+            ...s,
+            visibleRows: mapped,
+            totalLoaded: mapped.length,
+            isInitialLoading: false 
+          }));
+          this.allRecords.set(mapped);
+          
+          // Background refresh
           this.fetchChunk(2, this.CHUNK_SIZE + 1).subscribe();
           return of(mapped);
         }
-        return this.fetchChunk(2, this.CHUNK_SIZE + 1);
+
+        // NO CACHE: Fetch instant chunk
+        return this.fetchChunk(2, this.INSTANT_CHUNK_SIZE + 1).pipe(
+          tap(() => {
+            this.fetchChunk(this.INSTANT_CHUNK_SIZE + 2, this.CHUNK_SIZE + 1).subscribe();
+          }),
+          finalize(() => this.listState.update(s => ({ ...s, isInitialLoading: false })))
+        );
       }),
-      finalize(() => this.listState.update(s => ({ ...s, isInitialLoading: false })))
+      catchError(err => {
+        this.listState.update(s => ({ ...s, isInitialLoading: false }));
+        return throwError(() => err);
+      })
     );
   }
 
