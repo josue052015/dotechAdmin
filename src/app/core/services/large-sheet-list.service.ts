@@ -91,7 +91,7 @@ export abstract class LargeSheetListService<T> {
   }
 
   protected readonly INSTANT_CHUNK_SIZE = 25; // Render these first for sub-1s load
-  protected readonly CHUNK_SIZE = 1000;
+  protected readonly CHUNK_SIZE = 200;
 
   public loadInitialChunk(): Observable<any> {
     // Already set to true in initial state, but ensuring it here

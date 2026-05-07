@@ -120,6 +120,14 @@ import { Router } from '@angular/router';
                </div>
             </div>
 
+            <!-- WhatsApp Option for Mobile -->
+            <div *ngIf="!isEditing && order && !order.isDeleted" class="md:hidden bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50 mb-8 flex items-center justify-center">
+               <button (click)="openWhatsAppSelector()" class="flex items-center space-x-2 text-emerald-700 font-black text-xs uppercase tracking-wider hover:underline">
+                  <lucide-icon name="message-square" class="w-4 h-4"></lucide-icon>
+                  <span>Send WhatsApp Message</span>
+               </button>
+            </div>
+
             <!-- Detail Grid -->
             <div [formGroup]="orderForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                
