@@ -374,7 +374,7 @@ interface ColumnFilter {
                     </div>
                     <div class="flex flex-col min-w-0">
                       <span class="text-sm font-bold leading-tight truncate uppercase" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</span>
-                      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {{row.id}}</span>
+                      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">#{{(row.id || '').toString().split('#').join('')}}</span>
                     </div>
                   </div>
 
@@ -448,9 +448,9 @@ interface ColumnFilter {
                             <div class="flex flex-col min-w-0">
                                <h4 class="text-sm font-black text-slate-800 leading-tight truncate">{{row.fullName || 'Cliente sin identificar'}}</h4>
                                <div class="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-slate-400">
-                                  <span class="truncate">#{{row.id}}</span>
-                                  <span class="opacity-50">â€¢</span>
-                                  <span class="text-primary/70 whitespace-nowrap">{{row.date | date:'dd/MM/yy'}}</span>
+                                  <span class="truncate text-primary">#{{(row.id || '').toString().split('#').join('')}}</span>
+                                  <span class="opacity-50">&bull;</span>
+                                  <span class="whitespace-nowrap">{{row.date | date:'dd/MM/yy'}}</span>
                                </div>
                             </div>
                          </div>
