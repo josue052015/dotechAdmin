@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed, effect, untracked } from '@angular/core';
 import { Order } from '../models/order.model';
-import { catchError, map, tap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { catchError, map, tap, switchMap } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
 import { GoogleAuthService } from './google-auth.service';
 import { LargeSheetListService } from './large-sheet-list.service';
 
@@ -11,16 +11,74 @@ import { LargeSheetListService } from './large-sheet-list.service';
 export class OrderService extends LargeSheetListService<Order> {
     private auth = inject(GoogleAuthService);
     
+    protected override CHUNK_SIZE = 500;
     protected override SHEET_NAME = 'ORDENES';
     protected override COLUMNS_RANGE = 'A:P';
 
     // Backward compatibility signals
     public orders = computed(() => this.allRecords());
     public activeOrders = computed(() => this.allRecords().filter(o => o.isDeleted !== true));
-    public isLoading = computed(() => this.listState().isInitialLoading || this.listState().isLoadingMore);
+    public isLoading = computed(() => this.listState().isInitialLoading || this.listState().isLoadingMore || this.isDashboardFullLoadInProgress());
     
+    public isDashboardFullLoadInProgress = signal(false);
+    public hasDashboardHydratedOrders = signal(false);
+
+    public loadAllOrdersForDashboard(): Observable<Order[]> {
+        if (this.isFullyLoaded()) return of(this.allRecords());
+        if (this.isDashboardFullLoadInProgress()) return of([]);
+
+        this.isDashboardFullLoadInProgress.set(true);
+        
+        return this.resolveLastDataRow().pipe(
+            switchMap(lastRow => {
+                this.lastDataRow.set(lastRow);
+                return this.recursiveDashboardSync(lastRow);
+            }),
+            tap(all => {
+                this.isFullyLoaded.set(true);
+                this.isDashboardFullLoadInProgress.set(false);
+                this.hasDashboardHydratedOrders.set(true);
+            }),
+            catchError(err => {
+                this.isDashboardFullLoadInProgress.set(false);
+                return throwError(() => err);
+            })
+        );
+    }
+
+    private recursiveDashboardSync(endRow: number): Observable<Order[]> {
+        if (endRow < 2) return of([]);
+        const startRow = Math.max(2, endRow - this.CHUNK_SIZE + 1);
+        
+        return this.fetchChunk(startRow, endRow).pipe(
+            switchMap(mapped => {
+                if (startRow > 2) {
+                    return this.recursiveDashboardSync(startRow - 1).pipe(
+                        map(rest => [...rest, ...mapped])
+                    );
+                }
+                return of(mapped);
+            })
+        );
+    }
+
+    public initListFromLoadedMemory(): void {
+        if (this.isFullyLoaded() && this.allRecords().length > 0) {
+            // Re-initialize session state from existing memory
+            this.loadedRows.set(this.allRecords());
+            this.lowestRowLoaded = 2; // Everything is loaded
+            this.listState.update(s => ({
+                ...s,
+                visibleRows: this.allRecords(), // Show EVERYTHING
+                totalLoaded: this.allRecords().length,
+                hasMore: false
+            }));
+            this.isInitialized = true;
+        }
+    }
+
     private nextRowNumber: number = 2; // We'll keep this for creations
-    
+
     private readonly ORDER_SCHEMA: (keyof Order | 'notes')[] = [
         'id', 'date', 'productQuantity', 'productPrice', 'productName', 
         'fullName', 'phone', 'address1', 'province', 'city', 
@@ -50,24 +108,29 @@ export class OrderService extends LargeSheetListService<Order> {
         
         // Eager initialization if already authenticated
         if (this.auth.isAuthenticated()) {
-            super.initLargeList();
+            this.initLargeList();
+            this.loadAllOrdersForDashboard().subscribe();
         } else {
             // Wait for authentication
             effect(() => {
                 if (this.auth.isAuthenticated() && !this.isInitialized) {
-                    untracked(() => super.initLargeList());
+                    untracked(() => {
+                        this.initLargeList();
+                        this.loadAllOrdersForDashboard().subscribe();
+                    });
                 }
             });
         }
     }
 
     public override initLargeList(): void {
-        // Handled by constructor effect now
+        super.initLargeList();
     }
 
     // Adapt old loadOrders to new architecture
     public loadOrders(quiet: boolean = false): Observable<any> {
         this.initLargeList();
+        this.loadAllOrdersForDashboard().subscribe();
         return of(null);
     }
 
@@ -110,8 +173,11 @@ export class OrderService extends LargeSheetListService<Order> {
             }
             
             // Pre-normalize for fast searching
-            order._searchText = `${order.id} ${order.fullName} ${order.phone} ${order.productName} ${order.status}`.toLowerCase();
+            order._searchText = `${order.id} ${order.fullName} ${order.phone} ${order.productName} ${order.province} ${order.city} ${order.status}`.toLowerCase();
             if (order.date) order._dateTime = new Date(order.date).getTime();
+            
+            // Pre-calculate total price for filtering
+            order._totalPrice = (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0);
 
             return order as Order;
         }).filter(o => this.isValidOrder(o));
@@ -147,12 +213,11 @@ export class OrderService extends LargeSheetListService<Order> {
         order.date = `${yyyy}-${dd}-${mm}`;
         order.isDeleted = false;
 
-        // Use allRecords() to ensure we see the highest ID even if not in the current visible chunk
-        const allOrders = this.allRecords();
-        const wOrders = allOrders.filter(o => (o.id || '').toString().toLowerCase().includes('w'));
+        // Calculate next ID
+        const currentRows = this.allRecords();
         let nextNumber = 1;
-        if (wOrders.length > 0) {
-            const numbers = wOrders.map(o => {
+        if (currentRows.length > 0) {
+            const numbers = currentRows.map(o => {
                 const match = (o.id?.toString() || '').match(/\d+/);
                 return match ? parseInt(match[0], 10) : 0;
             });
@@ -161,18 +226,14 @@ export class OrderService extends LargeSheetListService<Order> {
         order.id = `W${nextNumber.toString().padStart(5, '0')}`;
 
         const row = this.mapOrderToRow(order);
-        // Use allRecords() length for a more accurate end-of-sheet calculation
-        const currentRow = this.allRecords().length + 2; 
+        const currentRow = (this.lastDataRow() || 2) + 1; 
 
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${currentRow}:${String.fromCharCode(64 + row.length)}${currentRow}`, [row]).pipe(
             tap(() => {
-                // Optimistic update
                 const mapped = { ...order, _rowNumber: currentRow };
-                this.listState.update(s => ({
-                    ...s,
-                    visibleRows: [mapped, ...s.visibleRows],
-                    totalLoaded: s.totalLoaded + 1
-                }));
+                this.lastDataRow.set(currentRow);
+                this.cacheService.saveMetadata(this.SHEET_NAME, 'lastDataRow', currentRow);
+                this.mergeRowsIntoState([mapped]);
             })
         );
     }
@@ -182,16 +243,8 @@ export class OrderService extends LargeSheetListService<Order> {
         const endCol = String.fromCharCode(64 + row.length);
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:${endCol}${rowNumber}`, [row]).pipe(
             tap(() => {
-                // Update local state
-                this.listState.update(s => {
-                    const idx = s.visibleRows.findIndex(o => o['_rowNumber'] === rowNumber);
-                    if (idx !== -1) {
-                        const updated = [...s.visibleRows];
-                        updated[idx] = { ...order, _rowNumber: rowNumber };
-                        return { ...s, visibleRows: updated };
-                    }
-                    return s;
-                });
+                const mapped = { ...order, _rowNumber: rowNumber };
+                this.mergeRowsIntoState([mapped]);
             })
         );
     }
@@ -202,6 +255,8 @@ export class OrderService extends LargeSheetListService<Order> {
 
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!${colLetter}${rowNumber}`, [['eliminado']]).pipe(
             tap(() => {
+                this.loadedRows.update(rows => rows.filter(o => o['_rowNumber'] !== rowNumber));
+                this.allRecords.update(rows => rows.filter(o => o['_rowNumber'] !== rowNumber));
                 this.listState.update(s => ({
                     ...s,
                     visibleRows: s.visibleRows.filter(o => o['_rowNumber'] !== rowNumber)

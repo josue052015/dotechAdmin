@@ -33,6 +33,7 @@ interface ColumnFilter {
 
 @Component({
   selector: 'app-order-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
@@ -40,7 +41,7 @@ interface ColumnFilter {
     MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule
   ],
   template: `
-    <div class="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="flex flex-col space-y-4 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 min-h-screen">
       
       <!-- Top Actions Row -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -134,7 +135,7 @@ interface ColumnFilter {
                      <lucide-icon name="package" class="text-slate-400 w-4 h-4"></lucide-icon>
                   </div>
                   <div class="flex-1 relative">
-                     <select formControlName="product" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
+                     <select formControlName="productName" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
                         <option value="">All Products</option>
                         <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
                      </select>
@@ -160,27 +161,6 @@ interface ColumnFilter {
             </div>
          </ng-container>
       </div>
-
-      <!-- Filter by Column Buttons 
-      <div class="flex flex-col space-y-3">
-         <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Filter by Column</span>
-         <div class="flex flex-wrap gap-2">
-            <button *ngFor="let col of columnDefs" 
-                    [matMenuTriggerFor]="filterMenu" 
-                    (click)="activeFilterCol = col.id"
-                    class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-500 hover:border-primary/30 hover:text-primary transition-all shadow-sm flex items-center space-x-2"
-                    [class.border-primary]="isColumnFiltered(col.id)"
-                    [class.text-primary]="isColumnFiltered(col.id)">
-               <span>{{ col.label }}</span>
-               <lucide-icon name="chevron-down" class="w-3 h-3 opacity-50"></lucide-icon>
-            </button>
-            
-            <mat-menu #filterMenu="matMenu" class="filter-menu-popover">
-               <ng-container *ngTemplateOutlet="filterTemplate; context: { column: activeFilterCol }"></ng-container>
-            </mat-menu>
-         </div>
-      </div>
-      -->
 
        <!-- Custom Date Range Inputs -->
        <div *ngIf="dateFilterService.activeRangeType() === 'custom'" 
@@ -213,8 +193,11 @@ interface ColumnFilter {
 
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col w-full max-w-full">
-        <div class="relative flex-1 flex flex-col min-h-0 w-full">
+        <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
+             [class.overflow-hidden]="!isMobile()"
+             [class.h-[calc(100vh-320px)]]="!isMobile()"
+             [class.min-h-[500px]]="!isMobile()">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
           
           <!-- Loading Skeletons (Initial Paint Optimized) -->
           <div *ngIf="orderService.listState().isInitialLoading && orderService.listState().visibleRows.length === 0" 
@@ -268,19 +251,29 @@ interface ColumnFilter {
           </div>
 
           <!-- Actual Content -->
-          <div *ngIf="visibleRows().length > 0 || !orderService.isLoading()" class="flex-1 flex flex-col">
+          <div *ngIf="!orderService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
             
-
+            <!-- Searching State -->
+            <div *ngIf="orderService.listState().isFiltering" 
+                 class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center animate-in fade-in duration-300">
+               <div class="flex flex-col items-center space-y-4">
+                  <div class="relative">
+                     <div class="w-12 h-12 rounded-full border-4 border-slate-100 border-t-primary animate-spin"></div>
+                     <lucide-icon name="search" class="absolute inset-0 m-auto w-4 h-4 text-primary opacity-50"></lucide-icon>
+                  </div>
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filtrando registros...</span>
+               </div>
+            </div>
 
             <!-- Empty State -->
-            <div *ngIf="!orderService.isLoading() && orderService.listState().visibleRows.length === 0" 
-                 class="flex flex-col items-center justify-center py-24 px-6 text-center animate-fade-in">
+            <div *ngIf="visibleRows().length === 0 && !orderService.listState().isFiltering" 
+                 class="flex-1 flex flex-col items-center justify-center py-24 px-6 text-center animate-fade-in">
               <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                 <lucide-icon name="package-open" class="w-12 h-12 text-slate-300"></lucide-icon>
               </div>
-              <h3 class="text-xl font-bold text-slate-800 mb-2">No se encontraron Ã³rdenes</h3>
+              <h3 class="text-xl font-bold text-slate-800 mb-2">No se encontraron órdenes</h3>
               <p class="text-slate-500 max-w-sm">
-                No hay registros que coincidan con los filtros seleccionados o la base de datos estÃ¡ vacÃ­a.
+                No hay registros que coincidan con los filtros seleccionados o la base de datos está vacía.
               </p>
               <button (click)="orderService.initLargeList()" 
                       class="mt-8 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
@@ -288,8 +281,8 @@ interface ColumnFilter {
               </button>
             </div>
 
-            <!-- Desktop Header -->
-            <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
+            <!-- Table Header (Only if results) -->
+            <div *ngIf="visibleRows().length > 0" class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
                <div class="col-span-1 flex items-center space-x-2">
                   <span>Date</span>
                   <button [matMenuTriggerFor]="dateFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('date')">
@@ -301,14 +294,32 @@ interface ColumnFilter {
                </div>
                <div class="col-span-2 flex items-center space-x-2">
                   <span>Customer</span>
-                  <button [matMenuTriggerFor]="customerFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('customer')">
+                  <button [matMenuTriggerFor]="customerFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('fullName')">
                      <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
                   </button>
                   <mat-menu #customerFilterMenu="matMenu" class="filter-menu-popover">
-                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'customer' }"></ng-container>
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'fullName' }"></ng-container>
                   </mat-menu>
                </div>
-               <div class="col-span-2 flex items-center space-x-2">
+               <div class="col-span-1 flex items-center space-x-2">
+                  <span>Province</span>
+                  <button [matMenuTriggerFor]="provinceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('province')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #provinceFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'province' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center space-x-2">
+                  <span>City</span>
+                  <button [matMenuTriggerFor]="cityFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('city')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #cityFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'city' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center space-x-2">
                   <span>Phone</span>
                   <button [matMenuTriggerFor]="phoneFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('phone')">
                      <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
@@ -317,31 +328,31 @@ interface ColumnFilter {
                      <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'phone' }"></ng-container>
                   </mat-menu>
                </div>
-               <div class="col-span-3 flex items-center space-x-2">
+               <div class="col-span-2 flex items-center space-x-2">
                   <span>Product</span>
-                  <button [matMenuTriggerFor]="productFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('product')">
+                  <button [matMenuTriggerFor]="productFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('productName')">
                      <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
                   </button>
                   <mat-menu #productFilterMenu="matMenu" class="filter-menu-popover">
-                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'product' }"></ng-container>
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'productName' }"></ng-container>
                   </mat-menu>
                </div>
                <div class="col-span-1 flex items-center justify-start space-x-2">
                   <span>Qty</span>
-                  <button [matMenuTriggerFor]="qtyFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('qty')">
+                  <button [matMenuTriggerFor]="qtyFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('productQuantity')">
                      <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
                   </button>
                   <mat-menu #qtyFilterMenu="matMenu" class="filter-menu-popover">
-                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'qty' }"></ng-container>
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'productQuantity' }"></ng-container>
                   </mat-menu>
                </div>
                <div class="col-span-1 flex items-center justify-start space-x-2">
                   <span>Price</span>
-                  <button [matMenuTriggerFor]="priceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('price')">
+                  <button [matMenuTriggerFor]="priceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('_totalPrice')">
                      <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
                   </button>
                   <mat-menu #priceFilterMenu="matMenu" class="filter-menu-popover">
-                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'price' }"></ng-container>
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: '_totalPrice' }"></ng-container>
                   </mat-menu>
                </div>
                <div class="col-span-1 flex items-center justify-start space-x-2">
@@ -353,16 +364,30 @@ interface ColumnFilter {
                      <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'status' }"></ng-container>
                   </mat-menu>
                </div>
-               <div class="col-span-1"></div>
             </div>
 
-            <!-- Normal List (No internal scroll) -->
-            <div class="flex-1 w-full">
-              <!-- Desktop Rows -->
-              <!-- Row Container (One per item) -->
-              <div *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
+            <!-- Viewport (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
+                  [itemSize]="72" 
+                  class="flex-1 w-full outline-none"
+                  style="height: 100%;"
+                  (scrolledIndexChange)="onScroll($event)">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+              </div>
+            </cdk-virtual-scroll-viewport>
+
+            <!-- Mobile List (Only if results) -->
+            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full flex flex-col">
+              <div *ngFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+              </div>
+            </div>
+>
+
+            <!-- Row Template (Shared) -->
+            <ng-template #rowTemplate let-row="row">
                 <!-- Desktop Layout -->
-                @defer (on viewport) {
                 <div (click)="openOrderDetail(row)"
                      class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
                   
@@ -378,13 +403,16 @@ interface ColumnFilter {
                     </div>
                   </div>
 
-                  <div class="col-span-2 flex items-center space-x-2" *ngIf="row.phone">
-                    <lucide-icon name="phone" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
-                    <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
-                  </div>
-                  <div class="col-span-2" *ngIf="!row.phone"></div>
+                  <div class="col-span-1 text-xs font-bold text-slate-600 truncate uppercase">{{row.province}}</div>
+                  <div class="col-span-1 text-xs font-bold text-slate-600 truncate uppercase">{{row.city}}</div>
 
-                  <div class="col-span-3 text-xs font-bold leading-relaxed truncate text-slate-700">{{row.productName}}</div>
+                  <div class="col-span-1 flex items-center space-x-2" *ngIf="row.phone">
+                    <lucide-icon name="phone" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
+                    <span class="text-xs font-bold text-slate-600 truncate">{{row.phone}}</span>
+                  </div>
+                  <div class="col-span-1" *ngIf="!row.phone"></div>
+
+                  <div class="col-span-2 text-xs font-bold leading-relaxed truncate text-slate-700">{{row.productName}}</div>
                   
                   <div class="col-span-1 text-left">
                     <span class="text-xs font-bold text-slate-900">{{row.productQuantity}}</span>
@@ -413,27 +441,8 @@ interface ColumnFilter {
                      </div>
                   </div>
                 </div>
-                } @placeholder {
-                  <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
-                    <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
-                    <div class="col-span-2 flex items-center space-x-4">
-                      <div class="w-10 h-10 rounded-full bg-slate-100"></div>
-                      <div class="space-y-2 flex-1">
-                        <div class="h-4 bg-slate-100 rounded w-24"></div>
-                        <div class="h-2 bg-slate-100 rounded w-12"></div>
-                      </div>
-                    </div>
-                    <div class="col-span-2 h-3 bg-slate-100 rounded w-20"></div>
-                    <div class="col-span-3 h-3 bg-slate-100 rounded w-32"></div>
-                    <div class="col-span-1 h-3 bg-slate-100 rounded w-8"></div>
-                    <div class="col-span-1 h-4 bg-slate-100 rounded w-16"></div>
-                    <div class="col-span-1 h-6 bg-slate-100 rounded-full w-16"></div>
-                    <div class="col-span-1 h-4 bg-slate-100 rounded w-8"></div>
-                  </div>
-                }
 
                 <!-- Mobile Layout -->
-                @defer (on viewport) {
                 <div (click)="openOrderDetail(row)"
                      class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
                    <div class="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
@@ -475,6 +484,10 @@ interface ColumnFilter {
                             <span class="col-span-8 text-[11px] font-bold text-slate-700 text-right truncate uppercase">{{row.productName}}</span>
                          </div>
                          <div class="grid grid-cols-12 gap-2 items-center border-t border-slate-100/50 pt-2">
+                            <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Location</span>
+                            <span class="col-span-8 text-[11px] font-bold text-slate-700 text-right truncate uppercase">{{row.province}}, {{row.city}}</span>
+                         </div>
+                         <div class="grid grid-cols-12 gap-2 items-center border-t border-slate-100/50 pt-2">
                             <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
                             <span class="text-[11px] font-black text-slate-900 col-span-8 text-right uppercase">{{row.productQuantity}} UNITS</span>
                          </div>
@@ -507,67 +520,35 @@ interface ColumnFilter {
                             </button>
                          </div>
                       </div>
-                   </div>
-                </div>
-                } @placeholder {
-                  <div class="md:hidden p-4 border-b border-slate-50">
-                    <div class="bg-white rounded-[1.5rem] border border-slate-100 p-4 space-y-4 animate-pulse">
-                      <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
-                        <div class="space-y-2 flex-1">
-                          <div class="h-4 bg-slate-100 rounded w-32"></div>
-                          <div class="h-2 bg-slate-100 rounded w-16"></div>
-                        </div>
-                      </div>
-                      <div class="h-24 bg-slate-50 rounded-xl"></div>
-                      <div class="flex justify-between">
-                        <div class="flex gap-2">
-                           <div class="w-10 h-10 bg-slate-100 rounded-xl"></div>
-                           <div class="w-10 h-10 bg-slate-100 rounded-xl"></div>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                           <div class="h-8 bg-slate-100 rounded w-20"></div>
-                           <div class="w-10 h-10 bg-slate-100 rounded-xl"></div>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                }
-              </div>
+                </div>
+            </ng-template>
 
               <!-- Loading Indicator at bottom -->
               <div *ngIf="orderService.listState().isLoadingMore" class="p-8 flex justify-center items-center">
                 <mat-spinner diameter="24"></mat-spinner>
-                <span class="ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cargando mÃ¡s registros...</span>
+                <span class="ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cargando más registros...</span>
               </div>
               
-              <!-- End of list Indicator -->
-              <div *ngIf="!orderService.listState().hasMore && visibleRows().length > 0" class="p-8 text-center">
-                <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Has llegado al final de la lista</span>
-              </div>
-              </div>
-            </div>
-          </div>
-          </div>
 
-         <!-- Styled Footer (Stats instead of Paginator) -->
-         <div *ngIf="!orderService.isLoading()" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left flex items-center space-x-4">
-               <div>Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> registros cargados</div>
-               <div *ngIf="orderService.listState().isFiltering" class="flex items-center space-x-2 text-primary animate-pulse">
-                  <div class="w-1.5 h-1.5 rounded-full bg-current"></div>
-                  <span>Buscando en todos los registros...</span>
-               </div>
+              </div>
             </div>
-            <div class="flex items-center space-x-4">
-               <button *ngIf="orderService.listState().hasMore" 
-                       (click)="orderService.loadMoreChunk()"
-                       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
-                  Cargar mÃ¡s registros
-               </button>
+
+         <!-- Simplified Footer -->
+         <div *ngIf="!orderService.isLoading() || visibleRows().length > 0" class="px-8 py-4 border-t border-slate-50 bg-slate-50/20 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+               <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">Total Records:</span>
+               <span class="text-[10px] font-black text-slate-500">{{visibleRows().length}}</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+               <div *ngIf="orderService.listState().isLoadingMore" class="flex items-center space-x-2 text-primary/60">
+                  <mat-spinner diameter="12"></mat-spinner>
+                  <span class="text-[9px] font-bold uppercase tracking-widest">Sincronizando...</span>
+               </div>
                <div *ngIf="!orderService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
-                  <span class="text-[10px] font-bold uppercase tracking-widest">Fin de la lista</span>
-                  <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
+                  <lucide-icon name="check-circle-2" class="w-3 h-3"></lucide-icon>
+                  <span class="text-[9px] font-bold uppercase tracking-widest">Lista Completa</span>
                </div>
             </div>
          </div>
@@ -641,11 +622,20 @@ interface ColumnFilter {
     .card-stitch {
        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
     }
-  `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    
+    .virtual-row {
+      content-visibility: auto;
+      contain-intrinsic-size: 1px 72px; /* Predicted height for desktop */
+    }
+    
+    @media (max-width: 767px) {
+      .virtual-row {
+        contain-intrinsic-size: 1px 210px; /* Predicted height for mobile */
+      }
+    }
+  `]
 })
 export class OrderListComponent implements OnInit, AfterViewInit {
-  public isMobile = window.innerWidth < 768;
   public orderService = inject(OrderService);
   public productService = inject(ProductService);
   public locationService = inject(LocationService);
@@ -659,7 +649,10 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   private confirmService = inject(ConfirmService);
   public Math = Math;
 
-  displayedColumns: string[] = ['date', 'customer', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
+  // State
+  isMobile = signal(window.innerWidth < 768);
+
+  displayedColumns: string[] = ['date', 'customer', 'province', 'city', 'phone', 'product', 'qty', 'price', 'status', 'actions'];
   dataSource: MatTableDataSource<Order> = new MatTableDataSource();
 
   products = computed(() => {
@@ -682,6 +675,8 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     { id: 'date', label: 'Date' },
     { id: 'id', label: 'Order ID' },
     { id: 'customer', label: 'Customer' },
+    { id: 'province', label: 'Province' },
+    { id: 'city', label: 'City' },
     { id: 'phone', label: 'Phone' },
     { id: 'product', label: 'Product' },
     { id: 'status', label: 'Status' },
@@ -692,7 +687,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   filterForm: FormGroup = this.fb.group({
     search: [''],
     status: [''],
-    product: [''],
+    productName: [''],
     province: [''],
     carrier: ['']
   });
@@ -702,16 +697,20 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   columnDefs = [
     { id: 'date', label: 'Date' },
     { id: 'id', label: 'Order ID' },
-    { id: 'customer', label: 'Customer' },
+    { id: 'fullName', label: 'Customer' },
     { id: 'status', label: 'Status' },
     { id: 'province', label: 'Province' },
-    { id: 'product', label: 'Product' },
-    { id: 'total', label: 'Total' }
+    { id: 'city', label: 'City' },
+    { id: 'productName', label: 'Product' },
+    { id: '_totalPrice', label: 'Total' }
   ];
 
   columnFilters = signal<{ [key: string]: ColumnFilter }>({});
 
   constructor() {
+    window.addEventListener('resize', () => {
+      this.isMobile.set(window.innerWidth < 768);
+    });
     effect(() => {
       // Access signals to register dependencies
       this.columnFilters(); 
@@ -722,14 +721,19 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.orderService.initLargeList();
+    if (this.orderService.hasDashboardHydratedOrders()) {
+      this.orderService.initListFromLoadedMemory();
+    } else {
+      this.orderService.initLargeList();
+    }
     this.exportTemplateService.loadTemplates(true).subscribe();
     this.messageService.loadTemplates(true).subscribe();
 
-    // Consolidate filter updates
+    // The effect in the constructor already handles signal changes (columnFilters, dateRange)
+    // The form subscription handles form field changes (search, dropdowns)
     this.filterForm.valueChanges.pipe(
       debounceTime(300),
-      distinctUntilChanged()
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
     ).subscribe(() => {
       this.applyFilters();
     });
@@ -737,11 +741,12 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
   applyFilters() {
     const colFilters = this.columnFilters();
-    const formValues = this.filterForm.value;
+    const { search, ...otherFilters } = this.filterForm.value;
     const dateRange = this.dateFilterService.currentRange();
     
     this.orderService.applyQuery({ 
-      ...formValues, 
+      search,
+      filters: otherFilters,
       columnFilters: colFilters, 
       dateRange: { 
         start: dateRange.start ? (dateRange.start as Date).getTime() : null, 
@@ -859,7 +864,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     this.filterForm.reset({
       search: '',
       status: '',
-      product: '',
+      productName: '',
       province: '',
       carrier: ''
     });
@@ -954,13 +959,7 @@ export class OrderListComponent implements OnInit, AfterViewInit {
 
   getUniqueValuesForCol(col: string, search: string = ''): string[] {
     const data = this.orderService.allRecords();
-    let values = data.map(o => {
-      if (col === 'customer') return o.fullName;
-      if (col === 'product') return o.productName;
-      if (col === 'qty') return o.productQuantity;
-      if (col === 'price') return (o.productPrice * o.productQuantity) + (o.shippingCost || 0) + (o.packaging || 0);
-      return (o as any)[col];
-    });
+    let values = data.map(o => (o as any)[col]);
 
     let unique = Array.from(new Set(values.map(v => String(v || '')))).sort();
     if (search) {

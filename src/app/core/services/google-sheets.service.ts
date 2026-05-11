@@ -16,9 +16,20 @@ export class GoogleSheetsService {
         return this.http.get(`${this.API_URL}/values/${encodeURIComponent(range)}`);
     }
 
+    // Get Theoretical Row Count from Sheet Metadata
+    public getSheetGridRowCount(sheetName: string): Observable<number> {
+        return this.http.get(`${this.API_URL}?fields=sheets(properties(title,gridProperties(rowCount)))`).pipe(
+            map((response: any) => {
+                const sheet = response.sheets.find((s: any) => s.properties.title === sheetName);
+                return sheet ? sheet.properties.gridProperties.rowCount : 1000;
+            })
+        );
+    }
+
     // Chunked Read
     public readSheetChunk(sheetName: string, startRow: number, endRow: number, columnsRange: string = 'A:Z'): Observable<any> {
-        const range = `'${sheetName}'!${columnsRange.split(':')[0]}${startRow}:${columnsRange.split(':')[1]}${endRow}`;
+        const [startCol, endCol] = columnsRange.split(':');
+        const range = `'${sheetName}'!${startCol}${startRow}:${endCol || 'Z'}${endRow}`;
         return this.readRange(range);
     }
 

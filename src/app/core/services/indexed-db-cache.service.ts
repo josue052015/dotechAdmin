@@ -24,10 +24,15 @@ export class IndexedDbCacheService {
         if (oldVersion < 4) {
           if (db.objectStoreNames.contains('chunks')) db.deleteObjectStore('chunks');
           if (db.objectStoreNames.contains('records')) db.deleteObjectStore('records');
+          if (db.objectStoreNames.contains('metadata')) db.deleteObjectStore('metadata');
         }
         
         if (!db.objectStoreNames.contains('chunks')) {
           db.createObjectStore('chunks', { keyPath: 'cacheId' });
+        }
+
+        if (!db.objectStoreNames.contains('metadata')) {
+          db.createObjectStore('metadata', { keyPath: 'cacheId' });
         }
         
         if (!db.objectStoreNames.contains('records')) {
@@ -46,6 +51,26 @@ export class IndexedDbCacheService {
         console.error('IndexedDB error:', event.target.error);
         reject(event.target.error);
       };
+    });
+  }
+
+  public async saveMetadata(sheetName: string, key: string, value: any): Promise<void> {
+    if (!this.db) await this.initDb();
+    const cacheId = `${sheetName}_${key}`;
+    return this.performTransaction('metadata', 'readwrite', (store) => {
+      store.put({ cacheId, sheetName, key, value, updatedAt: Date.now() });
+    });
+  }
+
+  public async getMetadata(sheetName: string, key: string): Promise<any | null> {
+    if (!this.db) await this.initDb();
+    const cacheId = `${sheetName}_${key}`;
+    return new Promise((resolve) => {
+      const transaction = this.db!.transaction(['metadata'], 'readonly');
+      const store = transaction.objectStore('metadata');
+      const request = store.get(cacheId);
+      request.onsuccess = () => resolve(request.result?.value || null);
+      request.onerror = () => resolve(null);
     });
   }
 

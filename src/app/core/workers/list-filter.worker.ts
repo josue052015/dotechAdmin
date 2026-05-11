@@ -20,7 +20,20 @@ addEventListener('message', ({ data }) => {
     });
   }
 
-  // 2. Column Filters
+  // 2. Simple Filters (Exact matches)
+  if (query.filters) {
+    Object.entries(query.filters).forEach(([col, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        const filterVal = val.toString().toLowerCase();
+        filtered = filtered.filter(r => {
+          const rowVal = (r[col] !== undefined && r[col] !== null) ? r[col].toString().toLowerCase() : '';
+          return rowVal === filterVal;
+        });
+      }
+    });
+  }
+
+  // 3. Column Filters (Advanced)
   if (query.columnFilters) {
     Object.entries(query.columnFilters).forEach(([col, filter]: [string, any]) => {
       if (filter.values && filter.values.length > 0) {
@@ -65,5 +78,5 @@ addEventListener('message', ({ data }) => {
     return 0;
   });
 
-  postMessage({ filtered, sheetName });
+  postMessage({ filtered, sheetName, queryVersion: data.queryVersion });
 });

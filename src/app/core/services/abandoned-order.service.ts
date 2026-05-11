@@ -89,7 +89,10 @@ export class AbandonedOrderService extends LargeSheetListService<AbandonedOrder>
                 });
             }
 
-            order._searchText = `${order.id} ${order.fullName} ${order.phone} ${order.productName}`.toLowerCase();
+            order._searchText = `${order.id} ${order.fullName} ${order.phone} ${order.productName} ${order.province} ${order.city}`.toLowerCase();
+            if (order.date) order._dateTime = new Date(order.date).getTime();
+            order._totalPrice = (order.productPrice * order.productQuantity) + (order.shippingCost || 0) + (order.packaging || 0);
+
             return order as AbandonedOrder;
         }).filter(o => this.isValidAbandonedOrder(o));
     }
@@ -118,9 +121,11 @@ export class AbandonedOrderService extends LargeSheetListService<AbandonedOrder>
     public deleteAbandonedOrder(rowNumber: number): Observable<any> {
         return this.sheetsService.clearRange(`${this.SHEET_NAME}!A${rowNumber}:P${rowNumber}`).pipe(
             tap(() => {
+                this.loadedRows.update(rows => rows.filter(o => o['_rowNumber'] !== rowNumber));
+                this.allRecords.update(rows => rows.filter(o => o['_rowNumber'] !== rowNumber));
                 this.listState.update(s => ({
                     ...s,
-                    visibleRows: s.visibleRows.filter(o => o._rowNumber !== rowNumber)
+                    visibleRows: s.visibleRows.filter(o => o['_rowNumber'] !== rowNumber)
                 }));
             })
         );

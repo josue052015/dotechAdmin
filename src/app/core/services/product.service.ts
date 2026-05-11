@@ -92,11 +92,10 @@ export class ProductService extends LargeSheetListService<Product> {
     }
 
     public createProduct(product: Product): Observable<any> {
-        const allProducts = this.allRecords();
-        const wProducts = allProducts.filter(p => (p.id || '').toString().toLowerCase().includes('w'));
+        const currentProducts = this.allRecords();
         let nextNumber = 1;
-        if (wProducts.length > 0) {
-            const numbers = wProducts.map(p => {
+        if (currentProducts.length > 0) {
+            const numbers = currentProducts.map(p => {
                 const match = (p.id?.toString() || '').match(/\d+/);
                 return match ? parseInt(match[0], 10) : 0;
             });
@@ -111,16 +110,14 @@ export class ProductService extends LargeSheetListService<Product> {
         (product as any).date = `${yyyy}-${dd}-${mm}`;
 
         const row = this.mapProductToRow(product);
-        const currentRow = this.allRecords().length + 2;
+        const currentRow = (this.lastDataRow() || 2) + 1;
 
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${currentRow}:${String.fromCharCode(64 + row.length)}${currentRow}`, [row]).pipe(
             tap(() => {
                 const mapped = { ...product, _rowNumber: currentRow };
-                this.listState.update(s => ({
-                    ...s,
-                    visibleRows: [mapped, ...s.visibleRows],
-                    totalLoaded: s.totalLoaded + 1
-                }));
+                this.lastDataRow.set(currentRow);
+                this.cacheService.saveMetadata(this.SHEET_NAME, 'lastDataRow', currentRow);
+                this.mergeRowsIntoState([mapped]);
             })
         );
     }
@@ -130,15 +127,8 @@ export class ProductService extends LargeSheetListService<Product> {
         const endCol = String.fromCharCode(64 + row.length);
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:${endCol}${rowNumber}`, [row]).pipe(
             tap(() => {
-                this.listState.update(s => {
-                    const idx = s.visibleRows.findIndex(p => p._rowNumber === rowNumber);
-                    if (idx !== -1) {
-                        const updated = [...s.visibleRows];
-                        updated[idx] = { ...product, _rowNumber: rowNumber };
-                        return { ...s, visibleRows: updated };
-                    }
-                    return s;
-                });
+                const mapped = { ...product, _rowNumber: rowNumber };
+                this.mergeRowsIntoState([mapped]);
             })
         );
     }
@@ -146,6 +136,8 @@ export class ProductService extends LargeSheetListService<Product> {
     public deleteProduct(rowNumber: number): Observable<any> {
         return this.sheetsService.clearRange(`${this.SHEET_NAME}!A${rowNumber}:G${rowNumber}`).pipe(
             tap(() => {
+                this.loadedRows.update(rows => rows.filter(p => p._rowNumber !== rowNumber));
+                this.allRecords.update(rows => rows.filter(p => p._rowNumber !== rowNumber));
                 this.listState.update(s => ({
                     ...s,
                     visibleRows: s.visibleRows.filter(p => p._rowNumber !== rowNumber)

@@ -100,7 +100,7 @@ interface ColumnFilter {
                <div class="absolute left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 group-focus-within:bg-blue-50 group-focus-within:border-blue-100 transition-colors">
                   <lucide-icon name="package" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
                </div>
-               <select formControlName="product" class="select-stitch h-10 md:h-12 pl-14 pr-10 font-bold text-xs">
+               <select formControlName="productName" class="select-stitch h-10 md:h-12 pl-14 pr-10 font-bold text-xs">
                   <option value="">All Products</option>
                   <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
                </select>
@@ -194,19 +194,29 @@ interface ColumnFilter {
           </div>
 
           <!-- Actual Content -->
-          <div *ngIf="visibleRows().length > 0 || !abandonedOrderService.isLoading()" class="flex-1 flex flex-col">
+          <div *ngIf="!abandonedOrderService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
             
-
+            <!-- Searching State -->
+            <div *ngIf="abandonedOrderService.listState().isFiltering" 
+                 class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center animate-in fade-in duration-300">
+               <div class="flex flex-col items-center space-y-4">
+                  <div class="relative">
+                     <div class="w-12 h-12 rounded-full border-4 border-slate-100 border-t-primary animate-spin"></div>
+                     <lucide-icon name="search" class="absolute inset-0 m-auto w-4 h-4 text-primary opacity-50"></lucide-icon>
+                  </div>
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filtrando registros...</span>
+               </div>
+            </div>
 
             <!-- Empty State -->
-            <div *ngIf="!abandonedOrderService.isLoading() && visibleRows().length === 0" 
-                 class="flex flex-col items-center justify-center py-24 px-6 text-center animate-fade-in">
+            <div *ngIf="visibleRows().length === 0 && !abandonedOrderService.listState().isFiltering" 
+                 class="flex-1 flex flex-col items-center justify-center py-24 px-6 text-center animate-fade-in">
               <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                 <lucide-icon name="package-open" class="w-12 h-12 text-slate-300"></lucide-icon>
               </div>
               <h3 class="text-xl font-bold text-slate-800 mb-2">No hay pedidos abandonados</h3>
               <p class="text-slate-500 max-w-sm">
-                No hay registros que coincidan con los filtros seleccionados o la base de datos estÃ¡ vacÃ­a.
+                No hay registros que coincidan con los filtros seleccionados o la base de datos está vacía.
               </p>
               <button (click)="abandonedOrderService.initLargeList()" 
                       class="mt-8 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
@@ -215,22 +225,87 @@ interface ColumnFilter {
             </div>
 
             <!-- Desktop Header -->
-            <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
-               <div class="col-span-1">Date</div>
-               <div class="col-span-3">Customer</div>
-               <div class="col-span-2">Phone</div>
-               <div class="col-span-3">Product</div>
-               <div class="col-span-1">Qty</div>
-               <div class="col-span-1">Price</div>
+            <div *ngIf="visibleRows().length > 0" class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
+               <div class="col-span-1 flex items-center space-x-2">
+                  <span>Date</span>
+                  <button [matMenuTriggerFor]="dateFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('date')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #dateFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'date' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2">
+                  <span>Customer</span>
+                  <button [matMenuTriggerFor]="customerFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('fullName')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #customerFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'fullName' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center space-x-2">
+                  <span>Province</span>
+                  <button [matMenuTriggerFor]="provinceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('province')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #provinceFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'province' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center space-x-2">
+                  <span>City</span>
+                  <button [matMenuTriggerFor]="cityFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('city')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #cityFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'city' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2">
+                  <span>Phone</span>
+                  <button [matMenuTriggerFor]="phoneFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('phone')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #phoneFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'phone' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2">
+                  <span>Product</span>
+                  <button [matMenuTriggerFor]="productFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('productName')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #productFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'productName' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center justify-start space-x-2">
+                  <span>Qty</span>
+                  <button [matMenuTriggerFor]="qtyFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('productQuantity')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #qtyFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'productQuantity' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center justify-start space-x-2">
+                  <span>Price</span>
+                  <button [matMenuTriggerFor]="priceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('_totalPrice')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #priceFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: '_totalPrice' }"></ng-container>
+                  </mat-menu>
+               </div>
                <div class="col-span-1"></div>
             </div>
 
-            <div class="flex-1 w-full">
+            <div class="flex-1 w-full" *ngIf="visibleRows().length > 0">
               <!-- Desktop Rows -->
               <ng-container *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
-                  @defer (on viewport) {
-                  <div (click)="openOrderDetail(row)"
-                       class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
+                  @defer (on viewport) {                   <div (click)="openOrderDetail(row)"
+                        class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
                   
                   <div class="col-span-1 text-[11px] font-bold text-slate-500 italic">{{ row.date | date:'dd/MM/yy' }}</div>
                   
@@ -244,13 +319,16 @@ interface ColumnFilter {
                     </div>
                   </div>
 
+                  <div class="col-span-1 text-[11px] font-bold text-slate-600 truncate uppercase">{{row.province}}</div>
+                  <div class="col-span-1 text-[11px] font-bold text-slate-600 truncate uppercase">{{row.city}}</div>
+
                   <div class="col-span-2 flex items-center space-x-2" *ngIf="row.phone">
                     <lucide-icon name="phone" class="text-slate-400 w-3.5 h-3.5"></lucide-icon>
-                    <span class="text-xs font-bold text-slate-600">{{row.phone}}</span>
+                    <span class="text-xs font-bold text-slate-600 truncate">{{row.phone}}</span>
                   </div>
                   <div class="col-span-2" *ngIf="!row.phone"></div>
 
-                  <div class="col-span-3 text-xs font-bold leading-relaxed truncate text-slate-700">{{row.productName}}</div>
+                  <div class="col-span-2 text-xs font-bold leading-relaxed truncate text-slate-700 uppercase">{{row.productName}}</div>
                   
                   <div class="col-span-1 text-left">
                     <span class="text-xs font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-md">{{row.productQuantity}}</span>
@@ -312,6 +390,10 @@ interface ColumnFilter {
                          <div class="flex items-start justify-between gap-4">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Product</span>
                             <span class="text-[11px] font-bold text-slate-900 text-right min-w-0 truncate leading-relaxed block">{{row.productName}}</span>
+                         </div>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</span>
+                            <span class="text-[11px] font-bold text-slate-900">{{row.province}}, {{row.city}}</span>
                          </div>
                          <div class="flex items-center justify-between border-t border-slate-100 pt-2">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
@@ -442,11 +524,11 @@ export class AbandonedOrderListComponent implements OnInit {
   public Math = Math;
 
   visibleRows = computed(() => this.abandonedOrderService.listState().visibleRows);
-  displayedColumns: string[] = ['date', 'customer', 'phone', 'product', 'qty', 'price', 'actions'];
+  displayedColumns: string[] = ['date', 'customer', 'province', 'city', 'phone', 'product', 'qty', 'price', 'actions'];
 
   filterForm: FormGroup = this.fb.group({
     search: [''],
-    product: [''],
+    productName: [''],
     province: [''],
     carrier: ['']
   });
@@ -455,11 +537,13 @@ export class AbandonedOrderListComponent implements OnInit {
   columnDefs = [
     { id: 'date', label: 'Date' },
     { id: 'id', label: 'Order ID' },
-    { id: 'customer', label: 'Customer' },
+    { id: 'fullName', label: 'Customer' },
+    { id: 'province', label: 'Province' },
+    { id: 'city', label: 'City' },
     { id: 'phone', label: 'Phone' },
-    { id: 'product', label: 'Product' },
+    { id: 'productName', label: 'Product' },
     { id: 'productQuantity', label: 'Quantity' },
-    { id: 'total', label: 'Total' }
+    { id: '_totalPrice', label: 'Total' }
   ];
 
   carriers = computed(() => {
@@ -479,7 +563,7 @@ export class AbandonedOrderListComponent implements OnInit {
 
     this.filterForm.valueChanges.pipe(
       debounceTime(300),
-      distinctUntilChanged()
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
     ).subscribe(() => {
       this.applyFilters();
     });
@@ -487,11 +571,12 @@ export class AbandonedOrderListComponent implements OnInit {
 
   applyFilters() {
     const colFilters = this.columnFilters();
-    const formValues = this.filterForm.value;
+    const { search, ...otherFilters } = this.filterForm.value;
     const dateRange = this.dateFilterService.currentRange();
     
     this.abandonedOrderService.applyQuery({ 
-      ...formValues, 
+      search,
+      filters: otherFilters,
       columnFilters: colFilters, 
       dateRange: { 
         start: dateRange.start ? (dateRange.start as any).getTime() : null, 
@@ -600,14 +685,7 @@ export class AbandonedOrderListComponent implements OnInit {
 
   getUniqueValuesForCol(col: string, search: string = ''): string[] {
     const data = this.abandonedOrderService.allRecords();
-    let values = data.map(o => {
-      if (col === 'id') return o.id;
-      if (col === 'customer') return o.fullName;
-      if (col === 'product') return o.productName;
-      if (col === 'productQuantity' || col === 'qty') return o.productQuantity;
-      if (col === 'total' || col === 'price') return (o.productPrice * o.productQuantity) + (o.shippingCost || 0) + (o.packaging || 0);
-      return (o as any)[col];
-    });
+    let values = data.map(o => (o as any)[col]);
 
     let unique = Array.from(new Set(values.map(v => String(v || '')))).sort();
     if (search) {
