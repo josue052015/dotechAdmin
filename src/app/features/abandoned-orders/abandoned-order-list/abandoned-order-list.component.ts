@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, signal, computed, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, signal, computed, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -557,6 +557,7 @@ export class AbandonedOrderListComponent implements OnInit {
 
   ngOnInit() {
     this.abandonedOrderService.initLargeList();
+    this.abandonedOrderService.startBackgroundSync();
     this.productService.initLargeList();
     this.messageService.loadTemplates(true).subscribe();
     this.exportTemplateService.loadTemplates(true).subscribe();
@@ -567,6 +568,10 @@ export class AbandonedOrderListComponent implements OnInit {
     ).subscribe(() => {
       this.applyFilters();
     });
+  }
+
+  ngOnDestroy() {
+    this.abandonedOrderService.stopBackgroundSync();
   }
 
   applyFilters() {

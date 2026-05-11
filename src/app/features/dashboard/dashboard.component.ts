@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, computed, untracked } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, computed, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -537,6 +537,11 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.messageService.loadTemplates(true).subscribe();
+    this.orderService.startBackgroundSync();
+  }
+
+  ngOnDestroy() {
+    this.orderService.stopBackgroundSync();
   }
 
   private calculateMetrics() {

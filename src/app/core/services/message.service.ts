@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { GoogleSheetsService } from './google-sheets.service';
 import { MessageTemplate } from '../models/message.model';
 import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, switchMap } from 'rxjs/operators';
 import { Order } from '../models/order.model';
 import { GoogleAuthService } from './google-auth.service';
 import { effect, untracked } from '@angular/core';
@@ -19,12 +19,22 @@ export class MessageService {
     public templates = signal<MessageTemplate[]>([], { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) });
     public isLoading = signal<boolean>(false);
 
-    constructor() {}
+    constructor() {
+        effect(() => {
+            if (this.auth.isAuthorized()) {
+                untracked(() => this.loadTemplates(true).subscribe());
+            }
+        });
+    }
 
 
     public loadTemplates(quiet: boolean = false): Observable<any> {
-        if (!this.auth.isAuthorized()) return of(null);
+        if (!this.auth.isAuthorized()) {
+            this.isLoading.set(false);
+            return of(null);
+        }
         if (!quiet) this.isLoading.set(true);
+        
         return this.sheetsService.readRange(`${this.SHEET_NAME}!A2:C`).pipe(
             tap((response) => {
                 const rows = response.values || [];
@@ -70,14 +80,14 @@ export class MessageService {
     public createTemplate(template: MessageTemplate): Observable<any> {
         const row = ['', template.name, template.text];
         return this.sheetsService.appendRow(`${this.SHEET_NAME}!A:C`, [row]).pipe(
-            tap(() => this.loadTemplates())
+            switchMap(() => this.loadTemplates(true))
         );
     }
 
     public updateTemplate(rowNumber: number, template: MessageTemplate): Observable<any> {
         const row = [template.id, template.name, template.text];
         return this.sheetsService.updateRow(`${this.SHEET_NAME}!A${rowNumber}:C${rowNumber}`, [row]).pipe(
-            tap(() => this.loadTemplates())
+            switchMap(() => this.loadTemplates(true))
         );
     }
 
@@ -117,7 +127,7 @@ export class MessageService {
 
     public deleteTemplate(rowNumber: number): Observable<any> {
         return this.sheetsService.clearRange(`${this.SHEET_NAME}!A${rowNumber}:C${rowNumber}`).pipe(
-            tap(() => this.loadTemplates())
+            switchMap(() => this.loadTemplates(true))
         );
     }
 }

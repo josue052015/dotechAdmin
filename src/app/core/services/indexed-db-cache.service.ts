@@ -62,6 +62,14 @@ export class IndexedDbCacheService {
     });
   }
 
+  public async saveHeaders(sheetName: string, headers: string[]): Promise<void> {
+    return this.saveMetadata(sheetName, 'headers', headers);
+  }
+
+  public async getHeaders(sheetName: string): Promise<string[] | null> {
+    return this.getMetadata(sheetName, 'headers');
+  }
+
   public async getMetadata(sheetName: string, key: string): Promise<any | null> {
     if (!this.db) await this.initDb();
     const cacheId = `${sheetName}_${key}`;

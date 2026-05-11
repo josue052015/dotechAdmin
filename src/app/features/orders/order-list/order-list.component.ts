@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, signal, AfterViewInit, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, signal, AfterViewInit, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -71,12 +71,13 @@ interface ColumnFilter {
       </div>
 
       <!-- Filters Grid (Responsive Layout) -->
+      @defer (on idle) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-         <ng-container *ngIf="orderService.isLoading()">
-            <div *ngFor="let i of [1,2,3,4,5]" class="h-14 rounded-2xl skeleton"></div>
-         </ng-container>
-
-         <ng-container *ngIf="!orderService.isLoading()">
+         @if (orderService.isLoading() && visibleRows().length === 0) {
+            @for (i of [1,2,3,4,5]; track i) {
+               <div class="h-14 rounded-2xl skeleton"></div>
+            }
+         } @else {
             <!-- Date Filter -->
             <div class="relative group" [formGroup]="filterForm">
                <div class="card-stitch flex items-center h-14 px-4 bg-white hover:border-primary/30 transition-all cursor-pointer">
@@ -105,7 +106,9 @@ interface ColumnFilter {
                   <div class="flex-1 relative">
                      <select formControlName="status" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
                         <option value="">All Statuses</option>
-                        <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
+                        @for (s of statuses; track s) {
+                          <option [value]="s">{{ s | titlecase }}</option>
+                        }
                      </select>
                      <lucide-icon name="chevron-down" class="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
                   </div>
@@ -121,7 +124,9 @@ interface ColumnFilter {
                   <div class="flex-1 relative">
                      <select formControlName="province" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
                         <option value="">All Provinces</option>
-                        <option *ngFor="let prov of provinces$ | async" [value]="prov">{{ prov }}</option>
+                        @for (prov of provinces$ | async; track prov) {
+                          <option [value]="prov">{{ prov }}</option>
+                        }
                      </select>
                      <lucide-icon name="chevron-down" class="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
                   </div>
@@ -137,7 +142,9 @@ interface ColumnFilter {
                   <div class="flex-1 relative">
                      <select formControlName="productName" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
                         <option value="">All Products</option>
-                        <option *ngFor="let p of products()" [value]="p.name">{{ p.name }}</option>
+                        @for (p of products(); track p.name) {
+                          <option [value]="p.name">{{ p.name }}</option>
+                        }
                      </select>
                      <lucide-icon name="chevron-down" class="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
                   </div>
@@ -153,18 +160,21 @@ interface ColumnFilter {
                   <div class="flex-1 relative">
                      <select formControlName="carrier" class="w-full bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 appearance-none pr-8">
                         <option value="">All Carriers</option>
-                        <option *ngFor="let c of carriers" [value]="c">{{ c | titlecase }}</option>
+                        @for (c of carriers; track c) {
+                          <option [value]="c">{{ c | titlecase }}</option>
+                        }
                      </select>
                      <lucide-icon name="chevron-down" class="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none"></lucide-icon>
                   </div>
                </div>
             </div>
-         </ng-container>
+         }
       </div>
+      }
 
        <!-- Custom Date Range Inputs -->
-       <div *ngIf="dateFilterService.activeRangeType() === 'custom'" 
-            class="p-4 bg-white rounded-2xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+       @if (dateFilterService.activeRangeType() === 'custom') {
+       <div class="p-4 bg-white rounded-2xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
           <div class="flex items-center justify-between mb-4">
              <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Rango de Fecha</span>
              <button (click)="onDateRangeChange('all')" class="text-[10px] font-bold text-primary uppercase hover:underline">Limpiar Rango</button>
@@ -190,6 +200,7 @@ interface ColumnFilter {
             </div>
           </div>
        </div>
+       }
 
 
       <!-- Main Table Container -->
@@ -199,14 +210,15 @@ interface ColumnFilter {
              [class.min-h-[500px]]="!isMobile()">
         <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
           
-          <!-- Loading Skeletons (Initial Paint Optimized) -->
-          <div *ngIf="orderService.listState().isInitialLoading && orderService.listState().visibleRows.length === 0" 
-               class="flex-1 overflow-auto bg-white" 
-               style="contain: paint layout;">
+          <!-- Loading Skeletons (Zero Flicker Logic) -->
+          @if (orderService.listState().isInitialLoading && visibleRows().length === 0) {
+          <div class="flex-1 overflow-auto bg-white" style="contain: paint layout;">
             <!-- Desktop Table Skeleton -->
             <div class="hidden md:block">
               <div class="hidden md:grid grid-cols-8 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100">
-                <div *ngFor="let col of [1,2,3,4,5,6,7,8]" class="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
+                @for (col of [1,2,3,4,5,6,7,8]; track col) {
+                   <div class="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
+                }
               </div>
               <div class="grid grid-cols-8 gap-4 px-6 py-6 border-b border-slate-50 items-center">
                 <div class="h-4 w-20 bg-slate-100 rounded animate-pulse"></div>
@@ -239,16 +251,10 @@ interface ColumnFilter {
                      <div class="w-20 h-6 rounded-full bg-slate-100 animate-pulse"></div>
                   </div>
                   <div class="h-24 bg-slate-50 rounded-2xl animate-pulse"></div>
-                  <div class="flex justify-between items-end">
-                     <div class="space-y-3 w-1/3">
-                        <div class="h-3 w-12 bg-slate-100 rounded animate-pulse"></div>
-                        <div class="h-6 w-full bg-slate-100 rounded animate-pulse"></div>
-                     </div>
-                     <div class="w-12 h-12 rounded-xl bg-slate-100 animate-pulse"></div>
-                  </div>
                </div>
             </div>
           </div>
+          }
 
           <!-- Actual Content -->
           <div *ngIf="!orderService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
@@ -725,8 +731,10 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     } else {
       this.orderService.initLargeList();
     }
-    this.exportTemplateService.loadTemplates(true).subscribe();
-    this.messageService.loadTemplates(true).subscribe();
+    this.orderService.startBackgroundSync();
+    
+    // We only load templates if they aren't already available
+    // These calls are now much "lighter" as they are handled by effects in services
 
     // The effect in the constructor already handles signal changes (columnFilters, dateRange)
     // The form subscription handles form field changes (search, dropdowns)
@@ -736,6 +744,10 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     ).subscribe(() => {
       this.applyFilters();
     });
+  }
+
+  ngOnDestroy() {
+    this.orderService.stopBackgroundSync();
   }
 
   applyFilters() {

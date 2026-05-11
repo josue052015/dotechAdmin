@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -63,11 +63,11 @@ interface ColumnFilter {
 
       <!-- Quick Stats Row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-         <ng-container *ngIf="productService.isLoading()">
-            <div *ngFor="let i of [1,2,3]" class="card-stitch p-4 md:p-6 h-28 skeleton"></div>
-         </ng-container>
-
-         <ng-container *ngIf="!productService.isLoading()">
+         @if (productService.isLoading() && visibleRows().length === 0) {
+            @for (i of [1,2,3]; track i) {
+               <div class="card-stitch p-4 md:p-6 h-28 skeleton"></div>
+            }
+         } @else {
             <!-- Total Products -->
             <div class="card-stitch p-4 md:p-6 flex items-center space-x-4 md:space-x-5 group hover:border-blue-200 transition-all">
                <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
@@ -108,7 +108,7 @@ interface ColumnFilter {
                   </div>
                </div>
             </div>
-         </ng-container>
+         }
       </div>
 
       <!-- Filter by Column Buttons 
@@ -194,7 +194,8 @@ interface ColumnFilter {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let i of [1,2,3,4,5,6,7,8]">
+                  @for (i of [1,2,3,4,5,6,7,8]; track i) {
+                  <tr>
                     <td>
                       <div class="flex items-center space-x-5">
                          <div class="w-12 h-12 rounded-xl skeleton"></div>
@@ -210,6 +211,7 @@ interface ColumnFilter {
                     <td><div class="h-8 w-24 rounded-full skeleton"></div></td>
                     <td><div class="w-8 h-8 rounded-lg skeleton"></div></td>
                   </tr>
+                  }
                 </tbody>
               </table>
             </div>
@@ -258,126 +260,125 @@ interface ColumnFilter {
             <div class="flex-1 w-full">
               <!-- Desktop Rows -->
               <!-- Row Container -->
-              <div *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
+              @for (row of visibleRows(); track trackByRowNumber($index, row)) {
                 <!-- Desktop Layout -->
                 @defer (on viewport) {
-                <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all items-center group">
-                  <div class="col-span-4 flex items-center space-x-5 text-left">
-                     <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
-                        <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
-                     </div>
-                     <div class="flex flex-col min-w-0">
-                        <span class="text-sm font-bold text-slate-900 leading-tight truncate uppercase">{{row.name}}</span>
-                        <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</span>
-                     </div>
-                  </div>
-
-                  <div class="col-span-2 text-left ml-4">
-                    <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50">
-                      {{ row.category || 'General' }}
-                    </span>
-                  </div>
-
-                  <div class="col-span-2 font-black text-slate-900 text-sm italic text-left"> 
-                    RD$ {{row.price | number:'1.2-2'}} 
-                  </div>
-
-                  <div class="col-span-1 text-xs font-bold text-slate-600 text-left"> 
-                     {{ row.stock || 0 }} units 
-                  </div>
-
-                  <div class="col-span-2 text-left">
-                    <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full border shadow-sm">
-                       <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
-                       <span class="text-[10px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="col-span-1 flex justify-end items-center space-x-1">
-                    <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-primary/5">
-                       <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-                    </button>
-                    <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors rounded-xl hover:bg-danger/5">
-                       <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                    </button>
-                  </div>
-                </div>
-                } @placeholder {
-                  <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
-                    <div class="col-span-4 flex items-center space-x-5">
-                      <div class="w-12 h-12 rounded-xl bg-slate-100"></div>
-                      <div class="space-y-2">
-                        <div class="h-4 bg-slate-100 rounded w-32"></div>
-                        <div class="h-2 bg-slate-100 rounded w-16"></div>
-                      </div>
-                    </div>
-                    <div class="col-span-2 h-6 bg-slate-100 rounded-lg w-20"></div>
-                    <div class="col-span-2 h-4 bg-slate-100 rounded w-24"></div>
-                    <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
-                    <div class="col-span-2 h-8 bg-slate-100 rounded-full w-24"></div>
-                    <div class="col-span-1 h-8 bg-slate-100 rounded-xl w-8"></div>
-                  </div>
-                }
-
-                <!-- Mobile Layout -->
-                @defer (on viewport) {
-                <div class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
-                   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
-                      <div class="flex items-center space-x-4">
-                         <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
+                  <div>
+                    <!-- Desktop Layout -->
+                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all items-center group">
+                      <div class="col-span-4 flex items-center space-x-5 text-left">
+                         <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
                             <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
                          </div>
-                         <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{{ row.name }}</h4>
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</p>
-                         </div>
-                         <div class="text-right">
-                            <p class="text-[15px] font-black text-slate-900 italic">RD$ {{ row.price | number }}</p>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Unit Price</span>
+                         <div class="flex flex-col min-w-0">
+                            <span class="text-sm font-bold text-slate-900 leading-tight truncate uppercase">{{row.name}}</span>
+                            <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</span>
                          </div>
                       </div>
 
-                      <div class="flex items-center justify-between pt-2">
-                         <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full border shadow-sm">
-                            <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
-                            <span class="text-[9px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
-                         </div>
-                         <div class="flex items-center space-x-2">
-                            <span class="text-[10px] font-bold text-slate-500">{{ row.stock || 0 }} in stock</span>
-                            <div class="h-4 w-px bg-slate-200"></div>
-                            <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors">
-                               <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-                            </button>
-                            <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors">
-                               <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                            </button>
-                         </div>
+                      <div class="col-span-2 text-left ml-4">
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50">
+                          {{ row.category || 'General' }}
+                        </span>
                       </div>
-                   </div>
-                </div>
-                } @placeholder {
-                  <div class="md:hidden p-4 border-b border-slate-50">
-                    <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 animate-pulse">
-                      <div class="flex items-center space-x-4">
-                        <div class="w-14 h-14 rounded-xl bg-slate-100"></div>
-                        <div class="flex-1 space-y-2">
+
+                      <div class="col-span-2 font-black text-slate-900 text-sm italic text-left"> 
+                        RD$ {{row.price | number:'1.2-2'}} 
+                      </div>
+
+                      <div class="col-span-1 text-xs font-bold text-slate-600 text-left"> 
+                         {{ row.stock || 0 }} units 
+                      </div>
+
+                      <div class="col-span-2 text-left">
+                        <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full border shadow-sm">
+                           <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
+                           <span class="text-[10px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
+                        </div>
+                      </div>
+
+                      <div class="col-span-1 flex justify-end items-center space-x-1">
+                        <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-primary/5">
+                           <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                        </button>
+                        <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors rounded-xl hover:bg-danger/5">
+                           <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Mobile Layout -->
+                    <div class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
+                       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
+                          <div class="flex items-center space-x-4">
+                             <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
+                                <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
+                             </div>
+                             <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{{ row.name }}</h4>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</p>
+                             </div>
+                             <div class="text-right">
+                                <p class="text-[15px] font-black text-slate-900 italic">RD$ {{ row.price | number }}</p>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Unit Price</span>
+                             </div>
+                          </div>
+
+                          <div class="flex items-center justify-between pt-2">
+                             <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full border shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
+                                <span class="text-[9px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
+                             </div>
+                             <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-bold text-slate-500">{{ row.stock || 0 }} in stock</span>
+                                <div class="h-4 w-px bg-slate-200"></div>
+                                <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                   <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                                </button>
+                                <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors">
+                                   <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                                </button>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                } @placeholder { <div class="placeholder-container w-full">
+                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
+                      <div class="col-span-4 flex items-center space-x-5">
+                        <div class="w-12 h-12 rounded-xl bg-slate-100"></div>
+                        <div class="space-y-2">
                           <div class="h-4 bg-slate-100 rounded w-32"></div>
                           <div class="h-2 bg-slate-100 rounded w-16"></div>
                         </div>
                       </div>
-                      <div class="flex justify-between items-center">
-                        <div class="h-6 bg-slate-100 rounded-full w-20"></div>
-                        <div class="h-6 bg-slate-100 rounded w-24"></div>
+                      <div class="col-span-2 h-6 bg-slate-100 rounded-lg w-20"></div>
+                      <div class="col-span-2 h-4 bg-slate-100 rounded w-24"></div>
+                      <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
+                      <div class="col-span-2 h-8 bg-slate-100 rounded-full w-24"></div>
+                      <div class="col-span-1 h-8 bg-slate-100 rounded-xl w-8"></div>
+                    </div>
+                    <div class="md:hidden p-4 border-b border-slate-50">
+                      <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 animate-pulse">
+                        <div class="flex items-center space-x-4">
+                          <div class="w-14 h-14 rounded-xl bg-slate-100"></div>
+                          <div class="flex-1 space-y-2">
+                            <div class="h-4 bg-slate-100 rounded w-32"></div>
+                            <div class="h-2 bg-slate-100 rounded w-16"></div>
+                          </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                          <div class="h-6 bg-slate-100 rounded-full w-20"></div>
+                          <div class="h-6 bg-slate-100 rounded w-24"></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                }
-              </div>
-
-              </div>
+                  </div> }
+              }
             </div>
           </div>
-          </div>
+        </div>
+      </div>
 
         <div *ngIf="!productService.isLoading()" class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
@@ -499,6 +500,7 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit() {
     this.productService.initLargeList();
+    this.productService.startBackgroundSync();
     
     this.searchSubject.pipe(
       debounceTime(300),
@@ -510,6 +512,10 @@ export class ProductListComponent implements OnInit {
         sort: { active: '', direction: '' } 
       });
     });
+  }
+
+  ngOnDestroy() {
+    this.productService.stopBackgroundSync();
   }
 
   onScroll(index: number) {

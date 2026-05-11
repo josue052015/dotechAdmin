@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ViewChild, effect } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, effect, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -13,6 +13,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 @Component({
    selector: 'app-message-list',
    standalone: true,
+   changeDetection: ChangeDetectionStrategy.OnPush,
    imports: [
       CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule, MatDialogModule
    ],
@@ -20,7 +21,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
       <!-- Header Area (Visible only when not editing) -->
-      <div *ngIf="!showForm" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+      <div *ngIf="!showForm()" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div class="flex flex-col">
           <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Message Templates</h1>
           <p class="text-slate-400 text-[10px] md:text-xs font-semibold uppercase tracking-widest mt-0.5">Manage and automate your customer communications</p>
@@ -49,10 +50,11 @@ import { ConfirmService } from '../../../core/services/confirm.service';
       </div>
 
       <!-- Template Grid (Visible only when not editing) -->
-      <div *ngIf="!showForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @if (!showForm()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-
-         <div *ngFor="let template of filteredTemplates" class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
+         @for (template of filteredTemplates(); track template.id) {
+         <div class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
             <div class="flex justify-between items-start mb-4">
                <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success-text border border-success/20">
@@ -88,23 +90,29 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                </div>
             </div>
          </div>
+         }
 
          <!-- Empty State for Search or No Data -->
-         <div *ngIf="filteredTemplates.length === 0 && !messageService.isLoading()" class="col-span-full py-20 flex flex-col items-center border-2 border-dashed border-slate-200 rounded-3xl">
+         @if (filteredTemplates().length === 0 && !messageService.isLoading()) {
+         <div class="col-span-full py-20 flex flex-col items-center border-2 border-dashed border-slate-200 rounded-3xl">
             <lucide-icon name="search" class="w-12 h-12 text-slate-100 mb-4" [strokeWidth]="1.5"></lucide-icon>
             <h3 class="text-lg font-bold text-slate-900">No se encontraron plantillas</h3>
             <p class="text-sm text-slate-400 mt-1">Intenta con otras palabras o crea una nueva plantilla.</p>
          </div>
+         }
 
          <!-- Loading State -->
-         <div *ngIf="messageService.isLoading() && templates.length === 0" class="col-span-full py-20 flex flex-col items-center">
+         @if (messageService.isLoading() && messageService.templates().length === 0) {
+         <div class="col-span-full py-20 flex flex-col items-center">
             <mat-spinner diameter="40"></mat-spinner>
             <p class="text-sm text-slate-400 mt-4 animate-pulse uppercase tracking-widest font-black">Cargando plantillas...</p>
          </div>
+         }
       </div>
+      }
 
       <!-- Sophisticated Template Editor -->
-      <div *ngIf="showForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10 animate-in slide-in-from-right-4 duration-500">
+      <div *ngIf="showForm()" class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10 animate-in slide-in-from-right-4 duration-500">
          <!-- Left Side: Form -->
          <div class="lg:col-span-12 xl:col-span-7 space-y-6 md:space-y-8">
             <div class="flex items-center space-x-4 mb-4">
@@ -112,7 +120,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                   <lucide-icon name="arrow-left" class="w-5 h-5"></lucide-icon>
                </button>
                <div>
-                  <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight uppercase tracking-wider">{{ isEditing ? 'Edit Template' : 'Create Template' }}</h2>
+                  <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight uppercase tracking-wider">{{ isEditing() ? 'Edit Template' : 'Create Template' }}</h2>
                   <nav class="flex items-center space-x-2 text-[9px] md:text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">
                      <span>Library</span>
                      <lucide-icon name="chevron-right" class="w-3 h-3"></lucide-icon>
@@ -149,10 +157,10 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
             <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
                <button (click)="closeForm()" class="order-2 sm:order-1 px-8 py-2.5 rounded-xl text-slate-500 hover:text-slate-900 font-bold text-sm bg-white border border-transparent hover:border-slate-200 transition-all">Discard Changes</button>
-               <button (click)="saveTemplate()" [disabled]="templateForm.invalid || isSaving" 
+               <button (click)="saveTemplate()" [disabled]="templateForm.invalid || isSaving()" 
                        class="order-1 sm:order-2 bg-primary hover:bg-blue-700 text-white px-10 py-3 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 text-sm font-black flex items-center justify-center space-x-2">
-                  <mat-spinner diameter="18" strokeWidth="3" *ngIf="isSaving" class="mr-2"></mat-spinner>
-                  <span>{{ isEditing ? 'Update Template' : 'Publish Template' }}</span>
+                  <mat-spinner diameter="18" strokeWidth="3" *ngIf="isSaving()" class="mr-2"></mat-spinner>
+                  <span>{{ isEditing() ? 'Update Template' : 'Publish Template' }}</span>
                </button>
             </div>
          </div>
@@ -191,7 +199,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                         
                         <!-- Message Bubble -->
                         <div class="self-start max-w-[85%] bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-slate-200/50 relative group">
-                           <div class="text-[13px] text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{{ previewText || 'Type text to preview...' }}</div>
+                           <div class="text-[13px] text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{{ previewText() || 'Type text to preview...' }}</div>
                            <div class="flex items-center justify-end space-x-1 mt-1 opacity-40">
                               <span class="text-[9px] font-bold">12:30 PM</span>
                               <lucide-icon name="check-check" class="w-3 h-3 flex items-center justify-center text-blue-500"></lucide-icon>
@@ -238,15 +246,25 @@ export class MessageListComponent implements OnInit {
    private router = inject(Router);
    private confirmService = inject(ConfirmService);
 
-   templates: MessageTemplate[] = [];
-   filteredTemplates: MessageTemplate[] = [];
+   filterText = signal('');
+   
+   filteredTemplates = computed(() => {
+      const templates = this.messageService.templates();
+      const filterValue = this.filterText().toLowerCase();
+      if (!filterValue) return templates;
+      return templates.filter(t =>
+         t.name.toLowerCase().includes(filterValue) ||
+         t.text.toLowerCase().includes(filterValue)
+      );
+   });
+
    variables = ['FullName', 'ProductName', 'Price', 'Status', 'OrderID', 'City', 'Address1', 'Province', 'Notes'];
 
-   showForm = false;
-   isEditing = false;
-   isSaving = false;
+   showForm = signal(false);
+   isEditing = signal(false);
+   isSaving = signal(false);
    currentRowNumber: number | null = null;
-   previewText = '';
+   previewText = signal('');
 
    templateForm: FormGroup = this.fb.group({
       name: ['', Validators.required],
@@ -255,72 +273,64 @@ export class MessageListComponent implements OnInit {
    });
 
    constructor() {
-      effect(() => {
-         this.templates = this.messageService.templates();
-         this.applyFilter({ target: { value: '' } } as any);
-      });
-
       this.templateForm.valueChanges.subscribe(val => {
-         this.previewText = this.processPreview(val.text || '');
+         this.previewText.set(this.processPreview(val.text || ''));
       });
    }
 
    ngOnInit() {
-      this.messageService.loadTemplates().subscribe();
+      // Templates are already loaded by the service constructor effect
+      // but we ensure we have them. 
+      if (this.messageService.templates().length === 0) {
+         this.messageService.loadTemplates().subscribe();
+      }
    }
 
    applyFilter(event: Event) {
-      const filterValue = (event.target as HTMLInputElement).value?.trim().toLowerCase() || '';
-      if (!filterValue) {
-         this.filteredTemplates = this.templates;
-      } else {
-         this.filteredTemplates = this.templates.filter(t =>
-            t.name.toLowerCase().includes(filterValue) ||
-            t.text.toLowerCase().includes(filterValue)
-         );
-      }
+      const filterValue = (event.target as HTMLInputElement).value?.trim() || '';
+      this.filterText.set(filterValue);
    }
 
    openForm() {
       this.templateForm.reset();
-      this.isEditing = false;
+      this.isEditing.set(false);
       this.currentRowNumber = null;
-      this.showForm = true;
-      this.previewText = '';
+      this.showForm.set(true);
+      this.previewText.set('');
    }
 
    closeForm() {
-      this.showForm = false;
+      this.showForm.set(false);
    }
 
    editTemplate(template: MessageTemplate) {
       this.templateForm.patchValue(template);
-      this.isEditing = true;
+      this.isEditing.set(true);
       this.currentRowNumber = template._rowNumber || null;
-      this.showForm = true;
+      this.showForm.set(true);
    }
 
    saveTemplate() {
       if (this.templateForm.invalid) return;
 
-      this.isSaving = true;
+      this.isSaving.set(true);
       const value = this.templateForm.value;
 
-      if (this.isEditing && this.currentRowNumber) {
+      if (this.isEditing() && this.currentRowNumber) {
          this.messageService.updateTemplate(this.currentRowNumber, value).subscribe({
             next: () => {
-               this.isSaving = false;
+               this.isSaving.set(false);
                this.closeForm();
             },
-            error: () => this.isSaving = false
+            error: () => this.isSaving.set(false)
          });
       } else {
          this.messageService.createTemplate(value).subscribe({
             next: () => {
-               this.isSaving = false;
+               this.isSaving.set(false);
                this.closeForm();
             },
-            error: () => this.isSaving = false
+            error: () => this.isSaving.set(false)
          });
       }
    }

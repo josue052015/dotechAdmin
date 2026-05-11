@@ -11,7 +11,7 @@ import { LargeSheetListService } from './large-sheet-list.service';
 export class OrderService extends LargeSheetListService<Order> {
     private auth = inject(GoogleAuthService);
     
-    protected override CHUNK_SIZE = 500;
+    protected override CHUNK_SIZE = 200;
     protected override SHEET_NAME = 'ORDENES';
     protected override COLUMNS_RANGE = 'A:P';
 

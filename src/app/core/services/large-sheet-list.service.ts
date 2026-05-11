@@ -2,7 +2,7 @@ import { signal, computed, inject } from '@angular/core';
 import { LargeListState, ListQuery } from '../models/list-state.model';
 import { GoogleSheetsService } from './google-sheets.service';
 import { IndexedDbCacheService } from './indexed-db-cache.service';
-import { Observable, BehaviorSubject, of, from, throwError, timer, Subscription } from 'rxjs';
+import { Observable, BehaviorSubject, of, from, throwError, timer, Subscription, forkJoin } from 'rxjs';
 import { tap, map, catchError, switchMap, finalize, filter } from 'rxjs/operators';
 
 export abstract class LargeSheetListService<T> {
@@ -37,9 +37,10 @@ export abstract class LargeSheetListService<T> {
   protected worker: Worker | null = null;
   protected isInitialized = false;
   protected lowestRowLoaded = 0;
-  protected CHUNK_SIZE = 500;
+  protected CHUNK_SIZE = 200;
   private syncSubscription?: Subscription;
   private rawDataCache = new Map<string, string>();
+  private isSyncing = false;
 
   constructor() {
     if (typeof Worker !== 'undefined') {
@@ -48,26 +49,69 @@ export abstract class LargeSheetListService<T> {
   }
 
   public initLargeList(): void {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {
+      // If already initialized, just ensure sync is running if it was stopped
+      return;
+    }
     this.isInitialized = true;
     
-    this.listState.update(s => ({ ...s, isInitialLoading: true }));
+    // Only show loading if we have absolutely no data in memory
+    const hasDataInMemory = this.allRecords().length > 0;
+    if (!hasDataInMemory) {
+      this.listState.update(s => ({ ...s, isInitialLoading: true }));
+    }
 
-    // 1. Load Headers first (needed for mapping)
-    this.sheetsService.readHeader(this.SHEET_NAME, this.COLUMNS_RANGE).subscribe(headers => {
-      this.currentHeaders = headers;
+    // --- PHASE 1: INSTANT CACHE RESTORATION ---
+    // If we have data in memory, we skip this to avoid signal noise
+    if (!hasDataInMemory) {
+      this.tryRestoreFromCache();
+    }
 
-      // 2. Resolve Last Row (Probe strategy)
-      this.resolveLastDataRow().subscribe(lastRow => {
+    // --- PHASE 2: BACKGROUND REVALIDATION ---
+    forkJoin({
+      headers: this.sheetsService.readHeader(this.SHEET_NAME, this.COLUMNS_RANGE).pipe(
+        tap(h => {
+          this.currentHeaders = h;
+          this.cacheService.saveHeaders(this.SHEET_NAME, h);
+        }),
+        catchError(() => of([]))
+      ),
+      lastRow: this.resolveLastDataRow()
+    }).pipe(
+      switchMap(({ lastRow }) => {
         this.lastDataRow.set(lastRow);
         this.lowestRowLoaded = lastRow + 1;
-        
-        // 3. Load Initial Chunk (last 100 rows)
-        this.loadInitialChunk().subscribe(() => {
-          this.startBackgroundSync();
-        });
-      });
-    });
+        return this.loadInitialChunk();
+      }),
+      finalize(() => {
+        if (!hasDataInMemory) {
+          this.listState.update(s => ({ ...s, isInitialLoading: false }));
+        }
+      })
+    ).subscribe();
+  }
+
+  private async tryRestoreFromCache(): Promise<void> {
+    const [cachedHeaders, cachedLastRow] = await Promise.all([
+      this.cacheService.getHeaders(this.SHEET_NAME),
+      this.cacheService.getMetadata(this.SHEET_NAME, 'lastDataRow')
+    ]);
+
+    if (cachedHeaders && cachedLastRow) {
+      this.currentHeaders = cachedHeaders;
+      this.lastDataRow.set(cachedLastRow);
+      this.lowestRowLoaded = cachedLastRow + 1;
+
+      // Immediately attempt to load records from cache for this range
+      const startRow = Math.max(2, cachedLastRow - this.CHUNK_SIZE + 1);
+      const cachedData = await this.cacheService.getChunk(this.SHEET_NAME, `${startRow}:${cachedLastRow}`);
+      
+      if (cachedData && cachedData.length > 0) {
+        const mapped = this.mapRowsToEntities(cachedData, startRow);
+        this.mergeRowsIntoState(mapped, { replaceInitial: true });
+        // UI is now showing data, likely in <100ms
+      }
+    }
   }
 
   /**
@@ -78,12 +122,20 @@ export abstract class LargeSheetListService<T> {
     this.isResolvingLastRow.set(true);
     const startRow = startFrom || 2;
     
-    // Proactive grid size check
-    return this.sheetsService.getSheetGridRowCount(this.SHEET_NAME).pipe(
-      catchError(() => of(5000)), // Better fail-safe than 100
-      switchMap(gridRowCount => {
-        // We always try to leapfrog from startRow up to gridRowCount
-        return this.leapfrogForward(startRow, gridRowCount);
+    // 1. Speculative leapfrog (fast probe for small/medium sheets)
+    // 2. Grid size check (for very large sheets)
+    // Run both in parallel to find the last row as fast as possible
+    return forkJoin({
+      gridRowCount: this.sheetsService.getSheetGridRowCount(this.SHEET_NAME).pipe(catchError(() => of(5000))),
+      fastProbe: this.leapfrogForward(startRow, startRow + 2000) 
+    }).pipe(
+      switchMap(({ gridRowCount, fastProbe }) => {
+        // If fast probe found something and it's less than the probe limit, 
+        // it might be the end. But if it hit the limit, we need to continue up to gridRowCount.
+        if (fastProbe < startRow + 2000) {
+           return of(fastProbe);
+        }
+        return this.leapfrogForward(fastProbe, gridRowCount);
       }),
       tap(lastRow => {
         this.isResolvingLastRow.set(false);
@@ -92,7 +144,7 @@ export abstract class LargeSheetListService<T> {
       catchError(err => {
         this.isResolvingLastRow.set(false);
         console.error('Error resolving last row:', err);
-        return of(5000); // Fail-safe to a large number to allow "load more" to work
+        return of(5000); 
       })
     );
   }
@@ -187,12 +239,10 @@ export abstract class LargeSheetListService<T> {
   }
 
   public loadInitialChunk(): Observable<any> {
-    this.listState.update(s => ({ ...s, isInitialLoading: true }));
-    
     const lastRow = this.lastDataRow() || 100;
     const startRow = Math.max(2, lastRow - this.CHUNK_SIZE + 1);
 
-    // Try cache first
+    // Try cache first (redundant if tryRestoreFromCache already ran, but safe)
     return from(this.cacheService.getChunk(this.SHEET_NAME, `${startRow}:${lastRow}`)).pipe(
       switchMap(cachedRows => {
         if (cachedRows && cachedRows.length > 0) {
@@ -200,14 +250,13 @@ export abstract class LargeSheetListService<T> {
           this.lowestRowLoaded = startRow;
           this.mergeRowsIntoState(mapped, { replaceInitial: true });
           
-          // Background refresh the current chunk
-          this.fetchChunk(startRow, lastRow).subscribe();
-          return of(mapped);
+          // Background refresh the current chunk with a LIGHTER fetch if possible
+          // But for consistency we fetch the full chunk
+          return this.fetchChunk(startRow, lastRow);
         }
 
         return this.fetchChunk(startRow, lastRow);
-      }),
-      finalize(() => this.listState.update(s => ({ ...s, isInitialLoading: false })))
+      })
     );
   }
 
@@ -411,20 +460,35 @@ export abstract class LargeSheetListService<T> {
   /**
    * Starts background synchronization.
    * @param activeInterval Frequency to check for new rows and refresh the top chunk (default 5s)
-   * @param backgroundInterval Frequency to refresh a larger set of records for edits (default 20s)
+   * @param backgroundInterval Frequency to refresh a larger set of records for edits (default 45s)
    */
-  public startBackgroundSync(activeInterval = 5000, backgroundInterval = 20000): void {
+  public startBackgroundSync(activeInterval = 5000, backgroundInterval = 45000): void {
     if (this.syncSubscription) return;
 
-    this.syncSubscription = timer(activeInterval, activeInterval).pipe(
-      filter(() => !document.hidden && !this.listState().isFiltering),
+    // Add random jitter to the start to avoid "herd effect" between multiple services
+    const startJitter = Math.floor(Math.random() * 5000);
+
+    this.syncSubscription = timer(startJitter, activeInterval).pipe(
+      filter(() => !document.hidden && !this.listState().isFiltering && !this.isSyncing),
       switchMap((tick) => {
         // Every backgroundInterval (roughly), do a deeper sync
         const isBackgroundTick = (tick * activeInterval) % backgroundInterval === 0;
-        return this.performSync(isBackgroundTick);
+        
+        // Add a small intra-tick jitter (0-2s) to prevent exact simultaneous firing
+        const tickJitter = Math.floor(Math.random() * 2000);
+        
+        return timer(tickJitter).pipe(
+          switchMap(() => {
+            this.isSyncing = true;
+            return this.performSync(isBackgroundTick).pipe(
+              finalize(() => this.isSyncing = false)
+            );
+          })
+        );
       }),
       catchError(err => {
         console.error('Background sync failed:', err);
+        this.isSyncing = false;
         return of(null);
       })
     ).subscribe();
@@ -462,5 +526,6 @@ export abstract class LargeSheetListService<T> {
       this.syncSubscription.unsubscribe();
       this.syncSubscription = undefined;
     }
+    this.isSyncing = false;
   }
 }

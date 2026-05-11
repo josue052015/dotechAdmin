@@ -28,7 +28,7 @@ export class SyncService {
   public isInitialSyncDone = signal<boolean>(false);
 
   constructor() {
-    this.initSyncLoop();
+    // this.initSyncLoop(); // Disabled to allow per-component context-aware sync
     this.setupInitialSyncTrigger();
   }
 
