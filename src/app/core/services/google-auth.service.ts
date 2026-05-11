@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { catchError, map, filter, tap, switchMap } from 'rxjs/operators';
@@ -17,17 +17,21 @@ const STORAGE_KEYS = {
     TOKEN_EXPIRES_AT: 'google_token_expires_at',
     USER_PROFILE: 'google_user_profile',
     IS_AUTHORIZED: 'google_is_authorized',
-    LAST_ACTIVITY_AT: 'google_last_activity_at'
+    LAST_ACTIVITY_AT: 'google_last_activity_at',
+    LAST_REFRESH_AT: 'google_last_refresh_at'
 };
 
 const INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000; // 24 hours
 const REFRESH_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes buffer to renew before expiry
+const SESSION_REFRESH_INTERVAL_MS = 8 * 60 * 1000; // 8 minutes
+const REFRESH_GRACE_PERIOD_MS = 60 * 1000; // 1 minute
 
 @Injectable({
     providedIn: 'root'
 })
 export class GoogleAuthService {
     private http = inject(HttpClient);
+    private zone = inject(NgZone);
     private tokenClient: any;
     
     // Centralized Reactive State
@@ -46,11 +50,16 @@ export class GoogleAuthService {
     private refreshInProgress: Promise<string | null> | null = null;
     private refreshResolver: ((token: string | null) => void) | null = null;
 
+    private sessionMonitorTimer: any;
+    private refreshDeadlineTimer: any;
+    private lastRefreshAt = signal<number>(0);
+
     constructor() {
         this.initializeAuthState();
         this.loadGoogleScript();
         this.setupInactivityTracker();
         this.setupTabSync();
+        this.scheduleSessionRefresh();
 
         // Safety timeout to prevent stuck splash screen
         setTimeout(() => {
@@ -66,9 +75,11 @@ export class GoogleAuthService {
         const expiresAt = parseInt(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || '0', 10);
         const profileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
         const lastActivity = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY_AT) || '0', 10);
+        const lastRefresh = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_REFRESH_AT) || '0', 10);
         const isAuthorizedLocal = localStorage.getItem(STORAGE_KEYS.IS_AUTHORIZED) === 'true';
 
         this.lastActivityAt.set(lastActivity);
+        this.lastRefreshAt.set(lastRefresh);
         this.tokenExpiresAt.set(expiresAt);
 
         // 1. Check absolute inactivity
@@ -157,6 +168,10 @@ export class GoogleAuthService {
             this.isAuthorized.set(isAuth);
             this.accessToken.set(token);
             this.tokenExpiresAt.set(expiresAt);
+            
+            const lastRefresh = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_REFRESH_AT) || '0', 10);
+            this.lastRefreshAt.set(lastRefresh);
+            this.scheduleSessionRefresh();
         } else {
             this.accessToken.set(null);
             this.isAuthenticated.set(false);
@@ -233,7 +248,14 @@ export class GoogleAuthService {
         this.tokenExpiresAt.set(expiresAt);
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
         localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, expiresAt.toString());
+        
+        const now = Date.now();
+        this.lastRefreshAt.set(now);
+        localStorage.setItem(STORAGE_KEYS.LAST_REFRESH_AT, now.toString());
+        
         this.markUserActivity();
+        this.clearRefreshDeadline();
+        this.scheduleSessionRefresh();
 
         // Check if we need to fetch/verify profile
         if (!this.userProfile() || !this.isAuthorized()) {
@@ -335,6 +357,13 @@ export class GoogleAuthService {
         localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
         localStorage.removeItem(STORAGE_KEYS.IS_AUTHORIZED);
         localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY_AT);
+        localStorage.removeItem(STORAGE_KEYS.LAST_REFRESH_AT);
+        
+        this.clearRefreshDeadline();
+        if (this.sessionMonitorTimer) {
+            clearTimeout(this.sessionMonitorTimer);
+            this.sessionMonitorTimer = null;
+        }
     }
 
     private fetchUserProfile(token: string): Observable<UserProfile> {
@@ -414,5 +443,58 @@ export class GoogleAuthService {
                 }
             })
         );
+    }
+
+    private scheduleSessionRefresh() {
+        if (!this.isAuthenticated()) return;
+
+        if (this.sessionMonitorTimer) {
+            clearTimeout(this.sessionMonitorTimer);
+        }
+
+        const timeSinceLastRefresh = Date.now() - this.lastRefreshAt();
+        const delay = Math.max(0, SESSION_REFRESH_INTERVAL_MS - timeSinceLastRefresh);
+
+        // Run outside Angular to avoid unnecessary change detection cycles
+        this.zone.runOutsideAngular(() => {
+            this.sessionMonitorTimer = setTimeout(() => {
+                this.executeBackgroundRefresh();
+            }, delay);
+        });
+    }
+
+    private executeBackgroundRefresh() {
+        if (!this.isAuthenticated()) return;
+
+        console.log('[Auth] Triggering scheduled background session refresh...');
+
+        // Start the 1-minute grace period timer
+        this.zone.runOutsideAngular(() => {
+            this.refreshDeadlineTimer = setTimeout(() => {
+                console.warn('[Auth] Background refresh deadline exceeded (1 minute). Redirecting to login.');
+                this.zone.run(() => this.logoutManual());
+            }, REFRESH_GRACE_PERIOD_MS);
+        });
+
+        // Trigger the silent renewal
+        this.silentRenew().subscribe({
+            next: (token) => {
+                if (token) {
+                    console.log('[Auth] Scheduled background refresh successful.');
+                } else {
+                    console.warn('[Auth] Scheduled background refresh failed to return a token.');
+                }
+            },
+            error: (err) => {
+                console.error('[Auth] Error during scheduled background refresh:', err);
+            }
+        });
+    }
+
+    private clearRefreshDeadline() {
+        if (this.refreshDeadlineTimer) {
+            clearTimeout(this.refreshDeadlineTimer);
+            this.refreshDeadlineTimer = null;
+        }
     }
 }
