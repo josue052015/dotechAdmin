@@ -2,8 +2,8 @@ import { signal, computed, inject } from '@angular/core';
 import { LargeListState, ListQuery } from '../models/list-state.model';
 import { GoogleSheetsService } from './google-sheets.service';
 import { IndexedDbCacheService } from './indexed-db-cache.service';
-import { Observable, BehaviorSubject, of, from, throwError } from 'rxjs';
-import { tap, map, catchError, switchMap, finalize } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, from, throwError, timer, Subscription } from 'rxjs';
+import { tap, map, catchError, switchMap, finalize, filter } from 'rxjs/operators';
 
 export abstract class LargeSheetListService<T> {
   protected sheetsService = inject(GoogleSheetsService);
@@ -38,6 +38,8 @@ export abstract class LargeSheetListService<T> {
   protected isInitialized = false;
   protected lowestRowLoaded = 0;
   protected CHUNK_SIZE = 500;
+  private syncSubscription?: Subscription;
+  private rawDataCache = new Map<string, string>();
 
   constructor() {
     if (typeof Worker !== 'undefined') {
@@ -61,7 +63,9 @@ export abstract class LargeSheetListService<T> {
         this.lowestRowLoaded = lastRow + 1;
         
         // 3. Load Initial Chunk (last 100 rows)
-        this.loadInitialChunk().subscribe();
+        this.loadInitialChunk().subscribe(() => {
+          this.startBackgroundSync();
+        });
       });
     });
   }
@@ -70,16 +74,16 @@ export abstract class LargeSheetListService<T> {
    * Probe backwards to find the actual last row with data in KEY_COLUMN
    * without reading the entire A:A column.
    */
-  protected resolveLastDataRow(): Observable<number> {
+  protected resolveLastDataRow(startFrom?: number): Observable<number> {
     this.isResolvingLastRow.set(true);
+    const startRow = startFrom || 2;
     
     // Proactive grid size check
     return this.sheetsService.getSheetGridRowCount(this.SHEET_NAME).pipe(
       catchError(() => of(5000)), // Better fail-safe than 100
       switchMap(gridRowCount => {
-        // We always try to leapfrog from row 2 up to gridRowCount
-        // to ensure we don't get stuck by a stale cache
-        return this.leapfrogForward(2, gridRowCount);
+        // We always try to leapfrog from startRow up to gridRowCount
+        return this.leapfrogForward(startRow, gridRowCount);
       }),
       tap(lastRow => {
         this.isResolvingLastRow.set(false);
@@ -179,9 +183,7 @@ export abstract class LargeSheetListService<T> {
     const lastRow = this.lastDataRow() || 100;
     const startRow = Math.max(2, lastRow - this.CHUNK_SIZE + 1);
 
-    return this.fetchChunk(startRow, lastRow).pipe(
-      tap(mapped => this.mergeRowsIntoState(mapped, { replaceInitial: true }))
-    );
+    return this.fetchChunk(startRow, lastRow);
   }
 
   public loadInitialChunk(): Observable<any> {
@@ -235,6 +237,15 @@ export abstract class LargeSheetListService<T> {
     return this.sheetsService.readSheetChunk(this.SHEET_NAME, startRow, endRow, this.COLUMNS_RANGE).pipe(
       switchMap(async response => {
         const rows = response.values || [];
+        const rangeKey = `${this.SHEET_NAME}!${startRow}:${endRow}`;
+        const dataHash = JSON.stringify(rows);
+
+        // Optimization: Only process if data has actually changed
+        if (this.rawDataCache.get(rangeKey) === dataHash) {
+          return [];
+        }
+        
+        this.rawDataCache.set(rangeKey, dataHash);
         const mapped = this.mapRowsToEntities(rows, startRow);
         
         await this.cacheService.saveChunk(this.SHEET_NAME, `${startRow}:${endRow}`, rows);
@@ -258,25 +269,41 @@ export abstract class LargeSheetListService<T> {
   }
 
   protected mergeRowsIntoState(newRows: T[], options?: { replaceInitial?: boolean }): void {
+    // Guard: If no rows were mapped (cached or empty response), do nothing
+    if (newRows.length === 0) return;
+
     const sorted = [...newRows].sort((a: any, b: any) => (b._rowNumber || 0) - (a._rowNumber || 0));
 
     // Update session loaded rows
     this.loadedRows.update(current => {
       const updated = options?.replaceInitial ? [...sorted] : [...current];
+      let hasChanges = false;
+
       if (!options?.replaceInitial) {
         sorted.forEach(row => {
           const idx = updated.findIndex((r: any) => r._rowNumber === (row as any)._rowNumber);
-          if (idx !== -1) updated[idx] = row;
-          else updated.push(row);
+          if (idx !== -1) {
+            // Check if actual content changed to avoid redundant signal updates
+            if (JSON.stringify(updated[idx]) !== JSON.stringify(row)) {
+              updated[idx] = row;
+              hasChanges = true;
+            }
+          } else {
+            updated.push(row);
+            hasChanges = true;
+          }
         });
+      } else {
+        hasChanges = true;
       }
+
+      if (!hasChanges && !options?.replaceInitial) return current;
       return updated.sort((a: any, b: any) => (b._rowNumber || 0) - (a._rowNumber || 0));
     });
 
     // Update allRecords for dashboard compatibility (unless already fully loaded)
-    if (!this.isFullyLoaded()) {
-      this.allRecords.set(this.loadedRows());
-    }
+    // Always update allRecords for dashboard compatibility (real-time updates)
+    this.allRecords.set(this.loadedRows());
 
     // Update visible rows
     if (!this.hasActiveFilter(this.listState().query)) {
@@ -379,5 +406,61 @@ export abstract class LargeSheetListService<T> {
       Object.values(query.filters || {}).some(v => v !== undefined && v !== null && v !== '') ||
       (query.dateRange && (query.dateRange.start || query.dateRange.end))
     );
+  }
+
+  /**
+   * Starts background synchronization.
+   * @param activeInterval Frequency to check for new rows and refresh the top chunk (default 5s)
+   * @param backgroundInterval Frequency to refresh a larger set of records for edits (default 20s)
+   */
+  public startBackgroundSync(activeInterval = 5000, backgroundInterval = 20000): void {
+    if (this.syncSubscription) return;
+
+    this.syncSubscription = timer(activeInterval, activeInterval).pipe(
+      filter(() => !document.hidden && !this.listState().isFiltering),
+      switchMap((tick) => {
+        // Every backgroundInterval (roughly), do a deeper sync
+        const isBackgroundTick = (tick * activeInterval) % backgroundInterval === 0;
+        return this.performSync(isBackgroundTick);
+      }),
+      catchError(err => {
+        console.error('Background sync failed:', err);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  private performSync(isBackgroundTick: boolean): Observable<any> {
+    // 1. Resolve Last Row to detect NEW rows (optimized probe from current last)
+    const currentLast = this.lastDataRow() || 2;
+    return this.resolveLastDataRow(currentLast).pipe(
+      switchMap(newLastRow => {
+        const syncTasks: Observable<any>[] = [];
+
+        // If new rows exist, fetch them
+        if (newLastRow > currentLast) {
+          syncTasks.push(this.fetchChunk(currentLast + 1, newLastRow));
+        }
+
+        // 2. Refresh the "Current Page" (top chunk) for edits every tick (5s)
+        const topChunkStart = Math.max(2, newLastRow - 50); // Sync top 50 for performance
+        syncTasks.push(this.fetchChunk(topChunkStart, newLastRow));
+
+        // 3. If it's a background tick (20s), refresh a larger window
+        if (isBackgroundTick) {
+          const midChunkStart = Math.max(2, newLastRow - 200);
+          syncTasks.push(this.fetchChunk(midChunkStart, newLastRow));
+        }
+
+        return syncTasks.length > 0 ? from(syncTasks).pipe(switchMap(t => t)) : of(null);
+      })
+    );
+  }
+
+  public stopBackgroundSync(): void {
+    if (this.syncSubscription) {
+      this.syncSubscription.unsubscribe();
+      this.syncSubscription = undefined;
+    }
   }
 }
