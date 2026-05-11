@@ -383,7 +383,6 @@ interface ColumnFilter {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
               </div>
             </div>
->
 
             <!-- Row Template (Shared) -->
             <ng-template #rowTemplate let-row="row">

@@ -280,10 +280,11 @@ export abstract class LargeSheetListService<T> {
 
     // Update visible rows
     if (!this.hasActiveFilter(this.listState().query)) {
+      const active = this.loadedRows().filter((r: any) => r.isDeleted !== true);
       this.listState.update(s => ({
         ...s,
-        visibleRows: this.loadedRows(),
-        totalLoaded: this.loadedRows().length
+        visibleRows: active,
+        totalLoaded: active.length
       }));
     } else {
       // Re-trigger filtering with current query to include new rows
@@ -299,7 +300,9 @@ export abstract class LargeSheetListService<T> {
     
     if (!hasFilter) {
       // Show ALL loaded rows if no filter, don't cap at 100
-      this.listState.update(s => ({ ...s, visibleRows: this.isFullyLoaded() ? this.allRecords() : this.loadedRows(), isFiltering: false }));
+      const source = this.isFullyLoaded() ? this.allRecords() : this.loadedRows();
+      const active = source.filter((r: any) => r.isDeleted !== true);
+      this.listState.update(s => ({ ...s, visibleRows: active, isFiltering: false }));
       return;
     }
 
@@ -321,7 +324,7 @@ export abstract class LargeSheetListService<T> {
       });
     } else {
       // Fallback (identical logic to worker)
-      let filtered = this.isFullyLoaded() ? this.allRecords() : this.loadedRows();
+      let filtered = (this.isFullyLoaded() ? this.allRecords() : this.loadedRows()).filter((r: any) => r.isDeleted !== true);
       
       if (query.search) {
         const term = query.search.toLowerCase();

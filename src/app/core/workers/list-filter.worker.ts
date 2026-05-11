@@ -8,7 +8,7 @@ addEventListener('message', ({ data }) => {
     return;
   }
 
-  let filtered = [...records];
+  let filtered = [...records].filter(r => r.isDeleted !== true);
 
   // 1. Search Filter (Global text search)
   if (query.search) {
