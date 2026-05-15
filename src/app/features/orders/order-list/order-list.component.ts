@@ -257,7 +257,7 @@ interface ColumnFilter {
           }
 
           <!-- Actual Content -->
-          <div *ngIf="!orderService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
+          <div *ngIf="visibleRows().length > 0 || !orderService.isLoading() || orderService.listState().totalLoaded > 0" class="flex-1 flex flex-col min-h-0 relative">
             
             <!-- Searching State -->
             <div *ngIf="orderService.listState().isFiltering" 
@@ -384,10 +384,12 @@ interface ColumnFilter {
             </cdk-virtual-scroll-viewport>
 
             <!-- Mobile List (Only if results) -->
-            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full flex flex-col">
-              <div *ngFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
-                <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
-              </div>
+            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
+              <cdk-virtual-scroll-viewport [itemSize]="210" class="h-full w-full custom-scrollbar" style="height: 100%;">
+                <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+                </div>
+              </cdk-virtual-scroll-viewport>
             </div>
 
             <!-- Row Template (Shared) -->
@@ -629,13 +631,12 @@ interface ColumnFilter {
     }
     
     .virtual-row {
-      content-visibility: auto;
-      contain-intrinsic-size: 1px 72px; /* Predicted height for desktop */
+      min-height: 72px;
     }
     
     @media (max-width: 767px) {
       .virtual-row {
-        contain-intrinsic-size: 1px 210px; /* Predicted height for mobile */
+        min-height: 210px;
       }
     }
   `]

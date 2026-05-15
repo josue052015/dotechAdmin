@@ -45,7 +45,35 @@ export abstract class LargeSheetListService<T> {
   constructor() {
     if (typeof Worker !== 'undefined') {
       this.worker = new Worker(new URL('../workers/list-filter.worker', import.meta.url));
+      this.setupWorkerListener();
     }
+  }
+
+  private setupWorkerListener(): void {
+    if (!this.worker) return;
+    this.worker.onmessage = ({ data }) => {
+      const { filtered, totalCount, queryVersion, sheetName } = data;
+      if (sheetName !== this.SHEET_NAME) return;
+      if (queryVersion !== undefined && queryVersion < this.lastQueryVersion) return;
+
+      this.listState.update(s => {
+        let newVisible = s.visibleRows;
+        if (filtered !== undefined) {
+          newVisible = filtered;
+        } else if (totalCount !== undefined && !this.hasActiveFilter(s.query)) {
+          // If we got a totalCount sync and NO filter is active,
+          // ensure visibleRows matches loadedRows (latest session data)
+          newVisible = this.loadedRows().filter((r: any) => r.isDeleted !== true);
+        }
+
+        return { 
+          ...s, 
+          visibleRows: newVisible, 
+          totalLoaded: totalCount !== undefined ? totalCount : s.totalLoaded,
+          isFiltering: queryVersion !== undefined ? false : s.isFiltering
+        };
+      });
+    };
   }
 
   public initLargeList(): void {
@@ -318,12 +346,10 @@ export abstract class LargeSheetListService<T> {
   }
 
   protected mergeRowsIntoState(newRows: T[], options?: { replaceInitial?: boolean }): void {
-    // Guard: If no rows were mapped (cached or empty response), do nothing
     if (newRows.length === 0) return;
 
     const sorted = [...newRows].sort((a: any, b: any) => (b._rowNumber || 0) - (a._rowNumber || 0));
 
-    // Update session loaded rows
     this.loadedRows.update(current => {
       const updated = options?.replaceInitial ? [...sorted] : [...current];
       let hasChanges = false;
@@ -332,7 +358,6 @@ export abstract class LargeSheetListService<T> {
         sorted.forEach(row => {
           const idx = updated.findIndex((r: any) => r._rowNumber === (row as any)._rowNumber);
           if (idx !== -1) {
-            // Check if actual content changed to avoid redundant signal updates
             if (JSON.stringify(updated[idx]) !== JSON.stringify(row)) {
               updated[idx] = row;
               hasChanges = true;
@@ -350,11 +375,17 @@ export abstract class LargeSheetListService<T> {
       return updated.sort((a: any, b: any) => (b._rowNumber || 0) - (a._rowNumber || 0));
     });
 
-    // Update allRecords for dashboard compatibility (unless already fully loaded)
-    // Always update allRecords for dashboard compatibility (real-time updates)
     this.allRecords.set(this.loadedRows());
 
-    // Update visible rows
+    // Sync to Stateful Worker
+    if (this.worker) {
+      this.worker.postMessage({
+        type: options?.replaceInitial ? 'SET_RECORDS' : 'ADD_RECORDS',
+        records: newRows,
+        sheetName: this.SHEET_NAME
+      });
+    }
+
     if (!this.hasActiveFilter(this.listState().query)) {
       const active = this.loadedRows().filter((r: any) => r.isDeleted !== true);
       this.listState.update(s => ({
@@ -363,7 +394,6 @@ export abstract class LargeSheetListService<T> {
         totalLoaded: active.length
       }));
     } else {
-      // Re-trigger filtering with current query to include new rows
       this.applyQuery(this.listState().query);
     }
   }
@@ -375,7 +405,6 @@ export abstract class LargeSheetListService<T> {
     this.listState.update(s => ({ ...s, query, isFiltering: !!hasFilter }));
     
     if (!hasFilter) {
-      // Show ALL loaded rows if no filter, don't cap at 100
       const source = this.isFullyLoaded() ? this.allRecords() : this.loadedRows();
       const active = source.filter((r: any) => r.isDeleted !== true);
       this.listState.update(s => ({ ...s, visibleRows: active, isFiltering: false }));
@@ -384,19 +413,11 @@ export abstract class LargeSheetListService<T> {
 
     if (this.worker) {
       this.lastQueryVersion++;
-      const currentVersion = this.lastQueryVersion;
-
-      this.worker.onmessage = ({ data }) => {
-        if (data.queryVersion && data.queryVersion < this.lastQueryVersion) return;
-        // Don't slice worker results either
-        this.listState.update(s => ({ ...s, visibleRows: data.filtered, isFiltering: false }));
-      };
-
       this.worker.postMessage({ 
-        records: this.isFullyLoaded() ? this.allRecords() : this.loadedRows(), 
+        type: 'APPLY_QUERY',
         query, 
         sheetName: this.SHEET_NAME,
-        queryVersion: currentVersion
+        queryVersion: this.lastQueryVersion
       });
     } else {
       // Fallback (identical logic to worker)

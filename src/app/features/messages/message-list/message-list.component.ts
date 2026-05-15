@@ -9,13 +9,15 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { Router } from '@angular/router';
 import { ConfirmService } from '../../../core/services/confirm.service';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @Component({
    selector: 'app-message-list',
    standalone: true,
    changeDetection: ChangeDetectionStrategy.OnPush,
    imports: [
-      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, MatProgressSpinnerModule, MatDialogModule
+      CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, 
+      MatProgressSpinnerModule, MatDialogModule, ScrollingModule
    ],
    template: `
     <div class="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -51,46 +53,50 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
       <!-- Template Grid (Visible only when not editing) -->
       @if (!showForm()) {
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-         @for (template of filteredTemplates(); track template.id) {
-         <div class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
-            <div class="flex justify-between items-start mb-4">
-               <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success-text border border-success/20">
-                    <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
+      <div class="h-[70vh] min-h-[500px]">
+         <cdk-virtual-scroll-viewport itemSize="240" class="h-full w-full custom-scrollbar">
+            <div *cdkVirtualFor="let row of templateRows()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+               @for (template of row; track template.id) {
+               <div class="card-stitch p-6 group hover:border-primary/30 transition-all flex flex-col min-h-[220px]">
+                  <div class="flex justify-between items-start mb-4">
+                     <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success-text border border-success/20">
+                          <lucide-icon name="message-square" class="w-5 h-5"></lucide-icon>
+                        </div>
+                        <div class="flex flex-col">
+                           <span class="text-sm font-bold text-slate-900 leading-tight">{{ template.name }}</span>
+                           <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">WhatsApp / Global</span>
+                        </div>
+                     </div>
+                     <div class="flex items-center h-6 px-2 rounded-full bg-slate-50 border border-slate-100">
+                        <span class="w-1.5 h-1.5 rounded-full bg-success mr-2"></span>
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Active</span>
+                     </div>
                   </div>
-                  <div class="flex flex-col">
-                     <span class="text-sm font-bold text-slate-900 leading-tight">{{ template.name }}</span>
-                     <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">WhatsApp / Global</span>
+
+                  <p class="text-xs text-slate-500 font-medium leading-relaxed flex-1 line-clamp-3 italic mb-6">
+                     "{{ template.text }}"
+                  </p>
+
+                  <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID: {{ template.id }}</span>
+                     <div class="flex items-center space-x-1">
+                        <button (click)="editTemplate(template)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90">
+                           <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
+                        </button>
+                        <button class="p-2 text-text-muted hover:text-text hover:bg-slate-100 rounded-lg transition-all active:scale-90">
+                           <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
+                        </button>
+                        <button (click)="deleteTemplate(template)" class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all active:scale-90">
+                           <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
+                        </button>
+                     </div>
                   </div>
                </div>
-               <div class="flex items-center h-6 px-2 rounded-full bg-slate-50 border border-slate-100">
-                  <span class="w-1.5 h-1.5 rounded-full bg-success mr-2"></span>
-                  <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Active</span>
-               </div>
+               }
             </div>
-
-            <p class="text-xs text-slate-500 font-medium leading-relaxed flex-1 line-clamp-3 italic mb-6">
-               "{{ template.text }}"
-            </p>
-
-            <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">ID: {{ template.id }}</span>
-               <div class="flex items-center space-x-1">
-                  <button (click)="editTemplate(template)" class="p-2 text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90">
-                     <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
-                  </button>
-                  <button class="p-2 text-text-muted hover:text-text hover:bg-slate-100 rounded-lg transition-all active:scale-90">
-                     <lucide-icon name="copy" class="w-4 h-4"></lucide-icon>
-                  </button>
-                  <button (click)="deleteTemplate(template)" class="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all active:scale-90">
-                     <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
-                  </button>
-               </div>
-            </div>
-         </div>
-         }
+         </cdk-virtual-scroll-viewport>
+      </div>
 
          <!-- Empty State for Search or No Data -->
          @if (filteredTemplates().length === 0 && !messageService.isLoading()) {
@@ -108,7 +114,6 @@ import { ConfirmService } from '../../../core/services/confirm.service';
             <p class="text-sm text-slate-400 mt-4 animate-pulse uppercase tracking-widest font-black">Cargando plantillas...</p>
          </div>
          }
-      </div>
       }
 
       <!-- Sophisticated Template Editor -->
@@ -265,6 +270,15 @@ export class MessageListComponent implements OnInit {
    isSaving = signal(false);
    currentRowNumber: number | null = null;
    previewText = signal('');
+
+   templateRows = computed(() => {
+      const templates = this.filteredTemplates();
+      const rows = [];
+      for (let i = 0; i < templates.length; i += 3) {
+         rows.push(templates.slice(i, i + 3));
+      }
+      return rows;
+   });
 
    templateForm: FormGroup = this.fb.group({
       name: ['', Validators.required],

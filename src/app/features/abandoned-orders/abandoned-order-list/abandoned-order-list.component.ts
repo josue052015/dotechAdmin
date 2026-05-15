@@ -120,27 +120,6 @@ interface ColumnFilter {
          </ng-container>
       </div>
 
-      <!-- Filter by Column Buttons 
-      <div class="flex flex-col space-y-3">
-         <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Filter by Column</span>
-         <div class="flex flex-wrap gap-2">
-            <button *ngFor="let col of columnDefs" 
-                    [matMenuTriggerFor]="filterMenu" 
-                    (click)="activeFilterCol = col.id"
-                    class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-500 hover:border-primary/30 hover:text-primary transition-all shadow-sm flex items-center space-x-2"
-                    [class.border-primary]="isColumnFiltered(col.id)"
-                    [class.text-primary]="isColumnFiltered(col.id)">
-               <span>{{ col.label }}</span>
-               <lucide-icon name="chevron-down" class="w-3 h-3 opacity-50"></lucide-icon>
-            </button>
-            
-            <mat-menu #filterMenu="matMenu" class="filter-menu-popover">
-               <ng-container *ngTemplateOutlet="filterTemplate; context: { column: activeFilterCol }"></ng-container>
-            </mat-menu>
-         </div>
-      </div>
-      -->
-
       <!-- Main Table Container -->
       <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col w-full max-w-full">
         <div class="relative flex-1 flex flex-col min-h-0 w-full">
@@ -194,7 +173,7 @@ interface ColumnFilter {
           </div>
 
           <!-- Actual Content -->
-          <div *ngIf="!abandonedOrderService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
+          <div *ngIf="visibleRows().length > 0 || !abandonedOrderService.isLoading() || abandonedOrderService.listState().totalLoaded > 0" class="flex-1 flex flex-col min-h-0 relative">
             
             <!-- Searching State -->
             <div *ngIf="abandonedOrderService.listState().isFiltering" 
@@ -214,7 +193,7 @@ interface ColumnFilter {
               <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                 <lucide-icon name="package-open" class="w-12 h-12 text-slate-300"></lucide-icon>
               </div>
-              <h3 class="text-xl font-bold text-slate-800 mb-2">No hay pedidos abandonados</h3>
+              <h3 class="text-xl font-bold text-slate-800 mb-2">No se encontraron órdenes</h3>
               <p class="text-slate-500 max-w-sm">
                 No hay registros que coincidan con los filtros seleccionados o la base de datos está vacía.
               </p>
@@ -301,11 +280,12 @@ interface ColumnFilter {
                <div class="col-span-1"></div>
             </div>
 
-            <div class="flex-1 w-full" *ngIf="visibleRows().length > 0">
-              <!-- Desktop Rows -->
-              <ng-container *ngFor="let row of visibleRows(); trackBy: trackByRowNumber">
-                  @defer (on viewport) {                   <div (click)="openOrderDetail(row)"
-                        class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group">
+            <div class="flex-1 w-full relative h-[70vh] min-h-[600px]" *ngIf="visibleRows().length > 0">
+              <cdk-virtual-scroll-viewport [itemSize]="isMobile() ? 210 : 80" class="h-full w-full custom-scrollbar" style="height: 100%;">
+                <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                  <!-- Desktop Layout -->
+                  <div (click)="openOrderDetail(row)"
+                        class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group h-full">
                   
                   <div class="col-span-1 text-[11px] font-bold text-slate-500 italic">{{ row.date | date:'dd/MM/yy' }}</div>
                   
@@ -347,29 +327,11 @@ interface ColumnFilter {
                      </div>
                   </div>
                   </div>
-                  } @placeholder {
-                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-6 border-b border-slate-50 items-center animate-pulse">
-                      <div class="col-span-1 h-3 bg-slate-100 rounded w-12"></div>
-                      <div class="col-span-2 flex items-center space-x-4">
-                        <div class="w-10 h-10 rounded-full bg-slate-100"></div>
-                        <div class="space-y-2 flex-1">
-                          <div class="h-4 bg-slate-100 rounded w-24"></div>
-                          <div class="h-2 bg-slate-100 rounded w-12"></div>
-                        </div>
-                      </div>
-                      <div class="col-span-2 h-3 bg-slate-100 rounded w-20"></div>
-                      <div class="col-span-3 h-3 bg-slate-100 rounded w-32"></div>
-                      <div class="col-span-1 h-3 bg-slate-100 rounded w-8"></div>
-                      <div class="col-span-1 h-4 bg-slate-100 rounded w-16"></div>
-                      <div class="col-span-1 h-4 bg-slate-100 rounded w-8"></div>
-                    </div>
-                  }
 
                   <!-- Mobile Layout -->
-                  @defer (on viewport) {
                   <div (click)="openOrderDetail(row)"
-                        class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
-                   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4">
+                        class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full">
+                   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4 h-full">
                       <div class="flex justify-between items-start gap-2">
                          <div class="flex items-center space-x-3 min-w-0">
                             <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
@@ -389,11 +351,11 @@ interface ColumnFilter {
                       <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
                          <div class="flex items-start justify-between gap-4">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Product</span>
-                            <span class="text-[11px] font-bold text-slate-900 text-right min-w-0 truncate leading-relaxed block">{{row.productName}}</span>
+                            <span class="text-[11px] font-bold text-slate-900 text-right min-w-0 truncate leading-relaxed block uppercase">{{row.productName}}</span>
                          </div>
                          <div class="flex items-center justify-between border-t border-slate-100 pt-2">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</span>
-                            <span class="text-[11px] font-bold text-slate-900">{{row.province}}, {{row.city}}</span>
+                            <span class="text-[11px] font-bold text-slate-900 uppercase">{{row.province}}, {{row.city}}</span>
                          </div>
                          <div class="flex items-center justify-between border-t border-slate-100 pt-2">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
@@ -416,32 +378,14 @@ interface ColumnFilter {
                       </div>
                    </div>
                   </div>
-                  } @placeholder {
-                    <div class="md:hidden p-4 border-b border-slate-50">
-                      <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 animate-pulse">
-                        <div class="flex items-center space-x-3">
-                          <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
-                          <div class="space-y-2 flex-1">
-                            <div class="h-4 bg-slate-100 rounded w-32"></div>
-                            <div class="h-2 bg-slate-100 rounded w-16"></div>
-                          </div>
-                        </div>
-                        <div class="h-20 bg-slate-50 rounded-xl"></div>
-                        <div class="flex justify-between items-center">
-                          <div class="h-8 bg-slate-100 rounded-xl w-24"></div>
-                          <div class="h-8 bg-slate-100 rounded-xl w-20"></div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-              </ng-container>
-
+                </div>
+              </cdk-virtual-scroll-viewport>
             </div>
           </div>
         </div>
 
          <!-- Styled Paginator -->
-         <div *ngIf="!abandonedOrderService.isLoading()" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
+         <div *ngIf="!abandonedOrderService.isLoading() || visibleRows().length > 0" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
                Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> registros
             </div>
@@ -507,11 +451,15 @@ interface ColumnFilter {
   styles: [`
     :host { display: block; }
     .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
+    .virtual-row { min-height: 80px; }
+    @media (max-width: 767px) {
+      .virtual-row { min-height: 210px; }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AbandonedOrderListComponent implements OnInit {
-  public isMobile = window.innerWidth < 768;
+  public isMobile = signal(window.innerWidth < 768);
   public abandonedOrderService = inject(AbandonedOrderService);
   public productService = inject(ProductService);
   public locationService = inject(LocationService);
@@ -561,6 +509,10 @@ export class AbandonedOrderListComponent implements OnInit {
     this.productService.initLargeList();
     this.messageService.loadTemplates(true).subscribe();
     this.exportTemplateService.loadTemplates(true).subscribe();
+
+    window.addEventListener('resize', () => {
+      this.isMobile.set(window.innerWidth < 768);
+    });
 
     this.filterForm.valueChanges.pipe(
       debounceTime(300),
@@ -702,7 +654,7 @@ export class AbandonedOrderListComponent implements OnInit {
   isAllSelected(col: string, search: string = ''): boolean {
     const uniqueVals = this.getUniqueValuesForCol(col, search);
     const selected = this.columnFilters()[col]?.values || [];
-    return uniqueVals.every(v => selected.includes(v));
+    return uniqueVals.length > 0 && uniqueVals.every(v => selected.includes(v));
   }
 
   isPartiallySelected(col: string, search: string = ''): boolean {
