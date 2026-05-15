@@ -112,11 +112,14 @@ interface ColumnFilter {
       </div>
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col">
-        <div class="relative flex-1 flex flex-col min-h-0">
+      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
+             [class.overflow-hidden]="!isMobile()"
+             [class.h-[calc(100vh-460px)]]="!isMobile()"
+             [class.min-h-[500px]]="!isMobile()">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
           
           <!-- Loading Skeletons (Only when truly empty) -->
-          <div *ngIf="productService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto">
+          <div *ngIf="productService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto bg-white" style="contain: paint layout;">
             <!-- Desktop Table Skeleton -->
             <div class="hidden md:block">
               <table class="table-stitch">
@@ -168,7 +171,7 @@ interface ColumnFilter {
           </div>
 
           <!-- Actual Content -->
-          <div *ngIf="visibleRows().length > 0 || !productService.isLoading()" class="flex-1 flex flex-col">
+          <div *ngIf="visibleRows().length > 0 || !productService.isLoading()" class="flex-1 flex flex-col min-h-0 relative">
             
             <!-- Empty State -->
             <div *ngIf="!productService.isLoading() && visibleRows().length === 0" 
@@ -178,23 +181,82 @@ interface ColumnFilter {
               </div>
               <h3 class="text-xl font-bold text-slate-800 mb-2">No hay productos disponibles</h3>
               <p class="text-slate-500 max-w-sm text-sm">
-                No se encontraron productos en el catÃ¡logo o no coinciden con la bÃºsqueda.
+                No se encontraron productos en el catálogo o no coinciden con la búsqueda.
               </p>
             </div>
 
             <!-- Desktop Header (Only if data exists) -->
             <div *ngIf="visibleRows().length > 0" class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
-               <div class="col-span-4 text-left">Product Details</div>
-               <div class="col-span-2 text-left ml-4">Category</div>
-               <div class="col-span-2 text-left">Price</div>
-               <div class="col-span-1 text-left">Stock</div>
-               <div class="col-span-2 text-left">Status</div>
+               <div class="col-span-4 flex items-center space-x-2 text-left">
+                  <span>Product Details</span>
+                  <button [matMenuTriggerFor]="nameFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('name')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #nameFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'name' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2 text-left ml-4">
+                  <span>Category</span>
+                  <button [matMenuTriggerFor]="categoryFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('category')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #categoryFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'category' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2 text-left">
+                  <span>Price</span>
+                  <button [matMenuTriggerFor]="priceFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('price')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #priceFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'price' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-1 flex items-center space-x-2 text-left">
+                  <span>Stock</span>
+                  <button [matMenuTriggerFor]="stockFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('stock')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #stockFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'stock' }"></ng-container>
+                  </mat-menu>
+               </div>
+               <div class="col-span-2 flex items-center space-x-2 text-left">
+                  <span>Status</span>
+                  <button [matMenuTriggerFor]="statusFilterMenu" (click)="$event.stopPropagation()" class="p-1 hover:bg-slate-200 rounded transition-colors" [class.text-primary]="isColumnFiltered('status')">
+                     <lucide-icon name="filter" class="w-3 h-3"></lucide-icon>
+                  </button>
+                  <mat-menu #statusFilterMenu="matMenu" class="filter-menu-popover">
+                     <ng-container *ngTemplateOutlet="filterTemplate; context: { column: 'status' }"></ng-container>
+                  </mat-menu>
+               </div>
                <div class="col-span-1 text-left"></div>
             </div>
 
-            <div class="flex-1 w-full relative h-[70vh] min-h-[600px]">
-              <cdk-virtual-scroll-viewport [itemSize]="isMobile() ? 100 : 80" class="h-full w-full custom-scrollbar" style="height: 100%;">
+            <!-- Viewport Desktop (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
+                  [itemSize]="80" 
+                  class="flex-1 w-full outline-none"
+                  style="height: 100%; min-height: 500px;"
+                  (scrolledIndexChange)="onScroll($event)">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+              </div>
+            </cdk-virtual-scroll-viewport>
+
+            <!-- Viewport Mobile (Only if results) -->
+            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
+              <cdk-virtual-scroll-viewport [itemSize]="100" class="h-full w-full custom-scrollbar" style="height: 100%;" (scrolledIndexChange)="onScroll($event)">
                 <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+                </div>
+              </cdk-virtual-scroll-viewport>
+            </div>
+
+            <!-- Row Template (Shared) -->
+            <ng-template #rowTemplate let-row="row">
                   <!-- Desktop Layout -->
                   <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all items-center group h-full">
                     <div class="col-span-4 flex items-center space-x-5 text-left">
@@ -273,19 +335,20 @@ interface ColumnFilter {
                         </div>
                      </div>
                   </div>
-                </div>
-              </cdk-virtual-scroll-viewport>
-            </div>
+            </ng-template>
           </div>
         </div>
       </div>
 
-        <div *ngIf="!productService.isLoading()" class="px-5 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-           <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-              Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> productos
+        <div *ngIf="!productService.isLoading() || visibleRows().length > 0" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
+           <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
+              TOTAL RECORDS: <span class="text-slate-900 ml-1">{{ visibleRows().length }}</span>
            </div>
            <div class="flex items-center space-x-4">
-               <button *ngIf="productService.listState().hasMore" (click)="productService.loadMoreChunk()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">Cargar más productos</button><div *ngIf="!productService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300"><span class="text-[10px] font-bold uppercase tracking-widest">Fin de la lista</span><lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon></div>
+               <div *ngIf="!productService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
+                  <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
+                  <span class="text-[10px] font-bold uppercase tracking-widest">LISTA COMPLETA</span>
+               </div>
            </div>
          </div>
       </div>
@@ -347,6 +410,7 @@ interface ColumnFilter {
   `,
   styles: [`
     :host { display: block; }
+    .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
     .virtual-row { min-height: 80px; }
     @media (max-width: 767px) {
       .virtual-row { min-height: 100px; }
@@ -510,7 +574,7 @@ export class ProductListComponent implements OnInit {
   isAllSelected(col: string, search: string = ''): boolean {
     const uniqueVals = this.getUniqueValuesForCol(col, search);
     const selected = this.columnFilters()[col]?.values || [];
-    return uniqueVals.length > 0 && uniqueVals.every(selected.includes);
+    return uniqueVals.length > 0 && uniqueVals.every(v => selected.includes(v));
   }
 
   isPartiallySelected(col: string, search: string = ''): boolean {

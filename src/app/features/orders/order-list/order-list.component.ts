@@ -554,7 +554,7 @@ interface ColumnFilter {
                   <span class="text-[9px] font-bold uppercase tracking-widest">Sincronizando...</span>
                </div>
                <div *ngIf="!orderService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
-                  <lucide-icon name="check-circle-2" class="w-3 h-3"></lucide-icon>
+                  <lucide-icon name="check-circle" class="w-3 h-3"></lucide-icon>
                   <span class="text-[9px] font-bold uppercase tracking-widest">Lista Completa</span>
                </div>
             </div>

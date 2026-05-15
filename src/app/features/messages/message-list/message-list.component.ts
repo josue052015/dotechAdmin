@@ -53,7 +53,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 
       <!-- Template Grid (Visible only when not editing) -->
       @if (!showForm()) {
-      <div class="h-[70vh] min-h-[500px]">
+      <div class="h-[calc(100vh-240px)] min-h-[500px]">
          <cdk-virtual-scroll-viewport itemSize="240" class="h-full w-full custom-scrollbar">
             <div *cdkVirtualFor="let row of templateRows()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                @for (template of row; track template.id) {

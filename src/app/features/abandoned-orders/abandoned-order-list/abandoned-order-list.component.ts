@@ -25,20 +25,20 @@ import { AbandonedOrderDetailComponent } from '../abandoned-order-detail/abandon
 
 
 interface ColumnFilter {
-  operator: 'eq' | 'neq';
-  values: string[];
+   operator: 'eq' | 'neq';
+   values: string[];
 }
 
 @Component({
-  selector: 'app-abandoned-order-list',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
-    LucideAngularModule, MatProgressSpinnerModule, ScrollingModule,
-    MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule,
-    AbandonedOrderDetailComponent
-  ],
-  template: `
+   selector: 'app-abandoned-order-list',
+   standalone: true,
+   imports: [
+      CommonModule, RouterModule, ReactiveFormsModule, FormsModule, MatTableModule,
+      LucideAngularModule, MatProgressSpinnerModule, ScrollingModule,
+      MatMenuModule, MatCheckboxModule, MatSnackBarModule, MatDialogModule,
+      AbandonedOrderDetailComponent
+   ],
+   template: `
     <div class="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       <!-- Top Actions Row -->
@@ -121,11 +121,14 @@ interface ColumnFilter {
       </div>
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white overflow-hidden min-h-[500px] flex flex-col w-full max-w-full">
-        <div class="relative flex-1 flex flex-col min-h-0 w-full">
+      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
+             [class.overflow-hidden]="!isMobile()"
+             [class.h-[calc(100vh-320px)]]="!isMobile()"
+             [class.min-h-[500px]]="!isMobile()">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
           
           <!-- Loading Skeletons (Only when truly empty) -->
-          <div *ngIf="abandonedOrderService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto">
+          <div *ngIf="abandonedOrderService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto bg-white" style="contain: paint layout;">
             <!-- Desktop Table Skeleton -->
             <div class="hidden md:block">
               <div class="hidden md:grid grid-cols-7 gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100">
@@ -280,9 +283,28 @@ interface ColumnFilter {
                <div class="col-span-1"></div>
             </div>
 
-            <div class="flex-1 w-full relative h-[70vh] min-h-[600px]" *ngIf="visibleRows().length > 0">
-              <cdk-virtual-scroll-viewport [itemSize]="isMobile() ? 210 : 80" class="h-full w-full custom-scrollbar" style="height: 100%;">
+            <!-- Viewport Desktop (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
+                  [itemSize]="80" 
+                  class="flex-1 w-full outline-none"
+                  style="height: 100%;"
+                  (scrolledIndexChange)="onScroll($event)">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+              </div>
+            </cdk-virtual-scroll-viewport>
+
+            <!-- Viewport Mobile (Only if results) -->
+            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
+              <cdk-virtual-scroll-viewport [itemSize]="210" class="h-full w-full custom-scrollbar" style="height: 100%;" (scrolledIndexChange)="onScroll($event)">
                 <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
+                </div>
+              </cdk-virtual-scroll-viewport>
+            </div>
+
+            <!-- Row Template (Shared) -->
+            <ng-template #rowTemplate let-row="row">
                   <!-- Desktop Layout -->
                   <div (click)="openOrderDetail(row)"
                         class="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-all cursor-pointer items-center group h-full">
@@ -378,9 +400,7 @@ interface ColumnFilter {
                       </div>
                    </div>
                   </div>
-                </div>
-              </cdk-virtual-scroll-viewport>
-            </div>
+            </ng-template>
           </div>
         </div>
 
@@ -390,11 +410,7 @@ interface ColumnFilter {
                Mostrando <span class="text-slate-900">{{ visibleRows().length }}</span> registros
             </div>
             <div class="flex items-center space-x-4">
-               <button *ngIf="abandonedOrderService.listState().hasMore" 
-                       (click)="abandonedOrderService.loadMoreChunk()"
-                       class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
-                  Cargar mÃ¡s pedidos
-               </button>
+             
                <div *ngIf="!abandonedOrderService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
                   <span class="text-[10px] font-bold uppercase tracking-widest">Fin de la lista</span>
                   <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
@@ -448,7 +464,7 @@ interface ColumnFilter {
        </div>
     </ng-template>
   `,
-  styles: [`
+   styles: [`
     :host { display: block; }
     .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
     .virtual-row { min-height: 80px; }
@@ -456,239 +472,239 @@ interface ColumnFilter {
       .virtual-row { min-height: 210px; }
     }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AbandonedOrderListComponent implements OnInit {
-  public isMobile = signal(window.innerWidth < 768);
-  public abandonedOrderService = inject(AbandonedOrderService);
-  public productService = inject(ProductService);
-  public locationService = inject(LocationService);
-  public dateFilterService = inject(DateFilterService);
-  private messageService = inject(MessageService);
-  private exportTemplateService = inject(ExportTemplateService);
-  private fb = inject(FormBuilder);
-  private dialog = inject(MatDialog);
-  private router = inject(Router);
-  public Math = Math;
+   public isMobile = signal(window.innerWidth < 768);
+   public abandonedOrderService = inject(AbandonedOrderService);
+   public productService = inject(ProductService);
+   public locationService = inject(LocationService);
+   public dateFilterService = inject(DateFilterService);
+   private messageService = inject(MessageService);
+   private exportTemplateService = inject(ExportTemplateService);
+   private fb = inject(FormBuilder);
+   private dialog = inject(MatDialog);
+   private router = inject(Router);
+   public Math = Math;
 
-  visibleRows = computed(() => this.abandonedOrderService.listState().visibleRows);
-  displayedColumns: string[] = ['date', 'customer', 'province', 'city', 'phone', 'product', 'qty', 'price', 'actions'];
+   visibleRows = computed(() => this.abandonedOrderService.listState().visibleRows);
+   displayedColumns: string[] = ['date', 'customer', 'province', 'city', 'phone', 'product', 'qty', 'price', 'actions'];
 
-  filterForm: FormGroup = this.fb.group({
-    search: [''],
-    productName: [''],
-    province: [''],
-    carrier: ['']
-  });
+   filterForm: FormGroup = this.fb.group({
+      search: [''],
+      productName: [''],
+      province: [''],
+      carrier: ['']
+   });
 
-  activeFilterCol = '';
-  columnDefs = [
-    { id: 'date', label: 'Date' },
-    { id: 'id', label: 'Order ID' },
-    { id: 'fullName', label: 'Customer' },
-    { id: 'province', label: 'Province' },
-    { id: 'city', label: 'City' },
-    { id: 'phone', label: 'Phone' },
-    { id: 'productName', label: 'Product' },
-    { id: 'productQuantity', label: 'Quantity' },
-    { id: '_totalPrice', label: 'Total' }
-  ];
+   activeFilterCol = '';
+   columnDefs = [
+      { id: 'date', label: 'Date' },
+      { id: 'id', label: 'Order ID' },
+      { id: 'fullName', label: 'Customer' },
+      { id: 'province', label: 'Province' },
+      { id: 'city', label: 'City' },
+      { id: 'phone', label: 'Phone' },
+      { id: 'productName', label: 'Product' },
+      { id: 'productQuantity', label: 'Quantity' },
+      { id: '_totalPrice', label: 'Total' }
+   ];
 
-  carriers = computed(() => {
-     const data = this.abandonedOrderService.allRecords();
-     return Array.from(new Set(data.map(o => o.carrier).filter(Boolean))).sort();
-  });
+   carriers = computed(() => {
+      const data = this.abandonedOrderService.allRecords();
+      return Array.from(new Set(data.map(o => o.carrier).filter(Boolean))).sort();
+   });
 
-  columnFilters = signal<{ [key: string]: ColumnFilter }>({});
-  provinces$ = this.locationService.getProvinces();
-  products = computed(() => this.productService.products());
+   columnFilters = signal<{ [key: string]: ColumnFilter }>({});
+   provinces$ = this.locationService.getProvinces();
+   products = computed(() => this.productService.products());
 
-  ngOnInit() {
-    this.abandonedOrderService.initLargeList();
-    this.abandonedOrderService.startBackgroundSync();
-    this.productService.initLargeList();
-    this.messageService.loadTemplates(true).subscribe();
-    this.exportTemplateService.loadTemplates(true).subscribe();
+   ngOnInit() {
+      this.abandonedOrderService.initLargeList();
+      this.abandonedOrderService.startBackgroundSync();
+      this.productService.initLargeList();
+      this.messageService.loadTemplates(true).subscribe();
+      this.exportTemplateService.loadTemplates(true).subscribe();
 
-    window.addEventListener('resize', () => {
-      this.isMobile.set(window.innerWidth < 768);
-    });
+      window.addEventListener('resize', () => {
+         this.isMobile.set(window.innerWidth < 768);
+      });
 
-    this.filterForm.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
-    ).subscribe(() => {
+      this.filterForm.valueChanges.pipe(
+         debounceTime(300),
+         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+      ).subscribe(() => {
+         this.applyFilters();
+      });
+   }
+
+   ngOnDestroy() {
+      this.abandonedOrderService.stopBackgroundSync();
+   }
+
+   applyFilters() {
+      const colFilters = this.columnFilters();
+      const { search, ...otherFilters } = this.filterForm.value;
+      const dateRange = this.dateFilterService.currentRange();
+
+      this.abandonedOrderService.applyQuery({
+         search,
+         filters: otherFilters,
+         columnFilters: colFilters,
+         dateRange: {
+            start: dateRange.start ? (dateRange.start as any).getTime() : null,
+            end: dateRange.end ? (dateRange.end as any).getTime() : null
+         }
+      });
+   }
+
+   onDateRangeChange(type: any) {
+      this.dateFilterService.setRangeType(type);
       this.applyFilters();
-    });
-  }
+   }
 
-  ngOnDestroy() {
-    this.abandonedOrderService.stopBackgroundSync();
-  }
-
-  applyFilters() {
-    const colFilters = this.columnFilters();
-    const { search, ...otherFilters } = this.filterForm.value;
-    const dateRange = this.dateFilterService.currentRange();
-    
-    this.abandonedOrderService.applyQuery({ 
-      search,
-      filters: otherFilters,
-      columnFilters: colFilters, 
-      dateRange: { 
-        start: dateRange.start ? (dateRange.start as any).getTime() : null, 
-        end: dateRange.end ? (dateRange.end as any).getTime() : null 
+   onScroll(index: number) {
+      const total = this.visibleRows().length;
+      if (index > total - 20) {
+         this.abandonedOrderService.loadMoreChunk();
       }
-    });
-  }
+   }
 
-  onDateRangeChange(type: any) {
-    this.dateFilterService.setRangeType(type);
-    this.applyFilters();
-  }
+   trackByRowNumber(index: number, item: any) {
+      return item['_rowNumber'] || item.id || index;
+   }
 
-  onScroll(index: number) {
-    const total = this.visibleRows().length;
-    if (index > total - 20) {
-      this.abandonedOrderService.loadMoreChunk();
-    }
-  }
+   openExportDialog() {
+      const isFiltering = this.abandonedOrderService.listState().isFiltering;
+      const dataset = isFiltering ? this.visibleRows() : this.abandonedOrderService.allRecords();
 
-  trackByRowNumber(index: number, item: any) {
-    return item['_rowNumber'] || item.id || index;
-  }
+      this.dialog.open(ExportSelectorDialogComponent, {
+         data: {
+            sourceKey: 'abandoned_orders',
+            dataset: dataset
+         },
+         width: '450px',
+         maxWidth: '95vw',
+         panelClass: 'custom-dialog-container'
+      });
+   }
 
-  openExportDialog() {
-    const isFiltering = this.abandonedOrderService.listState().isFiltering;
-    const dataset = isFiltering ? this.visibleRows() : this.abandonedOrderService.allRecords();
+   openOrderDetail(order: AbandonedOrder) {
+      this.dialog.open(AbandonedOrderDetailComponent, {
+         data: { order },
+         width: '1200px',
+         maxWidth: '95vw',
+         maxHeight: '90vh',
+         panelClass: 'custom-dialog-container'
+      });
+   }
 
-    this.dialog.open(ExportSelectorDialogComponent, {
-      data: {
-        sourceKey: 'abandoned_orders',
-        dataset: dataset
-      },
-      width: '450px',
-      maxWidth: '95vw',
-      panelClass: 'custom-dialog-container'
-    });
-  }
+   private snackBar = inject(MatSnackBar);
 
-  openOrderDetail(order: AbandonedOrder) {
-     this.dialog.open(AbandonedOrderDetailComponent, {
-       data: { order },
-       width: '1200px',
-       maxWidth: '95vw',
-       maxHeight: '90vh',
-       panelClass: 'custom-dialog-container'
-     });
-  }
+   openWhatsApp(row: AbandonedOrder) {
+      const templates = this.messageService.templates();
+      const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
+         data: { templates },
+         width: '400px',
+         maxWidth: '95vw',
+         panelClass: 'custom-dialog-container'
+      });
 
-  private snackBar = inject(MatSnackBar);
+      dialogRef.afterClosed().subscribe((template: any) => {
+         if (template) {
+            const url = this.messageService.generateWhatsAppUrl(row, template.text);
+            window.open(url, '_blank');
+         }
+      });
+   }
 
-  openWhatsApp(row: AbandonedOrder) {
-    const templates = this.messageService.templates();
-    const dialogRef = this.dialog.open(WhatsappSelectorDialogComponent, {
-      data: { templates },
-      width: '400px',
-      maxWidth: '95vw',
-      panelClass: 'custom-dialog-container'
-    });
+   // Column Filtering Logic
+   isColumnFiltered(col: string): boolean {
+      return !!this.columnFilters()[col];
+   }
 
-    dialogRef.afterClosed().subscribe((template: any) => {
-      if (template) {
-        const url = this.messageService.generateWhatsAppUrl(row, template.text);
-        window.open(url, '_blank');
+   isColumnValueSelected(col: string, val: string): boolean {
+      const filter = this.columnFilters()[col];
+      return filter ? filter.values.includes(val) : false;
+   }
+
+   toggleColumnValue(col: string, val: string) {
+      const current = this.columnFilters();
+      const colFilter = current[col] || { operator: 'eq', values: [] };
+
+      let newValues = [...colFilter.values];
+      const idx = newValues.indexOf(val);
+      if (idx >= 0) newValues.splice(idx, 1);
+      else newValues.push(val);
+
+      if (newValues.length === 0) {
+         this.clearColumnFilter(col);
+      } else {
+         this.columnFilters.set({
+            ...current,
+            [col]: { ...colFilter, values: newValues }
+         });
       }
-    });
-  }
+   }
 
-  // Column Filtering Logic
-  isColumnFiltered(col: string): boolean {
-    return !!this.columnFilters()[col];
-  }
-
-  isColumnValueSelected(col: string, val: string): boolean {
-    const filter = this.columnFilters()[col];
-    return filter ? filter.values.includes(val) : false;
-  }
-
-  toggleColumnValue(col: string, val: string) {
-    const current = this.columnFilters();
-    const colFilter = current[col] || { operator: 'eq', values: [] };
-    
-    let newValues = [...colFilter.values];
-    const idx = newValues.indexOf(val);
-    if (idx >= 0) newValues.splice(idx, 1);
-    else newValues.push(val);
-
-    if (newValues.length === 0) {
-      this.clearColumnFilter(col);
-    } else {
+   setColumnOperator(col: string, op: 'eq' | 'neq') {
+      const current = this.columnFilters();
+      if (!current[col]) return;
       this.columnFilters.set({
-        ...current,
-        [col]: { ...colFilter, values: newValues }
+         ...current,
+         [col]: { ...current[col], operator: op }
       });
-    }
-  }
+   }
 
-  setColumnOperator(col: string, op: 'eq' | 'neq') {
-    const current = this.columnFilters();
-    if (!current[col]) return;
-    this.columnFilters.set({
-      ...current,
-      [col]: { ...current[col], operator: op }
-    });
-  }
+   getUniqueValuesForCol(col: string, search: string = ''): string[] {
+      const data = this.abandonedOrderService.allRecords();
+      let values = data.map(o => (o as any)[col]);
 
-  getUniqueValuesForCol(col: string, search: string = ''): string[] {
-    const data = this.abandonedOrderService.allRecords();
-    let values = data.map(o => (o as any)[col]);
+      let unique = Array.from(new Set(values.map(v => String(v || '')))).sort();
+      if (search) {
+         unique = unique.filter(v => v.toLowerCase().includes(search.toLowerCase()));
+      }
+      return unique;
+   }
 
-    let unique = Array.from(new Set(values.map(v => String(v || '')))).sort();
-    if (search) {
-      unique = unique.filter(v => v.toLowerCase().includes(search.toLowerCase()));
-    }
-    return unique;
-  }
+   isAllSelected(col: string, search: string = ''): boolean {
+      const uniqueVals = this.getUniqueValuesForCol(col, search);
+      const selected = this.columnFilters()[col]?.values || [];
+      return uniqueVals.length > 0 && uniqueVals.every(v => selected.includes(v));
+   }
 
-  isAllSelected(col: string, search: string = ''): boolean {
-    const uniqueVals = this.getUniqueValuesForCol(col, search);
-    const selected = this.columnFilters()[col]?.values || [];
-    return uniqueVals.length > 0 && uniqueVals.every(v => selected.includes(v));
-  }
+   isPartiallySelected(col: string, search: string = ''): boolean {
+      const uniqueVals = this.getUniqueValuesForCol(col, search);
+      const selected = this.columnFilters()[col]?.values || [];
+      const some = uniqueVals.some(v => selected.includes(v));
+      return some && !this.isAllSelected(col, search);
+   }
 
-  isPartiallySelected(col: string, search: string = ''): boolean {
-    const uniqueVals = this.getUniqueValuesForCol(col, search);
-    const selected = this.columnFilters()[col]?.values || [];
-    const some = uniqueVals.some(v => selected.includes(v));
-    return some && !this.isAllSelected(col, search);
-  }
+   toggleSelectAll(col: string, search: string = '') {
+      const uniqueVals = this.getUniqueValuesForCol(col, search);
+      const isAll = this.isAllSelected(col, search);
 
-  toggleSelectAll(col: string, search: string = '') {
-    const uniqueVals = this.getUniqueValuesForCol(col, search);
-    const isAll = this.isAllSelected(col, search);
-    
-    const current = this.columnFilters();
-    const colFilter = current[col] || { operator: 'eq', values: [] };
-    let newValues = [...colFilter.values];
+      const current = this.columnFilters();
+      const colFilter = current[col] || { operator: 'eq', values: [] };
+      let newValues = [...colFilter.values];
 
-    if (isAll) {
-      newValues = newValues.filter(v => !uniqueVals.includes(v));
-    } else {
-      uniqueVals.forEach(v => {
-        if (!newValues.includes(v)) newValues.push(v);
+      if (isAll) {
+         newValues = newValues.filter(v => !uniqueVals.includes(v));
+      } else {
+         uniqueVals.forEach(v => {
+            if (!newValues.includes(v)) newValues.push(v);
+         });
+      }
+
+      this.columnFilters.set({
+         ...current,
+         [col]: { ...colFilter, values: newValues }
       });
-    }
+   }
 
-    this.columnFilters.set({
-      ...current,
-      [col]: { ...colFilter, values: newValues }
-    });
-  }
-
-  clearColumnFilter(col: string) {
-    const current = { ...this.columnFilters() };
-    delete current[col];
-    this.columnFilters.set(current);
-  }
+   clearColumnFilter(col: string) {
+      const current = { ...this.columnFilters() };
+      delete current[col];
+      this.columnFilters.set(current);
+   }
 }

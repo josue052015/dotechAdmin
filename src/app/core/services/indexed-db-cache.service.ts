@@ -5,23 +5,28 @@ import { Injectable } from '@angular/core';
 })
 export class IndexedDbCacheService {
   private dbName = 'SheetCacheDB';
-  private dbVersion = 4;
+  private dbVersion = 5;
   private db: IDBDatabase | null = null;
+  private initDbPromise: Promise<void> | null = null;
 
   constructor() {
     this.initDb().catch(err => console.error('Failed to init IndexedDB:', err));
   }
 
   private initDb(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    if (this.initDbPromise) {
+      return this.initDbPromise;
+    }
+
+    this.initDbPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
 
       request.onupgradeneeded = (event: any) => {
         const db = event.target.result;
         const oldVersion = event.oldVersion;
 
-        // Version 4: Change keyPath from 'id' to 'cacheId' to avoid clashing with business data
-        if (oldVersion < 4) {
+        // Version 5: Recreate stores to fix potential missing object store corruption
+        if (oldVersion < 5) {
           if (db.objectStoreNames.contains('chunks')) db.deleteObjectStore('chunks');
           if (db.objectStoreNames.contains('records')) db.deleteObjectStore('records');
           if (db.objectStoreNames.contains('metadata')) db.deleteObjectStore('metadata');
@@ -44,14 +49,35 @@ export class IndexedDbCacheService {
 
       request.onsuccess = (event: any) => {
         this.db = event.target.result;
+        
+        if (this.db) {
+          this.db.onversionchange = () => {
+            this.db?.close();
+            this.db = null;
+            this.initDbPromise = null;
+          };
+          this.db.onclose = () => {
+            this.db = null;
+            this.initDbPromise = null;
+          };
+        }
+        
         resolve();
       };
 
       request.onerror = (event: any) => {
         console.error('IndexedDB error:', event.target.error);
+        this.initDbPromise = null;
         reject(event.target.error);
       };
+      
+      request.onblocked = () => {
+        console.warn('IndexedDB blocked. Please close other tabs.');
+        // Don't reject here, as it might unblock when other tabs close
+      };
     });
+
+    return this.initDbPromise;
   }
 
   public async saveMetadata(sheetName: string, key: string, value: any): Promise<void> {

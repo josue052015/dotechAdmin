@@ -381,15 +381,15 @@ export class GoogleAuthService {
         const token = this.accessToken();
         const expiresAt = this.tokenExpiresAt();
 
-        // Valid and non-expiring soon
-        if (token && expiresAt > (Date.now() + REFRESH_THRESHOLD_MS)) {
+        // If token is mathematically valid (with 1 minute grace period), just use it.
+        // The proactive renewal is handled asynchronously by scheduleSessionRefresh().
+        // If the token is rejected early by Google, the auth.interceptor will catch the 401.
+        if (token && expiresAt > (Date.now() + 60000)) {
             return of(token);
         }
 
-        // Here is the CORE CHANGE:
-        // Instead of automatically calling silentRenew (which might fail with a blocked popup),
-        // we check if we are in a User Gesture context.
-        // If we are, we can try to renew.
+        // Only block the request and force a renewal if the token is completely expired.
+        console.warn('[Auth] Token is expired. Forcing silent renewal before request.');
         return this.silentRenew();
     }
 
@@ -424,10 +424,10 @@ export class GoogleAuthService {
                 // Set a timeout to resolve if GIS hangs or fails silently
                 setTimeout(() => {
                     if (this.refreshInProgress) {
-                        console.log('[Auth] Silent renew timed out (likely blocked or needs interaction).');
+                        console.log('[Auth] Silent renew timed out after 15 seconds (likely blocked or needs interaction).');
                         this.resolveRefresh(null);
                     }
-                }, 8000); // 8 seconds for slow networks
+                }, 15000); // 15 seconds as requested by user
 
             } catch (err) {
                 console.error('[Auth] Error during silent renewal request:', err);
@@ -438,8 +438,9 @@ export class GoogleAuthService {
         return from(this.refreshInProgress).pipe(
             tap((token: string | null) => {
                 if (!token && this.isAuthenticated()) {
-                    // If we can't renew silently and the token is already expired, 
-                    // we might want to flag this, but the interceptor handles the 401.
+                    // We don't automatically log out here. 
+                    // Let the HTTP Interceptor handle it if a request fails with 401.
+                    console.warn('[Auth] Silent renew failed to obtain token.');
                 }
             })
         );
@@ -452,14 +453,19 @@ export class GoogleAuthService {
             clearTimeout(this.sessionMonitorTimer);
         }
 
-        const timeSinceLastRefresh = Date.now() - this.lastRefreshAt();
-        const delay = Math.max(0, SESSION_REFRESH_INTERVAL_MS - timeSinceLastRefresh);
+        // Try to refresh 15 minutes before expiration (tokens usually last 60 minutes)
+        const timeUntilExpiry = this.tokenExpiresAt() - Date.now();
+        // If expired or expiring in less than 15 mins, refresh in 5 seconds.
+        // Otherwise, schedule it to run 15 mins before expiry.
+        const delay = timeUntilExpiry > REFRESH_THRESHOLD_MS 
+            ? timeUntilExpiry - REFRESH_THRESHOLD_MS 
+            : 5000; 
 
         // Run outside Angular to avoid unnecessary change detection cycles
         this.zone.runOutsideAngular(() => {
             this.sessionMonitorTimer = setTimeout(() => {
                 this.executeBackgroundRefresh();
-            }, delay);
+            }, Math.max(0, delay));
         });
     }
 
@@ -468,21 +474,13 @@ export class GoogleAuthService {
 
         console.log('[Auth] Triggering scheduled background session refresh...');
 
-        // Start the 1-minute grace period timer
-        this.zone.runOutsideAngular(() => {
-            this.refreshDeadlineTimer = setTimeout(() => {
-                console.warn('[Auth] Background refresh deadline exceeded (1 minute). Redirecting to login.');
-                this.zone.run(() => this.logoutManual());
-            }, REFRESH_GRACE_PERIOD_MS);
-        });
-
         // Trigger the silent renewal
         this.silentRenew().subscribe({
             next: (token) => {
                 if (token) {
                     console.log('[Auth] Scheduled background refresh successful.');
                 } else {
-                    console.warn('[Auth] Scheduled background refresh failed to return a token.');
+                    console.warn('[Auth] Scheduled background refresh failed. Will wait for interceptor to catch 401.');
                 }
             },
             error: (err) => {
