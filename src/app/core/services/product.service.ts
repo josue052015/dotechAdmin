@@ -22,12 +22,12 @@ export class ProductService extends LargeSheetListService<Product> {
     ];
 
     private readonly HEADER_MAP: { [key: string]: keyof Product } = {
-        '#': 'id', 'id': 'id', 'codigo': 'id',
-        'name': 'name', 'nombre': 'name', 'product': 'name',
-        'price': 'price', 'precio': 'price',
-        'stock': 'stock', 'existencia': 'stock',
-        'sku': 'sku',
-        'category': 'category', 'categoria': 'category', 'categoría': 'category'
+        '#': 'id', 'id': 'id', 'codigo': 'id', 'código': 'id',
+        'name': 'name', 'nombre': 'name', 'product': 'name', 'producto': 'name', 'productos': 'name', 'articulo': 'name', 'artículo': 'name', 'item': 'name',
+        'price': 'price', 'precio': 'price', 'precios': 'price',
+        'stock': 'stock', 'existencia': 'stock', 'existencias': 'stock', 'stock/existencia': 'stock', 'stock/existencias': 'stock', 'cantidad': 'stock', 'cant': 'stock', 'qty': 'stock', 'quantity': 'stock', 'unidades': 'stock', 'units': 'stock',
+        'sku': 'sku', 'referencia': 'sku', 'ref': 'sku',
+        'category': 'category', 'categoria': 'category', 'categoría': 'category', 'categorias': 'category', 'categorías': 'category'
     };
 
     constructor() {
@@ -87,7 +87,10 @@ export class ProductService extends LargeSheetListService<Product> {
             const num = parseFloat(sValue.replace(/[^0-9.-]/g, ""));
             return isNaN(num) ? 0 : num;
         }
-        if (property === 'stock') return parseInt(sValue.replace(/[^0-9]/g, '')) || 0;
+        if (property === 'stock') {
+            const num = parseFloat(sValue.replace(/[^0-9.-]/g, ""));
+            return isNaN(num) ? 0 : Math.round(num);
+        }
         return sValue;
     }
 

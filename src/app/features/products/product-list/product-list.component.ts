@@ -32,6 +32,7 @@ interface ColumnFilter {
   template: `
     <div class="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
+      @if (!showForm) {
       <!-- Header Area -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div class="flex flex-col">
@@ -344,18 +345,93 @@ interface ColumnFilter {
         </div>
       </div>
 
-        <div *ngIf="!productService.isLoading() || visibleRows().length > 0" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
-           <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
-              TOTAL RECORDS: <span class="text-slate-900 ml-1">{{ visibleRows().length }}</span>
-           </div>
-           <div class="flex items-center space-x-4">
-               <div *ngIf="!productService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
-                  <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
-                  <span class="text-[10px] font-bold uppercase tracking-widest">LISTA COMPLETA</span>
-               </div>
-           </div>
+      <div *ngIf="!productService.isLoading() || visibleRows().length > 0" class="px-4 md:px-8 py-4 md:py-5 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
+         <div class="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
+            TOTAL RECORDS: <span class="text-slate-900 ml-1">{{ visibleRows().length }}</span>
          </div>
-      </div>
+         <div class="flex items-center space-x-4">
+             <div *ngIf="!productService.listState().hasMore && visibleRows().length > 0" class="flex items-center space-x-2 text-slate-300">
+                <lucide-icon name="check-circle" class="w-3.5 h-3.5"></lucide-icon>
+                <span class="text-[10px] font-bold uppercase tracking-widest">LISTA COMPLETA</span>
+             </div>
+         </div>
+       </div>
+      } @else {
+         <!-- Sophisticated Product Form -->
+         <div class="max-w-[700px] mx-auto w-full space-y-6 md:space-y-8 animate-in slide-in-from-right-4 duration-500">
+            <!-- Header -->
+            <div class="flex items-center space-x-4 mb-4">
+               <button (click)="closeForm()" class="p-2.5 text-text-muted hover:text-text hover:bg-white border hover:border-border border-transparent rounded-xl transition-all shadow-sm bg-slate-50/50 sm:bg-transparent">
+                  <lucide-icon name="arrow-left" class="w-5 h-5"></lucide-icon>
+               </button>
+               <div>
+                  <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight uppercase tracking-wider">{{ isEditing ? 'Edit Product' : 'Add New Product' }}</h2>
+                  <nav class="flex items-center space-x-2 text-[9px] md:text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">
+                     <span>Inventory</span>
+                     <lucide-icon name="chevron-right" class="w-3 h-3"></lucide-icon>
+                     <span class="text-primary italic">Catalog</span>
+                  </nav>
+               </div>
+            </div>
+
+            <!-- Form Content Card -->
+            <div class="card-stitch p-5 md:p-8 bg-white space-y-6 md:space-y-8">
+               <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="space-y-6">
+                  
+                  <!-- Form Fields Grid -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                     
+                     <!-- Product Name -->
+                     <div class="space-y-2 md:col-span-2">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Product Name <span class="text-red-500">*</span></label>
+                        <input type="text" formControlName="name" placeholder="e.g. Wireless Headphones" 
+                               class="input-stitch font-bold text-slate-700 h-11 md:h-12 text-sm">
+                        <div *ngIf="productForm.get('name')?.touched && productForm.get('name')?.invalid" class="text-red-500 text-[10px] font-bold uppercase tracking-wider ml-1 mt-1">
+                           Product name is required
+                        </div>
+                     </div>
+
+                     <!-- Price -->
+                     <div class="space-y-2">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Price (RD$) <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">RD$</span>
+                           <input type="number" formControlName="price" placeholder="0.00" step="0.01" min="0.01"
+                                  class="input-stitch font-bold text-slate-700 h-11 md:h-12 text-sm pl-14">
+                        </div>
+                        <div *ngIf="productForm.get('price')?.touched && productForm.get('price')?.invalid" class="text-red-500 text-[10px] font-bold uppercase tracking-wider ml-1 mt-1">
+                           Price must be greater than 0
+                        </div>
+                     </div>
+
+                     <!-- Stock Quantity -->
+                     <div class="space-y-2">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest ml-1">Stock Quantity <span class="text-red-500">*</span></label>
+                        <input type="number" formControlName="stock" placeholder="0" min="0"
+                               class="input-stitch font-bold text-slate-700 h-11 md:h-12 text-sm">
+                        <div *ngIf="productForm.get('stock')?.touched && productForm.get('stock')?.invalid" class="text-red-500 text-[10px] font-bold uppercase tracking-wider ml-1 mt-1">
+                           Stock cannot be negative
+                        </div>
+                     </div>
+
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 border-t border-slate-100">
+                     <button type="button" (click)="closeForm()" class="order-2 sm:order-1 px-8 py-2.5 rounded-xl text-slate-500 hover:text-slate-900 font-bold text-sm bg-white border border-transparent hover:border-slate-200 transition-all active:scale-95">
+                        Discard Changes
+                     </button>
+                     <button type="submit" [disabled]="productForm.invalid || isSaving" 
+                             class="order-1 sm:order-2 bg-primary hover:bg-blue-700 text-white px-10 py-3 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all active:scale-95 text-sm font-black flex items-center justify-center space-x-2">
+                        <mat-spinner diameter="18" strokeWidth="3" *ngIf="isSaving" class="mr-2 text-white"></mat-spinner>
+                        <span>{{ isEditing ? 'Update Product' : 'Save Product' }}</span>
+                     </button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      }
+    </div>
 
     <!-- Filter Template -->
     <ng-template #filterTemplate let-col="column">
@@ -634,10 +710,12 @@ export class ProductListComponent implements OnInit, AfterViewInit {
     this.isEditing = false;
     this.currentRowNumber = null;
     this.showForm = true;
+    this.cdr.markForCheck();
   }
 
   closeForm() {
     this.showForm = false;
+    this.cdr.markForCheck();
   }
 
   editProduct(product: Product) {
@@ -645,12 +723,14 @@ export class ProductListComponent implements OnInit, AfterViewInit {
     this.isEditing = true;
     this.currentRowNumber = product['_rowNumber'] || null;
     this.showForm = true;
+    this.cdr.markForCheck();
   }
 
   saveProduct() {
     if (this.productForm.invalid) return;
 
     this.isSaving = true;
+    this.cdr.markForCheck();
     const value = this.productForm.getRawValue();
 
     if (this.isEditing && this.currentRowNumber) {
@@ -658,16 +738,24 @@ export class ProductListComponent implements OnInit, AfterViewInit {
         next: () => {
           this.isSaving = false;
           this.closeForm();
+          this.cdr.markForCheck();
         },
-        error: () => this.isSaving = false
+        error: () => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        }
       });
     } else {
       this.productService.createProduct(value).subscribe({
         next: () => {
           this.isSaving = false;
           this.closeForm();
+          this.cdr.markForCheck();
         },
-        error: () => this.isSaving = false
+        error: () => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        }
       });
     }
   }
