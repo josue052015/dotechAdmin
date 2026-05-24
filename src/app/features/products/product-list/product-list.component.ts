@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, effect, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, computed, signal, ChangeDetectionStrategy, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -12,7 +12,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ExportSelectorDialogComponent } from '../../../shared/components/export-selector-dialog/export-selector-dialog.component';
 import { Router } from '@angular/router';
 import { ConfirmService } from '../../../core/services/confirm.service';
-import { ScrollingModule } from '@angular/cdk/scrolling';
+import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject, BehaviorSubject } from 'rxjs';
 
@@ -112,11 +112,8 @@ interface ColumnFilter {
       </div>
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
-             [class.overflow-hidden]="!isMobile()"
-             [class.h-[calc(100vh-460px)]]="!isMobile()"
-             [class.min-h-[500px]]="!isMobile()">
-        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
+      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50 overflow-x-hidden md:overflow-hidden max-md:h-[75vh] md:h-[calc(100vh-460px)] md:min-h-[500px]">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full overflow-x-hidden">
           
           <!-- Loading Skeletons (Only when truly empty) -->
           <div *ngIf="productService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto bg-white" style="contain: paint layout;">
@@ -235,25 +232,16 @@ interface ColumnFilter {
                <div class="col-span-1 text-left"></div>
             </div>
 
-            <!-- Viewport Desktop (Only if results) -->
-            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
-                  [itemSize]="80" 
-                  class="flex-1 w-full outline-none"
+            <!-- Single Responsive Viewport (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="visibleRows().length > 0"
+                  [itemSize]="isMobile() ? 320 : 80" 
+                  class="flex-1 w-full outline-none h-full custom-scrollbar overflow-x-hidden"
                   style="height: 100%; min-height: 500px;"
                   (scrolledIndexChange)="onScroll($event)">
-              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="virtual-row">
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
               </div>
             </cdk-virtual-scroll-viewport>
-
-            <!-- Viewport Mobile (Only if results) -->
-            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
-              <cdk-virtual-scroll-viewport [itemSize]="100" class="h-full w-full custom-scrollbar" style="height: 100%;" (scrolledIndexChange)="onScroll($event)">
-                <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
-                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
-                </div>
-              </cdk-virtual-scroll-viewport>
-            </div>
 
             <!-- Row Template (Shared) -->
             <ng-template #rowTemplate let-row="row">
@@ -298,39 +286,55 @@ interface ColumnFilter {
                          <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
                       </button>
                     </div>
-                  </div>
-
-                  <!-- Mobile Layout -->
-                  <div class="md:hidden flex flex-col gap-4 p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full">
-                     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4 h-full">
-                        <div class="flex items-center space-x-4">
-                           <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm">
-                              <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
+                  </div>                  <!-- Mobile Layout -->
+                  <div (click)="editProduct(row)"
+                        class="md:hidden p-4 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full w-full max-w-full min-w-0 overflow-hidden box-border">
+                     <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 active:bg-slate-50 transition-all space-y-4 h-full min-w-0 overflow-hidden box-border">
+                        <div class="flex items-center justify-between gap-4 min-w-0">
+                           <div class="flex items-center space-x-4 min-w-0 flex-1">
+                              <div class="w-14 h-14 rounded-[1.25rem] bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm flex-shrink-0">
+                                 <img [src]="'https://api.dicebear.com/7.x/identicon/svg?seed=' + row.name" alt="Img" class="w-full h-full object-cover">
+                              </div>
+                              <div class="flex flex-col min-w-0 flex-1">
+                                 <h4 class="text-sm font-black text-slate-900 truncate uppercase tracking-tight w-full leading-tight">{{ row.name }}</h4>
+                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate w-full">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</p>
+                              </div>
                            </div>
-                           <div class="flex-1 min-w-0">
-                              <h4 class="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{{ row.name }}</h4>
-                              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">SKU: {{ row.sku || 'SKU-' + row['_rowNumber'] }}</p>
-                           </div>
-                           <div class="text-right">
+                           <div class="text-right flex-shrink-0">
                               <p class="text-[15px] font-black text-slate-900 italic">RD$ {{ row.price | number }}</p>
-                              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Price</span>
+                              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Price</span>
                            </div>
                         </div>
 
-                        <div class="flex items-center justify-between pt-2">
-                           <div [class]="getStockStatusClass(row.stock || 0)" class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full border shadow-sm">
-                              <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
-                              <span class="text-[9px] font-bold uppercase tracking-wider">{{ getStockStatusLabel(row.stock || 0) }}</span>
+                        <!-- Info Grid -->
+                        <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 space-y-3">
+                           <div class="flex items-center justify-between gap-4">
+                              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Category</span>
+                              <span class="text-[11px] font-bold text-slate-900 text-right flex-1 truncate uppercase min-w-0">{{ row.category || 'General' }}</span>
                            </div>
-                           <div class="flex items-center space-x-2">
-                              <span class="text-[10px] font-bold text-slate-500">{{ row.stock || 0 }} in stock</span>
-                              <div class="h-4 w-px bg-slate-200"></div>
-                              <button (click)="editProduct(row)" class="p-2 text-slate-400 hover:text-primary transition-colors">
+                           <div class="flex items-center justify-between border-t border-slate-100/50 pt-3 gap-4">
+                              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Stock</span>
+                              <div class="flex items-center gap-2 justify-end flex-1 min-w-0">
+                                 <span class="text-[11px] font-black text-slate-900 uppercase truncate">{{ row.stock || 0 }} units</span>
+                                 <div [class]="getStockStatusClass(row.stock || 0)" class="w-2 h-2 rounded-full flex-shrink-0"></div>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1">
+                           <div class="flex items-center gap-2">
+                              <button (click)="editProduct(row); $event.stopPropagation()" 
+                                      class="flex items-center justify-center w-10 h-10 bg-blue-50 text-primary rounded-xl hover:bg-blue-100 active:scale-95 transition-all border border-blue-100 shadow-sm">
                                  <lucide-icon name="pencil" class="w-4 h-4"></lucide-icon>
                               </button>
-                              <button (click)="deleteProduct(row)" class="p-2 text-slate-400 hover:text-danger transition-colors">
+                              <button (click)="deleteProduct(row); $event.stopPropagation()" 
+                                      class="w-10 h-10 flex items-center justify-center text-rose-500 bg-rose-50 rounded-xl hover:bg-rose-100 active:scale-95 transition-all border border-rose-100 shadow-sm">
                                  <lucide-icon name="trash-2" class="w-4 h-4"></lucide-icon>
                               </button>
+                           </div>
+                           <div [class]="getStockStatusClass(row.stock || 0)" class="px-3 py-1.5 rounded-full border shadow-sm flex items-center space-x-2">
+                              <span class="w-1.5 h-1.5 rounded-full" [class]="getStockStatusDot(row.stock || 0)"></span>
+                              <span class="text-[9px] font-black uppercase tracking-widest">{{ getStockStatusLabel(row.stock || 0) }}</span>
                            </div>
                         </div>
                      </div>
@@ -411,19 +415,28 @@ interface ColumnFilter {
   styles: [`
     :host { display: block; }
     .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
-    .virtual-row { min-height: 80px; }
+    .virtual-row { 
+      min-height: 80px; 
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      display: block;
+    }
     @media (max-width: 767px) {
-      .virtual-row { min-height: 100px; }
+      .virtual-row { min-height: 320px; }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, AfterViewInit {
   public productService = inject(ProductService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private confirmService = inject(ConfirmService);
+  private cdr = inject(ChangeDetectorRef);
+  
+  @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
   public Math = Math;
 
   // Reactive Mobile Detection
@@ -488,6 +501,15 @@ export class ProductListComponent implements OnInit {
         sort: { active: '', direction: '' } 
       });
     });
+  }
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      if (this.viewport) {
+        this.viewport.checkViewportSize();
+        this.cdr.detectChanges();
+      }
+    }, 500);
   }
 
   ngOnDestroy() {

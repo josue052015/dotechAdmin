@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, effect, signal, AfterViewInit, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, signal, AfterViewInit, computed, ChangeDetectionStrategy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -204,11 +204,8 @@ interface ColumnFilter {
 
 
       <!-- Main Table Container -->
-        <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
-             [class.overflow-hidden]="!isMobile()"
-             [class.h-[calc(100vh-320px)]]="!isMobile()"
-             [class.min-h-[500px]]="!isMobile()">
-        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
+        <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50 overflow-x-hidden md:overflow-hidden max-md:h-[75vh] md:h-[calc(100vh-320px)] md:min-h-[500px]">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full overflow-x-hidden">
           
           <!-- Loading Skeletons (Zero Flicker Logic) -->
           @if (orderService.listState().isInitialLoading && visibleRows().length === 0) {
@@ -372,25 +369,16 @@ interface ColumnFilter {
                </div>
             </div>
 
-            <!-- Viewport (Only if results) -->
-            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
-                  [itemSize]="72" 
-                  class="flex-1 w-full outline-none"
+            <!-- Single Responsive Viewport (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="visibleRows().length > 0"
+                  [itemSize]="isMobile() ? 320 : 72" 
+                  class="flex-1 w-full outline-none h-full custom-scrollbar overflow-x-hidden"
                   style="height: 100%;"
                   (scrolledIndexChange)="onScroll($event)">
-              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="virtual-row">
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
               </div>
             </cdk-virtual-scroll-viewport>
-
-            <!-- Mobile List (Only if results) -->
-            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
-              <cdk-virtual-scroll-viewport [itemSize]="210" class="h-full w-full custom-scrollbar" style="height: 100%;">
-                <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
-                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
-                </div>
-              </cdk-virtual-scroll-viewport>
-            </div>
 
             <!-- Row Template (Shared) -->
             <ng-template #rowTemplate let-row="row">
@@ -451,18 +439,18 @@ interface ColumnFilter {
 
                 <!-- Mobile Layout -->
                 <div (click)="openOrderDetail(row)"
-                     class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors">
-                   <div class="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-all space-y-4">
+                     class="md:hidden p-4 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full w-full max-w-full min-w-0 overflow-hidden box-border">
+                   <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 active:bg-slate-50 transition-all space-y-4 h-full min-w-0 overflow-hidden box-border">
                       
                       <!-- Card Header -->
-                      <div class="flex items-start justify-between gap-2">
-                         <div class="flex items-center gap-3 min-w-0">
+                      <div class="flex items-start justify-between gap-2 min-w-0">
+                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <!-- Avatar -->
                             <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[10px] font-black text-primary shadow-sm flex-shrink-0">
                                {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                             </div>
-                            <div class="flex flex-col min-w-0">
-                               <h4 class="text-sm font-black text-slate-800 leading-tight truncate">{{row.fullName || 'Cliente sin identificar'}}</h4>
+                            <div class="flex flex-col min-w-0 flex-1">
+                               <h4 class="text-sm font-black text-slate-800 leading-tight truncate w-full">{{row.fullName || 'Cliente sin identificar'}}</h4>
                                <div class="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-slate-400">
                                   <span class="truncate text-primary">#{{(row.id || '').toString().split('#').join('')}}</span>
                                   <span class="opacity-50">&bull;</span>
@@ -486,21 +474,21 @@ interface ColumnFilter {
 
                       <!-- Info Grid -->
                       <div class="bg-slate-50/50 rounded-xl p-3 space-y-2.5 border border-slate-100/50">
-                         <div class="grid grid-cols-12 gap-2 items-start">
-                            <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Product</span>
-                            <span class="col-span-8 text-[11px] font-bold text-slate-700 text-right truncate uppercase">{{row.productName}}</span>
+                         <div class="flex items-start justify-between gap-4">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-0.5 flex-shrink-0">Product</span>
+                            <span class="text-[11px] font-bold text-slate-700 text-right flex-1 line-clamp-2 uppercase leading-snug break-words min-w-0">{{row.productName}}</span>
                          </div>
-                         <div class="grid grid-cols-12 gap-2 items-center border-t border-slate-100/50 pt-2">
-                            <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Location</span>
-                            <span class="col-span-8 text-[11px] font-bold text-slate-700 text-right truncate uppercase">{{row.province}}, {{row.city}}</span>
+                         <div class="flex items-center justify-between border-t border-slate-100/50 pt-2 gap-4">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Location</span>
+                            <span class="text-[11px] font-bold text-slate-700 text-right flex-1 truncate uppercase min-w-0">{{row.province}}, {{row.city}}</span>
                          </div>
-                         <div class="grid grid-cols-12 gap-2 items-center border-t border-slate-100/50 pt-2">
-                            <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
-                            <span class="text-[11px] font-black text-slate-900 col-span-8 text-right uppercase">{{row.productQuantity}} UNITS</span>
+                         <div class="flex items-center justify-between border-t border-slate-100/50 pt-2 gap-4">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Qty</span>
+                            <span class="text-[11px] font-black text-slate-900 text-right flex-1 uppercase whitespace-nowrap min-w-0">{{row.productQuantity}} UNITS</span>
                          </div>
-                         <div class="grid grid-cols-12 gap-2 items-center border-t border-slate-100/50 pt-2" *ngIf="row.phone">
-                            <span class="col-span-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Phone</span>
-                            <span class="col-span-8 text-[11px] font-bold text-slate-600 text-right truncate">{{row.phone}}</span>
+                         <div class="flex items-center justify-between border-t border-slate-100/50 pt-2 gap-4" *ngIf="row.phone">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Phone</span>
+                            <span class="text-[11px] font-bold text-slate-600 text-right flex-1 truncate min-w-0">{{row.phone}}</span>
                          </div>
                       </div>
 
@@ -560,6 +548,7 @@ interface ColumnFilter {
             </div>
          </div>
       </div>
+    </div>
 
     <!-- Filter Popover Template -->
     <ng-template #filterTemplate let-col="column">
@@ -632,11 +621,15 @@ interface ColumnFilter {
     
     .virtual-row {
       min-height: 72px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      display: block;
     }
     
     @media (max-width: 767px) {
       .virtual-row {
-        min-height: 210px;
+        min-height: 320px;
       }
     }
   `]
@@ -653,6 +646,9 @@ export class OrderListComponent implements OnInit, AfterViewInit {
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private confirmService = inject(ConfirmService);
+  private cdr = inject(ChangeDetectorRef);
+  
+  @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
   public Math = Math;
 
   // State
@@ -747,6 +743,15 @@ export class OrderListComponent implements OnInit, AfterViewInit {
     });
   }
 
+  ngAfterViewInit() {
+    setTimeout(() => {
+      if (this.viewport) {
+        this.viewport.checkViewportSize();
+        this.cdr.detectChanges();
+      }
+    }, 500);
+  }
+
   ngOnDestroy() {
     this.orderService.stopBackgroundSync();
   }
@@ -790,10 +795,6 @@ export class OrderListComponent implements OnInit, AfterViewInit {
       maxHeight: '90vh',
       panelClass: 'custom-dialog-container'
     });
-  }
-
-  ngAfterViewInit() {
-    // CDK Sort and Paginator are no longer used with manual state
   }
 
   onScroll(index: number) {

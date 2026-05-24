@@ -76,3 +76,9 @@ body {
     }
   }
 }
+
+/* Fix for horizontal overflow in virtual scroll on mobile */
+.cdk-virtual-scroll-content-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+}

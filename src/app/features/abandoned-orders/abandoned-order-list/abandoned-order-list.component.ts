@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, effect, signal, computed, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, signal, computed, ViewChild, ChangeDetectionStrategy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -121,11 +121,8 @@ interface ColumnFilter {
       </div>
 
       <!-- Main Table Container -->
-      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50" 
-             [class.overflow-hidden]="!isMobile()"
-             [class.h-[calc(100vh-320px)]]="!isMobile()"
-             [class.min-h-[500px]]="!isMobile()">
-        <div class="relative flex-1 flex flex-col min-h-0 w-full" [class.overflow-visible]="isMobile()">
+      <div class="card-stitch bg-white flex flex-col w-full max-w-full transition-all duration-500 shadow-xl shadow-slate-200/50 overflow-x-hidden md:overflow-hidden max-md:h-[75vh] md:h-[calc(100vh-320px)] md:min-h-[500px]">
+        <div class="relative flex-1 flex flex-col min-h-0 w-full overflow-x-hidden">
           
           <!-- Loading Skeletons (Only when truly empty) -->
           <div *ngIf="abandonedOrderService.isLoading() && visibleRows().length === 0" class="flex-1 overflow-auto bg-white" style="contain: paint layout;">
@@ -283,25 +280,16 @@ interface ColumnFilter {
                <div class="col-span-1"></div>
             </div>
 
-            <!-- Viewport Desktop (Only if results) -->
-            <cdk-virtual-scroll-viewport *ngIf="!isMobile() && visibleRows().length > 0"
-                  [itemSize]="80" 
-                  class="flex-1 w-full outline-none"
+            <!-- Single Responsive Viewport (Only if results) -->
+            <cdk-virtual-scroll-viewport *ngIf="visibleRows().length > 0"
+                  [itemSize]="isMobile() ? 320 : 80" 
+                  class="flex-1 w-full outline-none h-full custom-scrollbar overflow-x-hidden"
                   style="height: 100%;"
                   (scrolledIndexChange)="onScroll($event)">
-              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
+              <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="virtual-row">
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
               </div>
             </cdk-virtual-scroll-viewport>
-
-            <!-- Viewport Mobile (Only if results) -->
-            <div *ngIf="isMobile() && visibleRows().length > 0" class="flex-1 w-full relative h-[70vh]">
-              <cdk-virtual-scroll-viewport [itemSize]="210" class="h-full w-full custom-scrollbar" style="height: 100%;" (scrolledIndexChange)="onScroll($event)">
-                <div *cdkVirtualFor="let row of visibleRows(); trackBy: trackByRowNumber" class="w-full virtual-row">
-                  <ng-container *ngTemplateOutlet="rowTemplate; context: { row: row }"></ng-container>
-                </div>
-              </cdk-virtual-scroll-viewport>
-            </div>
 
             <!-- Row Template (Shared) -->
             <ng-template #rowTemplate let-row="row">
@@ -352,19 +340,19 @@ interface ColumnFilter {
 
                   <!-- Mobile Layout -->
                   <div (click)="openOrderDetail(row)"
-                        class="md:hidden p-4 border-b border-slate-200/60 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full">
-                   <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 active:bg-slate-50 transition-colors space-y-4 h-full">
-                      <div class="flex justify-between items-start gap-2">
-                         <div class="flex items-center space-x-3 min-w-0">
+                        class="md:hidden p-4 hover:bg-slate-50/50 odd:bg-slate-50/20 transition-colors h-full w-full max-w-full min-w-0 overflow-hidden box-border">
+                   <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 active:bg-slate-50 transition-colors space-y-4 h-full min-w-0 overflow-hidden box-border">
+                      <div class="flex justify-between items-start gap-2 min-w-0">
+                         <div class="flex items-center space-x-3 min-w-0 flex-1">
                             <div class="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
                                {{ row.fullName?.charAt(0) || 'C' }}{{ row.fullName?.split(' ')?.[1]?.charAt(0) || '' }}
                             </div>
-                            <div class="flex flex-col min-w-0">
-                               <p class="text-sm font-bold leading-tight truncate" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</p>
+                            <div class="flex flex-col min-w-0 flex-1">
+                               <p class="text-sm font-bold leading-tight truncate w-full" [class.text-red-600]="!row.fullName || row.fullName.toLowerCase() === 'cliente sin identificar'">{{row.fullName || 'Cliente sin identificar'}}</p>
                                <div class="flex flex-wrap items-center gap-x-2 mt-0.5 text-[10px] font-bold text-slate-400">
-                                   <span>#{{row.id}}</span>
+                                   <span class="truncate">#{{row.id}}</span>
                                   <span class="hidden xs:inline">•</span>
-                                  <span class="text-primary/70">{{row.date | date:'dd/MM/yy'}}</span>
+                                  <span class="text-primary/70 whitespace-nowrap">{{row.date | date:'dd/MM/yy'}}</span>
                                </div>
                             </div>
                          </div>
@@ -372,20 +360,20 @@ interface ColumnFilter {
 
                       <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 space-y-2">
                          <div class="flex items-start justify-between gap-4">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Product</span>
-                            <span class="text-[11px] font-bold text-slate-900 text-right min-w-0 truncate leading-relaxed block uppercase">{{row.productName}}</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0 pt-0.5">Product</span>
+                            <span class="text-[11px] font-bold text-slate-900 text-right flex-1 min-w-0 line-clamp-2 leading-relaxed block uppercase break-words">{{row.productName}}</span>
                          </div>
-                         <div class="flex items-center justify-between border-t border-slate-100 pt-2">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</span>
-                            <span class="text-[11px] font-bold text-slate-900 uppercase">{{row.province}}, {{row.city}}</span>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2 gap-4">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Location</span>
+                            <span class="text-[11px] font-bold text-slate-900 uppercase text-right flex-1 truncate min-w-0">{{row.province}}, {{row.city}}</span>
                          </div>
-                         <div class="flex items-center justify-between border-t border-slate-100 pt-2">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</span>
-                            <span class="text-[11px] font-bold text-slate-900">{{row.productQuantity}} units</span>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2 gap-4">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Qty</span>
+                            <span class="text-[11px] font-bold text-slate-900 text-right flex-1 whitespace-nowrap min-w-0">{{row.productQuantity}} units</span>
                          </div>
-                         <div class="flex items-center justify-between border-t border-slate-100 pt-2" *ngIf="row.phone">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</span>
-                            <span class="text-[11px] font-bold text-slate-600">{{row.phone}}</span>
+                         <div class="flex items-center justify-between border-t border-slate-100 pt-2 gap-4" *ngIf="row.phone">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Phone</span>
+                            <span class="text-[11px] font-bold text-slate-600 text-right flex-1 truncate min-w-0">{{row.phone}}</span>
                          </div>
                       </div>
 
@@ -418,6 +406,7 @@ interface ColumnFilter {
             </div>
          </div>
       </div>
+    </div>
     <!-- Filter Template (Reusable for all columns) -->
     <ng-template #filterTemplate let-column="column">
        <div class="bg-white p-4 w-[280px] flex flex-col space-y-4 shadow-2xl">
@@ -467,15 +456,24 @@ interface ColumnFilter {
    styles: [`
     :host { display: block; }
     .filter-menu-popover { border-radius: 16px !important; overflow: hidden !important; border: 1px solid #f1f5f9 !important; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important; }
-    .virtual-row { min-height: 80px; }
+    .virtual-row { 
+      min-height: 80px; 
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      display: block;
+    }
     @media (max-width: 767px) {
-      .virtual-row { min-height: 210px; }
+      .virtual-row { min-height: 320px; }
     }
   `],
    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AbandonedOrderListComponent implements OnInit {
+export class AbandonedOrderListComponent implements OnInit, AfterViewInit {
    public isMobile = signal(window.innerWidth < 768);
+   private cdr = inject(ChangeDetectorRef);
+   @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
+   
    public abandonedOrderService = inject(AbandonedOrderService);
    public productService = inject(ProductService);
    public locationService = inject(LocationService);
@@ -536,6 +534,15 @@ export class AbandonedOrderListComponent implements OnInit {
       ).subscribe(() => {
          this.applyFilters();
       });
+   }
+
+   ngAfterViewInit() {
+      setTimeout(() => {
+         if (this.viewport) {
+            this.viewport.checkViewportSize();
+            this.cdr.detectChanges();
+         }
+      }, 500);
    }
 
    ngOnDestroy() {

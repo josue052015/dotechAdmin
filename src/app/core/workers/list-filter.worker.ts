@@ -3,25 +3,48 @@
 /// <reference lib="webworker" />
 
 let internalRecords: any[] = [];
-let recordsMap = new Map<string, any>();
+let recordsMap = new Map<string, Map<any, any>>();
 
 addEventListener('message', ({ data }) => {
   const { type, records, query, sheetName, queryVersion } = data;
   
   switch (type) {
-    case 'SET_RECORDS':
+    case 'SET_RECORDS': {
       if (!sheetName) break;
-      recordsMap.set(sheetName, [...records]);
-      self.postMessage({ sheetName, totalCount: records.length });
+      const sheetMap = new Map<any, any>();
+      if (Array.isArray(records)) {
+        for (let i = 0; i < records.length; i++) {
+          const r = records[i];
+          if (r) {
+            const key = r._rowNumber !== undefined ? r._rowNumber : (r.id !== undefined ? r.id : Math.random());
+            sheetMap.set(key, r);
+          }
+        }
+      }
+      recordsMap.set(sheetName, sheetMap);
+      self.postMessage({ sheetName, totalCount: sheetMap.size });
       break;
+    }
 
-    case 'ADD_RECORDS':
+    case 'ADD_RECORDS': {
       if (!sheetName) break;
-      const existing = (recordsMap.get(sheetName) || []);
-      const updated = [...existing, ...records];
-      recordsMap.set(sheetName, updated);
-      self.postMessage({ sheetName, totalCount: updated.length });
+      let sheetMap = recordsMap.get(sheetName);
+      if (!sheetMap) {
+        sheetMap = new Map<any, any>();
+        recordsMap.set(sheetName, sheetMap);
+      }
+      if (Array.isArray(records)) {
+        for (let i = 0; i < records.length; i++) {
+          const r = records[i];
+          if (r) {
+            const key = r._rowNumber !== undefined ? r._rowNumber : (r.id !== undefined ? r.id : Math.random());
+            sheetMap.set(key, r);
+          }
+        }
+      }
+      self.postMessage({ sheetName, totalCount: sheetMap.size });
       break;
+    }
 
     case 'APPLY_QUERY':
       if (!sheetName) break;
@@ -31,7 +54,8 @@ addEventListener('message', ({ data }) => {
 });
 
 function processQuery(query: any, sheetName: string, queryVersion: number) {
-  const records = recordsMap.get(sheetName) || [];
+  const sheetMap = recordsMap.get(sheetName);
+  const records = sheetMap ? Array.from(sheetMap.values()) : [];
   let filtered = records.filter(r => r.isDeleted !== true);
 
   // 1. Search Filter

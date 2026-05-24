@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, effect, computed, untracked } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, effect, computed, untracked, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -358,6 +358,7 @@ export class DashboardComponent implements OnInit {
   public messageService = inject(MessageService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
 
   public isLoading = computed(() => 
     this.orderService.isDashboardFullLoadInProgress() || 
@@ -369,9 +370,14 @@ export class DashboardComponent implements OnInit {
     this.productService.initLargeList();
 
     effect(() => {
+      // Register dependencies on the date range and the loaded orders
+      this.dateFilterService.currentRange();
+      this.orderService.activeOrders();
+
       if (this.orderService.isFullyLoaded()) {
         untracked(() => {
           this.calculateMetrics();
+          this.cdr.markForCheck();
         });
       }
     });
