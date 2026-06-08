@@ -46,6 +46,7 @@ export class GoogleAuthService {
     public isVerifying = signal<boolean>(false);
     public lastActivityAt = signal<number>(0);
     public sessionExpiredByInactivity = signal<boolean>(false);
+    public needsInteractiveRefresh = signal<boolean>(false);
 
     private refreshInProgress: Promise<string | null> | null = null;
     private refreshResolver: ((token: string | null) => void) | null = null;
@@ -240,6 +241,7 @@ export class GoogleAuthService {
     }
 
     private async handleTokenResponse(tokenResponse: any) {
+        this.needsInteractiveRefresh.set(false);
         const token = tokenResponse.access_token;
         const expiresIn = tokenResponse.expires_in || 3599;
         const expiresAt = Date.now() + (expiresIn * 1000);
@@ -351,6 +353,7 @@ export class GoogleAuthService {
         this.isAuthenticated.set(false);
         this.isAuthorized.set(false);
         this.userProfile.set(null);
+        this.needsInteractiveRefresh.set(false);
         
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
@@ -441,6 +444,7 @@ export class GoogleAuthService {
                     // We don't automatically log out here. 
                     // Let the HTTP Interceptor handle it if a request fails with 401.
                     console.warn('[Auth] Silent renew failed to obtain token.');
+                    this.needsInteractiveRefresh.set(true);
                 }
             })
         );

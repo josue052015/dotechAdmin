@@ -353,6 +353,42 @@ declare var XLSX: any;
         </div>
         
       </main>
+
+      <!-- Premium Glassmorphic Reconnection Modal -->
+      <div *ngIf="auth.needsInteractiveRefresh()" 
+           class="fixed inset-0 bg-slate-900/65 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300">
+        <div class="bg-white rounded-[32px] shadow-2xl border border-slate-100 max-w-md w-full p-8 text-center animate-in zoom-in-95 duration-300 relative overflow-hidden">
+          
+          <!-- Decorative subtle top border accent -->
+          <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500"></div>
+
+          <!-- Pulsing Warning/Auth Icon Container -->
+          <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-amber-100/50 shadow-inner relative">
+            <span class="absolute inset-0 rounded-2xl bg-amber-400/20 animate-ping opacity-75"></span>
+            <lucide-icon name="alert-triangle" class="text-amber-500 w-8 h-8 relative z-10"></lucide-icon>
+          </div>
+
+          <!-- Content -->
+          <h2 class="text-xl font-black text-slate-900 mb-3 tracking-tight uppercase">Conexión de Google Expirada</h2>
+          <p class="text-[13px] text-slate-500 mb-8 leading-relaxed px-2">
+            La sesión de seguridad con Google Sheets ha expirado. Para continuar sincronizando, visualizando y editando tus datos de forma segura, necesitamos que renueves tu autorización.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="space-y-3.5">
+            <button (click)="reconnectGoogle()" 
+                    class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm tracking-wide shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center space-x-2">
+              <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
+              <span>Renovar Sesión con Google</span>
+            </button>
+
+            <button (click)="logout()" 
+                    class="w-full py-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-2xl font-semibold text-xs tracking-wider transition-all uppercase">
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
       
     </div>
   `,
@@ -377,7 +413,7 @@ declare var XLSX: any;
   `]
 })
 export class LayoutComponent {
-  private auth = inject(GoogleAuthService);
+  public auth = inject(GoogleAuthService);
   private router = inject(Router);
   private orderService = inject(OrderService);
   private productService = inject(ProductService);
@@ -547,6 +583,10 @@ export class LayoutComponent {
     };
 
     pdfMake.createPdf(docDefinition).download(`orders_export_${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  reconnectGoogle() {
+    this.auth.loginInteractive();
   }
 
   logout() {
